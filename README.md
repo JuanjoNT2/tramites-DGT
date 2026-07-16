@@ -31,14 +31,27 @@ npm run dev
 | `/tramitar/*` | Wizards amigables |
 | `/calcular/*` | Calculadoras |
 
-## Tracking (CDP)
+## Tracking (CDP + GTM/GA4)
 
-Eventos: `form_started`, `form_step_viewed`, `form_step_completed`, `form_abandoned`, `form_submitted`, `payment_started`.
+Eventos: `page_view`, `cta_click`, `form_*`, `payment_started` → PostHog + `window.dataLayer`.
+
+Inventario: `src/lib/analytics/event-declaration.json`.
 
 ```env
 PUBLIC_POSTHOG_KEY=
 PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
+PUBLIC_GTM_ID=
 ```
+
+## Panel admin (analítica estilo GA4)
+
+- URL: `/admin` (login: `/admin/login`)
+- Password: `ADMIN_PASSWORD` (por defecto local: `admin`)
+- Sin credenciales GA4/Ads → **modo demo** con datos sintéticos
+- Vistas: overview, canales, eventos/conversiones, conexiones, etiquetado, data layer
+- Export: CSV y PDF (`/admin/api/export/...`)
+
+Ver `.env.example` para `GA4_*`, Search Console, Google Ads y Meta Ads.
 
 ## Deploy
 
