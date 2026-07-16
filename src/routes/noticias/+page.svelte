@@ -1,48 +1,17 @@
-<section class="section">
-	<div class="wrap">
-		<h1>Noticias</h1>
-		<div class="grid">
-			<article class="card item">
-				<h2>¿Cómo entender el informe de vehículo de la DGT?</h2>
-				<p>Cuando compras un coche de segunda mano, el informe DGT es fundamental.</p>
-				<time>30/04/2026</time>
-			</article>
-			<article class="card item">
-				<h2>¿Qué es el cálculo valor venal coche?</h2>
-				<p>El valor venal es la referencia que Hacienda usa para calcular el ITP.</p>
-				<time>30/04/2026</time>
-			</article>
-		</div>
-	</div>
-</section>
+<script lang="ts">
+	import NoticiasList from '$lib/components/NoticiasList.svelte';
+	import { getPostsPage } from '$lib/data/posts';
 
-<style>
-	h1 {
-		font-size: 32px;
-		font-weight: 800;
-		margin-bottom: 28px;
-	}
-	.grid {
-		display: grid;
-		gap: 16px;
-		max-width: 720px;
-	}
-	.item {
-		padding: 24px;
-	}
-	h2 {
-		font-size: 18px;
-		font-weight: 700;
-		margin-bottom: 8px;
-	}
-	p {
-		color: var(--text2);
-		font-size: 15px;
-		line-height: 1.5;
-		margin-bottom: 12px;
-	}
-	time {
-		font-size: 13px;
-		color: var(--text3);
-	}
-</style>
+	const { items, page, totalPages } = getPostsPage(1);
+</script>
+
+<svelte:head>
+	<title>Noticias | Trámites DGT Online</title>
+	<meta
+		name="description"
+		content="Mantente informado con las últimas noticias sobre trámites DGT, transferencia de vehículos, etiquetas medioambientales e informes de tráfico."
+	/>
+	<link rel="canonical" href="https://tramitesdgtonline.com/noticias/" />
+</svelte:head>
+
+<NoticiasList {items} {page} {totalPages} />
