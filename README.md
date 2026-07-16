@@ -6,7 +6,7 @@ App **SvelteKit** con look & feel inspirado en [tramitesdgtonline.com](https://t
 
 ## Stack
 
-- SvelteKit 5 + TypeScript + adapter Vercel
+- SvelteKit 5 + TypeScript + adapter Verce
 - Formularios propios en `/tramitar/*`
 - PostHog (opcional) para medir abandono por paso
 
