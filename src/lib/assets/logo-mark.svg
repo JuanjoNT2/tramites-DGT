@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 48" role="img" aria-label="DGT">
+	<title>DGT</title>
+	<defs>
+		<linearGradient id="mk1" x1="0%" y1="100%" x2="100%" y2="0%">
+			<stop offset="0%" stop-color="#0057a6" />
+			<stop offset="100%" stop-color="#0087d0" />
+		</linearGradient>
+	</defs>
+	<rect width="56" height="48" rx="4" fill="#0057a6" />
+	<rect width="56" height="5" y="43" fill="#ffb200" />
+	<g transform="translate(6, 6)">
+		<path
+			d="M4 34 C4 14 18 6 32 6"
+			fill="none"
+			stroke="#ffffff"
+			stroke-width="4.5"
+			stroke-linecap="round"
+		/>
+		<path
+			d="M10 34 C10 20 20 12 34 12"
+			fill="none"
+			stroke="#fbcf00"
+			stroke-width="4"
+			stroke-linecap="round"
+		/>
+		<path
+			d="M16 34 C16 26 24 20 36 20"
+			fill="none"
+			stroke="url(#mk1)"
+			stroke-width="3.5"
+			stroke-linecap="round"
+			opacity="0"
+		/>
+	</g>
+</svg>

@@ -1,0 +1,202 @@
+:root {
+	/* Paleta oficial tramitesdgtonline.com (Elementor globals) */
+	--bg-deep: #003050;
+	--bg-navy: #003050;
+	--bg-section: #00263d;
+	--bg-light: #0a4060;
+	--bg-white: #ffffff;
+	--bg-card: #ffffff;
+	--bg-card-service: #00305066;
+
+	--ink: #1a2b3c;
+	--ink-on-dark: #ffffff;
+	--text2: #5a6b7d;
+	--text2-on-dark: rgba(255, 255, 255, 0.86);
+	--text3: #8896a6;
+	--border: rgba(0, 198, 209, 0.45);
+	--border-light: #e2e8f0;
+	--border-focus: #00c6d1;
+
+	--primary: #00c6d1;
+	--primary-hover: #00a8b3;
+	--primary-dark: #008f99;
+	--primary-light: #4cb8c4;
+	--primary-dim: rgba(0, 198, 209, 0.15);
+	--accent: #00c6d1;
+	--accent-yellow: #00c6d1;
+	--accent-yellow-light: #4de8f0;
+
+	--brand-navy: #003050;
+	--brand-teal: #00c6d1;
+
+	--success: #28a745;
+	--error: #dc3545;
+	--warning: #d99700;
+
+	--footer-bar: #002238;
+
+	--max: 1140px;
+	--radius: 8px;
+	--radius-lg: 12px;
+	--radius-btn: 6px;
+	--ease: cubic-bezier(0.22, 1, 0.36, 1);
+	--shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+	--shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.35);
+}
+
+*,
+*::before,
+*::after {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	color: var(--ink-on-dark);
+	background: var(--bg-deep);
+	-webkit-font-smoothing: antialiased;
+}
+
+::selection {
+	background: var(--brand-teal);
+	color: var(--bg-deep);
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+	font-family: inherit;
+}
+
+.wrap {
+	max-width: var(--max);
+	margin: 0 auto;
+	padding: 0 24px;
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	height: 48px;
+	padding: 0 24px;
+	border-radius: var(--radius-btn);
+	background: var(--primary);
+	color: #fff;
+	font-size: 15px;
+	font-weight: 700;
+	border: none;
+	cursor: pointer;
+	transition: background 0.15s, transform 0.15s, opacity 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+	background: var(--primary-hover);
+}
+
+.btn:disabled {
+	opacity: 0.65;
+	cursor: not-allowed;
+}
+
+.btn.ghost {
+	background: transparent;
+	color: var(--primary);
+	border: 2px solid var(--primary);
+	box-shadow: none;
+}
+
+.btn.ghost:hover:not(:disabled) {
+	background: var(--primary-dim);
+}
+
+.btn.ghost-on-dark {
+	background: transparent;
+	color: #fff;
+	border: 2px solid rgba(255, 255, 255, 0.7);
+}
+
+.btn.ghost-on-dark:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.1);
+	border-color: #fff;
+}
+
+.btn.yellow {
+	background: var(--primary);
+	border: none;
+	color: #fff;
+}
+
+.btn.big {
+	height: 52px;
+	padding: 0 32px;
+	font-size: 16px;
+}
+
+.section {
+	padding: 72px 0;
+}
+
+.section-alt {
+	background: var(--bg-section);
+}
+
+.section-white {
+	background: var(--bg-section);
+}
+
+.sec-head {
+	text-align: center;
+	margin-bottom: 48px;
+}
+
+.sec-head h2 {
+	font-size: clamp(28px, 4vw, 40px);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	line-height: 1.15;
+	color: var(--ink-on-dark);
+}
+
+.sec-sub {
+	font-size: 17px;
+	color: var(--text2-on-dark);
+	margin-top: 12px;
+	line-height: 1.55;
+	max-width: 56ch;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.card {
+	background: var(--bg-card);
+	border: none;
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow);
+	color: var(--ink);
+}
+
+.grid-3 {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 20px;
+}
+
+.grid-4 {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 16px;
+}

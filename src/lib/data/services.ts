@@ -1,0 +1,142 @@
+export type Service = {
+	id: string;
+	slug: string;
+	title: string;
+	description: string;
+	landingPath: string;
+	tramitarPath: string;
+	image: string;
+};
+
+export const services: Service[] = [
+	{
+		id: 'transferencia',
+		slug: 'transferencia-vehiculos',
+		title: 'Transferencia de Vehículos',
+		description: 'Cambia la titularidad de tu vehículo de manera fácil y rápida',
+		landingPath: '/transferencia-vehiculos',
+		tramitarPath: '/tramitar/transferencia',
+		image: '/images/services/transferencia.webp'
+	},
+	{
+		id: 'etiqueta',
+		slug: 'distintivo-medioambiental',
+		title: 'Etiqueta Medioambiental',
+		description: 'Consigue la etiqueta medioambiental oficial de la DGT para tu vehículo',
+		landingPath: '/distintivo-medioambiental',
+		tramitarPath: '/tramitar/etiqueta',
+		image: '/images/services/etiqueta.webp'
+	},
+	{
+		id: 'informe',
+		slug: 'informe-trafico',
+		title: 'Informe de Vehículo DGT',
+		description: 'Emitido directamente por la DGT y autentificado por nosotros',
+		landingPath: '/informe-trafico',
+		tramitarPath: '/tramitar/informe-dgt',
+		image: '/images/services/informe.png'
+	},
+	{
+		id: 'duplicado',
+		slug: 'duplicado-de-carnet-de-conducir',
+		title: 'Duplicado Carnet Conducir',
+		description: 'Solicita un duplicado de tu carnet de conducir',
+		landingPath: '/duplicado-de-carnet-de-conducir',
+		tramitarPath: '/tramitar/duplicado-carnet',
+		image: '/images/services/duplicado.jpg'
+	},
+	{
+		id: 'cancelacion',
+		slug: 'cancelacion-de-reserva-de-dominio',
+		title: 'Cancelación de reserva de dominio',
+		description: 'Cancela la reserva de dominio a la entidad de crédito',
+		landingPath: '/cancelacion-de-reserva-de-dominio',
+		tramitarPath: '/tramitar/cancelacion-reserva',
+		image: '/images/services/cancelacion.jpg'
+	}
+];
+
+export const calculators = [
+	{ title: 'Precio de una transferencia', path: '/calcular/precio-transferencia' },
+	{ title: 'Valor venal en Hacienda', path: '/calcular/valor-venal' },
+	{ title: 'Contrato de compraventa', path: '/calcular/precio-transferencia' },
+	{ title: 'Potencia fiscal', path: '/calcular/potencia-fiscal' },
+	{ title: 'Calculadora de ITP', path: '/calcular/itp' }
+];
+
+export const advantages = [
+	{ title: 'Cómodo', desc: 'Sin enviar papeles, todo desde la comodidad de tu teléfono.' },
+	{ title: 'Rápido', desc: 'Solicita tus trámites en menos de 5 minutos.' },
+	{ title: 'Sin esperas', desc: 'Recepción todos los días del año, las 24 horas del día.' },
+	{ title: 'Seguro', desc: 'Garantizamos la seguridad del proceso, evitando fraudes o estafas.' }
+];
+
+export const processSteps = [
+	{
+		id: 'presupuesto',
+		label: 'Calcula tu presupuesto',
+		title: 'Calcula tu presupuesto',
+		desc: 'Ingresa los datos técnicos del vehículo que quieres adquirir y calcula el presupuesto de la transferencia.',
+		image: '/images/steps/presupuesto.png'
+	},
+	{
+		id: 'datos',
+		label: 'Introduce los datos',
+		title: 'Introduce los datos',
+		desc: 'Introduce los datos del comprador, vendedor y matrícula y elige la forma de pago.',
+		image: '/images/steps/datos.png'
+	},
+	{
+		id: 'identidad',
+		label: 'Verifica tu identidad',
+		title: 'Verifica tu identidad',
+		desc: 'Verifica tu identidad de forma segura con DNI o NIE para continuar el trámite.',
+		image: '/images/steps/identidad.png'
+	},
+	{
+		id: 'listo',
+		label: 'Conduce tu nuevo vehículo',
+		title: 'Conduce tu nuevo vehículo',
+		desc: '¡Listo! Solo espera el permiso de circulación con nuevos datos; podrás conducir con el certificado que te enviamos.',
+		image: '/images/steps/listo.png'
+	}
+];
+
+export const testimonials = [
+	{
+		name: 'José Castro',
+		text: 'Muy satisfecho con el servicio. No fue necesario papeleo ni ningún trámite complicado, fue sencillo y práctico todo el proceso de transferir mi vehículo.'
+	},
+	{
+		name: 'Daniela Sánchez',
+		text: 'No tenía el distintivo ambiental y la verdad fue todo cosa de segundos, pagar y luego esperar para obtenerlo. Ninguna queja. ¡Recomendados!'
+	},
+	{
+		name: 'Carlos Roa',
+		text: 'A pesar de que la modalidad es virtual, pensé que tardaría un tiempo pero no fue así, en unos cuantos minutos mi trámite estaba listo. Son muy eficientes.'
+	},
+	{
+		name: 'Laura Gómez',
+		text: 'Sin duda adquirir el informe de tráfico en Trámites DGT Online fue muy sencillo. Lo recomiendo, ¡gracias por esta opción!'
+	},
+	{
+		name: 'Andrea Medina',
+		text: 'Tras consultar en diferentes compañías, el presupuesto que me dieron fue uno de los mejores que encontré, además el proceso fue rápido y sencillo. ¡Súper agradecida!'
+	},
+	{
+		name: 'Miguel Torres',
+		text: 'Todo el procedimiento para hacer el cambio de titularidad de mi vehículo fue online, súper fácil y sin ningún tipo de problema. Los recomiendo 100%.'
+	},
+	{
+		name: 'Patricia Ruiz',
+		text: 'Trámites DGT Online es lo más recomendable si quieres transferir tu vehículo. Hacen del proceso algo sencillo y rápido sin necesidad de papeleos complicados.'
+	},
+	{
+		name: 'Elena Martín',
+		text: 'Con un par de clicks he podido pedir el informe de tráfico del vehículo que quiero comprar. No se tarda nada en rellenar la información y es un trámite muy sencillo.'
+	},
+	{
+		name: 'Javier Ortega',
+		text: 'Es la segunda vez que pido el distintivo ambiental para otro coche que tengo y sin dudas lo recomiendo al 100%. No se tarda nada en pedir y en pocos días llega a casa.'
+	}
+];
