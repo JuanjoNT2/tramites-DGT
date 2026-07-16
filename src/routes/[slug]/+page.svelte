@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CtaIds, trackClick } from '$lib/analytics';
 	import { services } from '$lib/data/services';
 
 	let { data } = $props();
@@ -61,7 +62,19 @@
 				<article class="svc">
 					<h3>{s.title}</h3>
 					<p>{s.description}</p>
-					<a class="btn" href={s.tramitarPath}>Solicitar</a>
+					<a
+						class="btn"
+						href={s.tramitarPath}
+						data-analytics={CtaIds.BLOG_TRAMITE}
+						onclick={() =>
+							trackClick(CtaIds.BLOG_TRAMITE, {
+								tramite: s.id,
+								destination: s.tramitarPath,
+								post_slug: post.slug
+							})}
+					>
+						Solicitar
+					</a>
 				</article>
 			{/each}
 		</div>
@@ -75,13 +88,34 @@
 			<div class="rel-grid">
 				{#each related as r (r.slug)}
 					<article class="rel-card">
-						<a class="thumb-link" href="/{r.slug}" tabindex="-1" aria-hidden="true">
+						<a
+							class="thumb-link"
+							href="/{r.slug}"
+							tabindex="-1"
+							aria-hidden="true"
+							onclick={() =>
+								trackClick(CtaIds.BLOG_RELATED, {
+									destination: `/${r.slug}`,
+									post_slug: r.slug,
+									from_post: post.slug
+								})}
+						>
 							{#if r.image}
 								<img src={r.image} alt="" loading="lazy" />
 							{/if}
 						</a>
 						<div class="rel-body">
-							<h3><a href="/{r.slug}">{r.title}</a></h3>
+							<h3>
+								<a
+									href="/{r.slug}"
+									onclick={() =>
+										trackClick(CtaIds.BLOG_RELATED, {
+											destination: `/${r.slug}`,
+											post_slug: r.slug,
+											from_post: post.slug
+										})}>{r.title}</a
+								>
+							</h3>
 							{#if r.excerpt}
 								<p>{r.excerpt}</p>
 							{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CtaIds, trackClick } from '$lib/analytics';
 	import { services, advantages, testimonials, processSteps } from '$lib/data/services';
 	import ServiceIcon from '$lib/components/ui/ServiceIcon.svelte';
 	import TestimonialsCarousel from '$lib/components/TestimonialsCarousel.svelte';
@@ -32,7 +33,14 @@
 					</div>
 					<h3>{s.title}</h3>
 					<p>{s.description}</p>
-					<a class="tramitar" href={s.tramitarPath}>Tramitar</a>
+					<a
+						class="tramitar"
+						href={s.tramitarPath}
+						data-analytics={CtaIds.HOME_TRAMITAR}
+						onclick={() => trackClick(CtaIds.HOME_TRAMITAR, { tramite: s.id, destination: s.tramitarPath })}
+					>
+						Tramitar
+					</a>
 				</article>
 			{/each}
 		</div>
@@ -76,8 +84,24 @@
 					<h3>{s.title}</h3>
 					<p>{s.description}</p>
 					<div class="feature-actions">
-						<a class="btn" href={s.tramitarPath}>Tramitar</a>
-						<a class="btn ghost" href={s.landingPath}>Ver trámite</a>
+						<a
+							class="btn"
+							href={s.tramitarPath}
+							data-analytics={CtaIds.HOME_TRAMITAR}
+							onclick={() =>
+								trackClick(CtaIds.HOME_TRAMITAR, { tramite: s.id, destination: s.tramitarPath })}
+						>
+							Tramitar
+						</a>
+						<a
+							class="btn ghost"
+							href={s.landingPath}
+							data-analytics={CtaIds.HOME_VER_TRAMITE}
+							onclick={() =>
+								trackClick(CtaIds.HOME_VER_TRAMITE, { tramite: s.id, destination: s.landingPath })}
+						>
+							Ver trámite
+						</a>
 					</div>
 				</div>
 			</div>

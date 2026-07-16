@@ -1,16 +1,20 @@
 <script lang="ts">
+	import { CtaIds, trackClick } from '$lib/analytics';
+
 	let {
 		title,
 		description,
 		steps,
 		tramitarPath,
-		calcPath = null
+		calcPath = null,
+		tramite = undefined
 	}: {
 		title: string;
 		description: string;
 		steps: string[];
 		tramitarPath: string;
 		calcPath?: string | null;
+		tramite?: string;
 	} = $props();
 </script>
 
@@ -19,8 +23,24 @@
 		<h1>{title}</h1>
 		<p class="sub">{description}</p>
 		<div class="cta">
-			<a class="btn big" href={tramitarPath}>Solicitar ahora</a>
-			{#if calcPath}<a class="btn big ghost-on-dark" href={calcPath}>Calcular precio</a>{/if}
+			<a
+				class="btn big"
+				href={tramitarPath}
+				data-analytics={CtaIds.LANDING_SOLICITAR}
+				onclick={() => trackClick(CtaIds.LANDING_SOLICITAR, { tramite })}
+			>
+				Solicitar ahora
+			</a>
+			{#if calcPath}
+				<a
+					class="btn big ghost-on-dark"
+					href={calcPath}
+					data-analytics={CtaIds.LANDING_CALCULAR}
+					onclick={() => trackClick(CtaIds.LANDING_CALCULAR, { tramite })}
+				>
+					Calcular precio
+				</a>
+			{/if}
 		</div>
 	</div>
 </section>

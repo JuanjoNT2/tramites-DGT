@@ -7,6 +7,7 @@
 </svelte:head>
 
 <TramiteLanding
+	tramite="informe"
 	title="Informe de vehículo DGT"
 	description="Solicita el informe de tráfico emitido por la DGT. Conoce cargas, reservas de dominio e historial."
 	tramitarPath="/tramitar/informe-dgt"

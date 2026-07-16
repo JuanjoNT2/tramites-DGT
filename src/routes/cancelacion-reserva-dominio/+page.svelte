@@ -7,6 +7,7 @@
 </svelte:head>
 
 <TramiteLanding
+	tramite="cancelacion"
 	title="Cancelación de reserva de dominio"
 	description="Cancela la reserva de dominio de tu vehículo ante la entidad financiera."
 	tramitarPath="/tramitar/cancelacion-reserva"

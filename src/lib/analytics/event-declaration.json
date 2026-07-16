@@ -1,0 +1,364 @@
+{
+  "version": 1,
+  "destinations": [
+    "posthog",
+    "window.dataLayer"
+  ],
+  "events": {
+    "PAGE_VIEW": "page_view",
+    "CTA_CLICK": "cta_click",
+    "FORM_STARTED": "form_started",
+    "FORM_STEP_VIEWED": "form_step_viewed",
+    "FORM_STEP_COMPLETED": "form_step_completed",
+    "FORM_ABANDONED": "form_abandoned",
+    "FORM_SUBMITTED": "form_submitted",
+    "PAYMENT_STARTED": "payment_started"
+  },
+  "pages": [
+    {
+      "path": "/",
+      "page_type": "home",
+      "content_group": "home",
+      "tramite": null,
+      "label": "Home",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "home_tramitar",
+        "home_ver_tramite",
+        "nav_iniciar_sesion"
+      ]
+    },
+    {
+      "path": "/transferencia-vehiculos",
+      "page_type": "landing_servicio",
+      "content_group": "servicios",
+      "tramite": "transferencia",
+      "label": "Transferencia de vehículos",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "landing_solicitar_ahora",
+        "landing_calcular_precio"
+      ]
+    },
+    {
+      "path": "/distintivo-medioambiental",
+      "page_type": "landing_servicio",
+      "content_group": "servicios",
+      "tramite": "etiqueta",
+      "label": "Etiqueta medioambiental",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "landing_solicitar_ahora"
+      ]
+    },
+    {
+      "path": "/informe-trafico",
+      "page_type": "landing_servicio",
+      "content_group": "servicios",
+      "tramite": "informe",
+      "label": "Informe de vehículo DGT",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "landing_solicitar_ahora"
+      ]
+    },
+    {
+      "path": "/duplicado-de-carnet-de-conducir",
+      "page_type": "landing_servicio",
+      "content_group": "servicios",
+      "tramite": "duplicado",
+      "label": "Duplicado carnet de conducir",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "landing_solicitar_ahora"
+      ]
+    },
+    {
+      "path": "/cancelacion-de-reserva-de-dominio",
+      "page_type": "landing_servicio",
+      "content_group": "servicios",
+      "tramite": "cancelacion",
+      "label": "Cancelación reserva de dominio",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "landing_solicitar_ahora"
+      ]
+    },
+    {
+      "path": "/tramitar/transferencia",
+      "page_type": "funnel_tramite",
+      "content_group": "conversion",
+      "tramite": "transferencia",
+      "label": "Funnel transferencia",
+      "events": [
+        "page_view",
+        "cta_click",
+        "form_started",
+        "form_step_viewed",
+        "form_step_completed",
+        "form_abandoned",
+        "form_submitted",
+        "payment_started"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/tramitar/etiqueta",
+      "page_type": "funnel_tramite",
+      "content_group": "conversion",
+      "tramite": "etiqueta",
+      "label": "Funnel etiqueta",
+      "events": [
+        "page_view",
+        "cta_click",
+        "form_started",
+        "form_step_viewed",
+        "form_step_completed",
+        "form_abandoned",
+        "form_submitted",
+        "payment_started"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/tramitar/informe-dgt",
+      "page_type": "funnel_tramite",
+      "content_group": "conversion",
+      "tramite": "informe",
+      "label": "Funnel informe",
+      "events": [
+        "page_view",
+        "cta_click",
+        "form_started",
+        "form_step_viewed",
+        "form_step_completed",
+        "form_abandoned",
+        "form_submitted",
+        "payment_started"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/tramitar/duplicado-carnet",
+      "page_type": "funnel_tramite",
+      "content_group": "conversion",
+      "tramite": "duplicado",
+      "label": "Funnel duplicado",
+      "events": [
+        "page_view",
+        "cta_click",
+        "form_started",
+        "form_step_viewed",
+        "form_step_completed",
+        "form_abandoned",
+        "form_submitted",
+        "payment_started"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/tramitar/cancelacion-reserva",
+      "page_type": "funnel_tramite",
+      "content_group": "conversion",
+      "tramite": "cancelacion",
+      "label": "Funnel cancelación",
+      "events": [
+        "page_view",
+        "cta_click",
+        "form_started",
+        "form_step_viewed",
+        "form_step_completed",
+        "form_abandoned",
+        "form_submitted",
+        "payment_started"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/calcular/precio-transferencia",
+      "page_type": "calculadora",
+      "content_group": "herramientas",
+      "tramite": "transferencia",
+      "label": "Calc. precio transferencia",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/calcular/valor-venal",
+      "page_type": "calculadora",
+      "content_group": "herramientas",
+      "tramite": null,
+      "label": "Calc. valor venal",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/calcular/potencia-fiscal",
+      "page_type": "calculadora",
+      "content_group": "herramientas",
+      "tramite": null,
+      "label": "Calc. potencia fiscal",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/calcular/itp",
+      "page_type": "calculadora",
+      "content_group": "herramientas",
+      "tramite": "transferencia",
+      "label": "Calc. ITP",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/noticias",
+      "page_type": "noticias_listado",
+      "content_group": "contenido",
+      "tramite": null,
+      "label": "Noticias",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "noticias_abrir_post"
+      ]
+    },
+    {
+      "path": "/quienes-somos",
+      "page_type": "institucional",
+      "content_group": "institucional",
+      "tramite": null,
+      "label": "Quiénes somos",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/preguntas-frecuentes",
+      "page_type": "faq",
+      "content_group": "institucional",
+      "tramite": null,
+      "label": "FAQs",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/contacto",
+      "page_type": "contacto",
+      "content_group": "institucional",
+      "tramite": null,
+      "label": "Contacto",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/aviso-legal",
+      "page_type": "legal",
+      "content_group": "legal",
+      "tramite": null,
+      "label": "Aviso legal",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/politica-de-privacidad",
+      "page_type": "legal",
+      "content_group": "legal",
+      "tramite": null,
+      "label": "Política de privacidad",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/politica-de-cookies",
+      "page_type": "legal",
+      "content_group": "legal",
+      "tramite": null,
+      "label": "Política de cookies",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/politica-de-devoluciones",
+      "page_type": "legal",
+      "content_group": "legal",
+      "tramite": null,
+      "label": "Política de devoluciones",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/[slug]",
+      "page_type": "blog_post",
+      "content_group": "contenido",
+      "tramite": null,
+      "label": "Artículo blog (dinámico)",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "blog_noticia_relacionada",
+        "blog_tramite_cta"
+      ]
+    }
+  ],
+  "notes": {
+    "source_of_truth": "src/lib/analytics/page-map.ts + events.ts",
+    "page_view": "Cada navegación (afterNavigate). Props: page_path, page_type, content_group, page_label, tramite?",
+    "cta_click": "Clics medidos. Props: cta_id, destination?, tramite?, page_* del contexto",
+    "funnel": "Solo /tramitar/*: form_started, form_step_viewed, form_step_completed, form_abandoned, form_submitted, payment_started",
+    "gtm": "Escuchar event en dataLayer con los mismos nombres. Usar page_type y content_group como dimensiones."
+  }
+}

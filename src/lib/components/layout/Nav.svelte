@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { CtaIds, trackClick } from '$lib/analytics';
 	import { services, calculators } from '$lib/data/services';
 	import Logo from '$lib/components/layout/Logo.svelte';
 
@@ -50,7 +51,15 @@
 				<button type="button" class="drop-btn">Trámites ▾</button>
 				<div class="drop-menu" role="menu">
 					{#each services as s (s.id)}
-						<a href={s.landingPath} role="menuitem">{s.title}</a>
+						<a
+							href={s.landingPath}
+							role="menuitem"
+							data-analytics={CtaIds.NAV_TRAMITE}
+							onclick={() =>
+								trackClick(CtaIds.NAV_TRAMITE, { tramite: s.id, destination: s.landingPath })}
+						>
+							{s.title}
+						</a>
 					{/each}
 				</div>
 			</div>
@@ -58,17 +67,50 @@
 				<button type="button" class="drop-btn">Calculador ▾</button>
 				<div class="drop-menu" role="menu">
 					{#each calculators as c}
-						<a href={c.path} role="menuitem">{c.title}</a>
+						<a
+							href={c.path}
+							role="menuitem"
+							data-analytics={CtaIds.NAV_CALCULADOR}
+							onclick={() => trackClick(CtaIds.NAV_CALCULADOR, { destination: c.path })}
+						>
+							{c.title}
+						</a>
 					{/each}
 				</div>
 			</div>
-			<a href="/noticias">Noticias</a>
-			<a href="/quienes-somos">Quiénes somos</a>
-			<a href="/preguntas-frecuentes">FAQS</a>
-			<a href="/contacto">Contacto</a>
+			<a
+				href="/noticias"
+				data-analytics={CtaIds.NAV_LINK}
+				onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/noticias' })}>Noticias</a
+			>
+			<a
+				href="/quienes-somos"
+				data-analytics={CtaIds.NAV_LINK}
+				onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/quienes-somos' })}
+				>Quiénes somos</a
+			>
+			<a
+				href="/preguntas-frecuentes"
+				data-analytics={CtaIds.NAV_LINK}
+				onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/preguntas-frecuentes' })}
+				>FAQS</a
+			>
+			<a
+				href="/contacto"
+				data-analytics={CtaIds.NAV_LINK}
+				onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/contacto' })}>Contacto</a
+			>
 		</nav>
 
-		<a href="/tramitar/transferencia" class="btn cta desktop-cta">Iniciar sesión</a>
+		<a
+			href="/tramitar/transferencia"
+			class="btn cta desktop-cta"
+			data-analytics={CtaIds.NAV_LOGIN}
+			onclick={() =>
+				trackClick(CtaIds.NAV_LOGIN, { tramite: 'transferencia', destination: '/tramitar/transferencia' })}
+		>
+			Iniciar sesión
+		</a>
 
 		<button
 			type="button"
@@ -108,7 +150,17 @@
 					{#if openTramites}
 						<div class="mobile-sub">
 							{#each services as s (s.id)}
-								<a href={s.landingPath} onclick={closeMobile}>{s.title}</a>
+								<a
+									href={s.landingPath}
+									onclick={() => {
+										trackClick(CtaIds.NAV_TRAMITE, {
+											tramite: s.id,
+											destination: s.landingPath,
+											nav: 'mobile'
+										});
+										closeMobile();
+									}}>{s.title}</a
+								>
 							{/each}
 						</div>
 					{/if}
@@ -127,17 +179,58 @@
 					{#if openCalculador}
 						<div class="mobile-sub">
 							{#each calculators as c}
-								<a href={c.path} onclick={closeMobile}>{c.title}</a>
+								<a
+									href={c.path}
+									onclick={() => {
+										trackClick(CtaIds.NAV_CALCULADOR, { destination: c.path, nav: 'mobile' });
+										closeMobile();
+									}}>{c.title}</a
+								>
 							{/each}
 						</div>
 					{/if}
 				</div>
 
-				<a href="/noticias" onclick={closeMobile}>Noticias</a>
-				<a href="/quienes-somos" onclick={closeMobile}>Quiénes somos</a>
-				<a href="/preguntas-frecuentes" onclick={closeMobile}>FAQS</a>
-				<a href="/contacto" onclick={closeMobile}>Contacto</a>
-				<a href="/tramitar/transferencia" class="btn mobile-cta" onclick={closeMobile}>
+				<a
+					href="/noticias"
+					onclick={() => {
+						trackClick(CtaIds.NAV_LINK, { destination: '/noticias', nav: 'mobile' });
+						closeMobile();
+					}}>Noticias</a
+				>
+				<a
+					href="/quienes-somos"
+					onclick={() => {
+						trackClick(CtaIds.NAV_LINK, { destination: '/quienes-somos', nav: 'mobile' });
+						closeMobile();
+					}}>Quiénes somos</a
+				>
+				<a
+					href="/preguntas-frecuentes"
+					onclick={() => {
+						trackClick(CtaIds.NAV_LINK, { destination: '/preguntas-frecuentes', nav: 'mobile' });
+						closeMobile();
+					}}>FAQS</a
+				>
+				<a
+					href="/contacto"
+					onclick={() => {
+						trackClick(CtaIds.NAV_LINK, { destination: '/contacto', nav: 'mobile' });
+						closeMobile();
+					}}>Contacto</a
+				>
+				<a
+					href="/tramitar/transferencia"
+					class="btn mobile-cta"
+					onclick={() => {
+						trackClick(CtaIds.NAV_LOGIN, {
+							tramite: 'transferencia',
+							destination: '/tramitar/transferencia',
+							nav: 'mobile'
+						});
+						closeMobile();
+					}}
+				>
 					Iniciar sesión
 				</a>
 			</nav>

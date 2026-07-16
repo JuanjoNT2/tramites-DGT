@@ -7,6 +7,7 @@
 </svelte:head>
 
 <TramiteLanding
+	tramite="duplicado"
 	title="Duplicado de carnet de conducir"
 	description="Solicita el duplicado de tu permiso de conducir por pérdida, robo o deterioro."
 	tramitarPath="/tramitar/duplicado-carnet"

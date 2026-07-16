@@ -7,6 +7,7 @@
 </svelte:head>
 
 <TramiteLanding
+	tramite="etiqueta"
 	title="Etiqueta medioambiental DGT"
 	description="Consigue la etiqueta medioambiental oficial para tu vehículo. 100% online, envío a domicilio."
 	tramitarPath="/tramitar/etiqueta"

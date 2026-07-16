@@ -1,13 +1,20 @@
 <script lang="ts">
+	import { afterNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import '$lib/styles/tokens.css';
 	import Nav from '$lib/components/layout/Nav.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
-	import { initAnalytics } from '$lib/analytics';
+	import { initAnalytics, trackPageView } from '$lib/analytics';
 
 	let { children } = $props();
 
 	onMount(() => initAnalytics());
+
+	afterNavigate(({ to }) => {
+		if (to?.url.pathname) {
+			trackPageView(to.url.pathname);
+		}
+	});
 </script>
 
 <svelte:head>

@@ -7,6 +7,7 @@
 </svelte:head>
 
 <TramiteLanding
+	tramite="transferencia"
 	title="Transferencia de vehículos: rápido y seguro"
 	description="Cambia la titularidad de tu vehículo 100% online, sin desplazamientos. Servicio disponible los 365 días del año."
 	tramitarPath="/tramitar/transferencia"

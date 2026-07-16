@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CtaIds, trackClick } from '$lib/analytics';
 	import type { Post } from '$lib/data/posts';
 
 	let {
@@ -14,6 +15,10 @@
 	function pageHref(n: number) {
 		return n <= 1 ? '/noticias' : `/noticias/page/${n}`;
 	}
+
+	function openPost(slug: string) {
+		trackClick(CtaIds.NOTICIAS_POST, { destination: `/${slug}`, post_slug: slug });
+	}
 </script>
 
 <section class="section noticias">
@@ -26,7 +31,13 @@
 		<div class="grid">
 			{#each items as post (post.slug)}
 				<article class="card">
-					<a class="thumb-link" href="/{post.slug}" tabindex="-1" aria-hidden="true">
+					<a
+						class="thumb-link"
+						href="/{post.slug}"
+						tabindex="-1"
+						aria-hidden="true"
+						onclick={() => openPost(post.slug)}
+					>
 						{#if post.image}
 							<img class="thumb" src={post.image} alt="" loading="lazy" />
 						{:else}
@@ -35,7 +46,7 @@
 					</a>
 					<div class="body">
 						<h2 class="title">
-							<a href="/{post.slug}">{post.title}</a>
+							<a href="/{post.slug}" onclick={() => openPost(post.slug)}>{post.title}</a>
 						</h2>
 						{#if post.excerpt}
 							<p class="excerpt">{post.excerpt}</p>
