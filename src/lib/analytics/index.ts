@@ -1,12 +1,16 @@
 /**
- * Analytics / taggeado Trámites DGT
+ * Analytics / taggeado Trámites DGT (arquitectura Performanze)
  *
- * - events.ts     → nombres canónicos de eventos y cta_id
- * - page-map.ts   → declaración por URL (page_type, content_group, eventos, CTAs)
- * - track.ts      → envío a PostHog + window.dataLayer
- * - funnel.ts     → helpers del embudo /tramitar/*
- *
- * Inventario SEO: listEventDeclarations() desde page-map.
+ * DEC  events.ts + page-map.ts + server/validate.ts
+ * CAP  track.ts → destino único de verdad /api/collect (+ espejo dataLayer)
+ * IDE  identity.ts
+ * ADQ  acquisition.ts (first-touch de sesión)
+ * ING  routes/api/collect
+ * VAL  server/validate.ts
+ * ALM  server/store-* (Supabase o .data/analytics)
+ * MOD  server/model.ts → analytics_daily
+ * PAN  /admin lee del modelo
+ * RGP  consent.ts + ConsentBanner
  */
 export { CtaIds, Events, type CtaId, type EventName } from './events';
 export {
@@ -21,3 +25,8 @@ export {
 } from './page-map';
 export { funnel, type FunnelProps } from './funnel';
 export { initAnalytics, track, trackClick, trackPageView } from './track';
+export {
+	canCaptureAnalytics,
+	getAnalyticsConsent,
+	setAnalyticsConsent
+} from './consent';

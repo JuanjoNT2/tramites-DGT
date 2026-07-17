@@ -14,7 +14,8 @@ export type OverviewMetrics = {
 	conversions: number;
 	eventCount: number;
 	engagementRate: number;
-	source: 'ga4' | 'demo';
+	source: 'own' | 'demo' | 'ga4';
+	store?: string;
 };
 
 export type ChannelRow = {

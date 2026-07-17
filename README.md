@@ -31,27 +31,27 @@ npm run dev
 | `/tramitar/*` | Wizards amigables |
 | `/calcular/*` | Calculadoras |
 
-## Tracking (CDP + GTM/GA4)
+## Tracking (capa de datos propia)
 
-Eventos: `page_view`, `cta_click`, `form_*`, `payment_started` → PostHog + `window.dataLayer`.
+Flujo Performanze: declaración → captura → identidad/sesión → adquisición → `/api/collect` → validación → crudo → modelo → panel.
 
-Inventario: `src/lib/analytics/event-declaration.json`.
+- Consentimiento: banner en el sitio (`tdgt_consent_analytics`)
+- Inventario: `src/lib/analytics/event-declaration.json`
+- SQL Supabase: `supabase/migrations/20260717_analytics_own_store.sql`
 
 ```env
-PUBLIC_POSTHOG_KEY=
-PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 PUBLIC_GTM_ID=
 ```
 
-## Panel admin (analítica estilo GA4)
+Sin Supabase, en local los eventos van a `.data/analytics/`.
 
-- URL: `/admin` (login: `/admin/login`)
-- Password: `ADMIN_PASSWORD` (por defecto local: `admin`)
-- Sin credenciales GA4/Ads → **modo demo** con datos sintéticos
-- Vistas: overview, canales, eventos/conversiones, conexiones, etiquetado, data layer
-- Export: CSV y PDF (`/admin/api/export/...`)
+## Panel admin (analítica)
 
-Ver `.env.example` para `GA4_*`, Search Console, Google Ads y Meta Ads.
+- URL: `/admin` · login `/admin/login` · password `ADMIN_PASSWORD` (default local: `admin`)
+- Lee del **almacén propio** (no de GA4). CSV/PDF salen del mismo modelo.
+- Carril B (GSC/Ads/Meta): tablas externas separadas.
 
 ## Deploy
 

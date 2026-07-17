@@ -12,8 +12,13 @@
 </svelte:head>
 
 <AdminShell range={data.range} title="Métricas generales">
-	<div class="banner" class:live={data.overview.source === 'ga4'}>
-		Fuente: {data.overview.source === 'ga4' ? 'GA4 (live)' : 'Demo (sin credenciales GA4)'}
+	<div class="banner" class:live={data.overview.source === 'own'}>
+		{#if data.overview.source === 'own'}
+			Fuente de verdad: almacén propio ({data.overview.store}) — eventos de /api/collect
+		{:else}
+			Sin eventos propios en el periodo · mostrando demo. Acepta cookies de analítica y navega el
+			sitio para llenar el crudo.
+		{/if}
 	</div>
 
 	<div class="kpis">

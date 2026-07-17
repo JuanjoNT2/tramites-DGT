@@ -11,9 +11,8 @@
 
 <AdminShell range={data.range} title="Configuración de capas de datos">
 	<p class="intro">
-		Contrato de <code>window.dataLayer</code> alineado con GTM → GA4. El sitio empuja estos eventos
-		desde <code>src/lib/analytics/track.ts</code>. En GTM crea un trigger Custom Event por cada
-		nombre y, para conversiones, márcalas en GA4.
+		Contrato de eventos (capa DEC). La captura envía primero a <code>/api/collect</code> (fuente de
+		verdad). <code>dataLayer</code> / GTM son un espejo de marketing, no el almacén del panel.
 	</p>
 
 	{#each data.contract as item}

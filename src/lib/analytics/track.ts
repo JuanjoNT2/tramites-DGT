@@ -1,7 +1,10 @@
 import posthog from 'posthog-js';
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
+import { getAcquisition } from './acquisition';
+import { canCaptureAnalytics, getAnalyticsConsent } from './consent';
 import { CtaIds, Events, type CtaId, type EventName } from './events';
+import { getSessionId, getVisitorId, touchSession } from './identity';
 import { pageContext, resolvePageTag } from './page-map';
 
 declare global {
@@ -15,15 +18,14 @@ let lastPagePath = '';
 
 export function initAnalytics() {
 	if (!browser || ready) return;
-
 	window.dataLayer = window.dataLayer || [];
 
+	// PostHog opcional como espejo de marketing; la fuente de verdad es /api/collect
 	const key = env.PUBLIC_POSTHOG_KEY ?? '';
 	if (key) {
 		posthog.init(key, {
 			api_host: env.PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
 			person_profiles: 'identified_only',
-			// Page views los disparamos nosotros con page_type / content_group
 			capture_pageview: false,
 			capture_pageleave: true
 		});
@@ -34,26 +36,34 @@ export function initAnalytics() {
 
 function pushDataLayer(event: string, props?: Record<string, unknown>) {
 	window.dataLayer = window.dataLayer || [];
-	window.dataLayer.push({
-		event,
-		...props
-	});
+	window.dataLayer.push({ event, ...props });
 }
 
-function queueLocal(event: string, props?: Record<string, unknown>) {
+/** Destino único de verdad: ingesta de primera parte en el propio dominio. */
+function sendFirstParty(payload: Record<string, unknown>) {
+	const body = JSON.stringify(payload);
+	const url = '/api/collect';
 	try {
-		const q = JSON.parse(localStorage.getItem('tdgt_events') || '[]') as unknown[];
-		q.push({ event, props, t: Date.now() });
-		localStorage.setItem('tdgt_events', JSON.stringify(q.slice(-200)));
-		console.debug('[tdgt-track]', event, props);
+		if (navigator.sendBeacon) {
+			const blob = new Blob([body], { type: 'application/json' });
+			if (navigator.sendBeacon(url, blob)) return;
+		}
 	} catch {
-		/* ignore */
+		/* fall through */
 	}
+	void fetch(url, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body,
+		keepalive: true,
+		credentials: 'same-origin'
+	}).catch(() => undefined);
 }
 
 /**
- * Dispara un evento a PostHog + dataLayer (GTM/GA4).
- * Incluye contexto de página si hay pathname en props o se pasa currentPath.
+ * Emite un evento según el contrato.
+ * 1) Ingesta propia (/api/collect) — fuente de verdad
+ * 2) dataLayer — espejo para GTM/GA4 (carril marketing, no verdad del panel)
  */
 export function track(
 	event: EventName | string,
@@ -63,28 +73,54 @@ export function track(
 	if (!browser) return;
 	initAnalytics();
 
+	if (!canCaptureAnalytics()) {
+		console.debug('[tdgt-track:blocked-consent]', event);
+		return;
+	}
+
+	touchSession();
 	const pathname =
 		opts?.pathname ??
 		(typeof props?.page_path === 'string' ? props.page_path : undefined) ??
 		window.location.pathname;
 
 	const ctx = pageContext(pathname);
-	const payload = { ...ctx, ...props };
+	const pageProps = { ...ctx, ...props };
+	const acquisition = getAcquisition(String(pageProps.page_path || pathname));
+	const visitor_id = getVisitorId();
+	const session_id = getSessionId();
+	const consent = getAnalyticsConsent();
+
+	const firstParty = {
+		event,
+		visitor_id,
+		session_id,
+		consent,
+		ts: new Date().toISOString(),
+		props: pageProps,
+		acquisition
+	};
 
 	try {
-		pushDataLayer(event, payload);
+		sendFirstParty(firstParty);
+
+		// Espejo marketing (no sustituye al almacén propio)
+		pushDataLayer(event, {
+			...pageProps,
+			visitor_id,
+			session_id,
+			channel: acquisition.channel,
+			consent
+		});
 
 		if (env.PUBLIC_POSTHOG_KEY) {
-			posthog.capture(event, payload);
-		} else {
-			queueLocal(event, payload);
+			posthog.capture(event, { ...pageProps, channel: acquisition.channel });
 		}
 	} catch {
 		/* ignore */
 	}
 }
 
-/** Page view tipado según declaración de la URL. */
 export function trackPageView(pathname: string = browser ? window.location.pathname : '/') {
 	if (!browser) return;
 	const tag = resolvePageTag(pathname);
@@ -104,20 +140,12 @@ export function trackPageView(pathname: string = browser ? window.location.pathn
 	);
 }
 
-/** Clic en CTA. cta_id debe ser de CtaIds cuando sea posible. */
 export function trackClick(
 	ctaId: CtaId | string,
 	props?: Record<string, unknown>,
 	opts?: { pathname?: string }
 ) {
-	track(
-		Events.CTA_CLICK,
-		{
-			cta_id: ctaId,
-			...props
-		},
-		opts
-	);
+	track(Events.CTA_CLICK, { cta_id: ctaId, ...props }, opts);
 }
 
 export { CtaIds, Events };

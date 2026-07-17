@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { env } from '$env/dynamic/public';
 	import '$lib/styles/tokens.css';
+	import ConsentBanner from '$lib/components/ConsentBanner.svelte';
 	import Nav from '$lib/components/layout/Nav.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import { initAnalytics, trackPageView } from '$lib/analytics';
@@ -61,6 +62,7 @@
 	<Nav />
 	<main>{@render children()}</main>
 	<Footer />
+	<ConsentBanner />
 {/if}
 
 <style>
