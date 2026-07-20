@@ -126,7 +126,9 @@
 				</FormField>
 			{:else}
 				<div class="result">
-					<p class="big">{breakdown ? `${breakdown.total.toLocaleString('es-ES')} €` : '—'}</p>
+					<p class="result-amount">
+						{breakdown ? `${breakdown.total.toLocaleString('es-ES')} €` : '—'}
+					</p>
 					<p class="sub">Presupuesto estimado de transferencia</p>
 					<a class="btn big" href="/tramitar/transferencia">Tramitar ahora</a>
 					<button type="button" class="btn ghost big" onclick={() => (step = 1)}>Nuevo cálculo</button>
@@ -179,10 +181,11 @@
 		padding: 24px 0;
 	}
 
-	.big {
+	.result-amount {
 		font-size: 48px;
 		font-weight: 800;
 		color: var(--primary);
+		line-height: 1.1;
 	}
 
 	.sub {
@@ -192,6 +195,17 @@
 
 	.result .btn {
 		margin: 6px;
+	}
+
+	/* CTA principal: mismos colores globales (.btn) — texto blanco sobre primary */
+	.result a.btn:not(.ghost) {
+		background: var(--primary);
+		color: #fff;
+	}
+
+	.result a.btn:not(.ghost):hover {
+		background: var(--primary-hover);
+		color: #fff;
 	}
 
 	@media (max-width: 900px) {
