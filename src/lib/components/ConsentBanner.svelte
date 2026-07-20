@@ -31,7 +31,8 @@
 		<div class="inner">
 			<p>
 				Usamos analítica propia (primera parte) para mejorar el embudo de trámites. No vendemos tus
-				datos. Puedes aceptar o rechazar el seguimiento anónimo.
+				datos. Puedes aceptar o rechazar el seguimiento. Más info en la
+				<a href="/politica-de-cookies">política de cookies</a>.
 			</p>
 			<div class="actions">
 				<button type="button" class="ghost" onclick={deny}>Rechazar</button>
@@ -74,6 +75,10 @@
 		flex: 1;
 		min-width: 220px;
 		color: rgba(255, 255, 255, 0.92);
+	}
+	p a {
+		color: #7ee8ef;
+		text-decoration: underline;
 	}
 	.actions {
 		display: flex;
