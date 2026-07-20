@@ -53,7 +53,8 @@ export function validatePhone(value: string): string | null {
 	return null;
 }
 
-export function validateRequired(value: string, label = 'Este campo'): string | null {
-	if (!value.trim()) return `${label} es obligatorio`;
+export function validateRequired(value: string | number | null | undefined, label = 'Este campo'): string | null {
+	const v = value == null ? '' : String(value).trim();
+	if (!v) return `${label} es obligatorio`;
 	return null;
 }

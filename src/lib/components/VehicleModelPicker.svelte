@@ -140,7 +140,8 @@
 		options={brandOptions}
 		bind:value={marcaId}
 		placeholder="Buscar marca…"
-		maxResults={60}
+		maxResults={40}
+		minChars={1}
 		onChange={onMarcaChange}
 	/>
 </FormField>
@@ -157,6 +158,7 @@
 		placeholder={marcaId ? 'Buscar combustible…' : 'Primero elige marca'}
 		disabled={!marcaId || loadingFuels}
 		maxResults={20}
+		minChars={0}
 		onChange={onCombustibleChange}
 	/>
 </FormField>
@@ -176,7 +178,8 @@
 		bind:value={modeloId}
 		placeholder={combustibleId ? 'Buscar modelo o versión…' : 'Primero elige combustible'}
 		disabled={!combustibleId || loadingModels}
-		maxResults={80}
+		maxResults={40}
+		minChars={2}
 		emptyText="Sin coincidencias. Prueba otra búsqueda."
 		onChange={onModeloChange}
 	/>

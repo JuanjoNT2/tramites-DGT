@@ -91,7 +91,8 @@
 		options={brandOptions}
 		bind:value={marcaId}
 		placeholder="Buscar marca…"
-		maxResults={60}
+		maxResults={40}
+		minChars={2}
 		onChange={onMarcaChange}
 	/>
 </FormField>
@@ -133,7 +134,8 @@
 			bind:value={modeloId}
 			placeholder={marcaId ? 'Buscar modelo…' : 'Primero elige marca'}
 			disabled={!marcaId || loadingModels}
-			maxResults={80}
+			maxResults={40}
+			minChars={1}
 			emptyText="Sin coincidencias. Prueba otra búsqueda."
 			onChange={onModeloChange}
 		/>
@@ -151,7 +153,14 @@
 	hint="Obligatoria para valoración Hacienda (tablas por tramo de cc)"
 	required
 >
-	<input type="number" bind:value={cilindrada} min="1" max="3000" placeholder="Ej: 650" />
+	<input
+		type="text"
+		inputmode="numeric"
+		pattern="[0-9]*"
+		bind:value={cilindrada}
+		placeholder="Ej: 650"
+		autocomplete="off"
+	/>
 </FormField>
 
 {#if marcaNombre && modeloNombre}

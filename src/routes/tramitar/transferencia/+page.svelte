@@ -171,8 +171,8 @@
 				errors.modelo = validateRequired(modeloId, 'El modelo');
 			} else {
 				errors.marca = validateRequired(marcaMotoId, 'La marca');
-				errors.modelo = validateRequired(modeloMotoNombre, 'El modelo');
-				errors.cilindrada = validateRequired(cilindradaMoto, 'La cilindrada');
+				errors.modelo = validateRequired(modeloMotoNombre || modeloMotoId, 'El modelo');
+				errors.cilindrada = validateRequired(String(cilindradaMoto ?? ''), 'La cilindrada');
 			}
 			errors.fechaMatricula = validateRequired(fechaMatricula, 'La fecha de matrícula');
 		}

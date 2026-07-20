@@ -5,6 +5,7 @@
 		placeholder = 'Buscar…',
 		disabled = false,
 		maxResults = 40,
+		minChars = 0,
 		emptyText = 'Sin resultados',
 		onChange
 	}: {
@@ -13,6 +14,8 @@
 		placeholder?: string;
 		disabled?: boolean;
 		maxResults?: number;
+		/** Caracteres mínimos antes de mostrar sugerencias (0 = listar al enfocar). */
+		minChars?: number;
 		emptyText?: string;
 		onChange?: (value: string) => void;
 	} = $props();
@@ -23,24 +26,50 @@
 	const selected = $derived(options.find((o) => o.value === value));
 	const selectedLabel = $derived(selected?.label ?? '');
 
-	const filtered = $derived.by(() => {
-		const q = query.trim().toLowerCase();
-		const list = q
-			? options.filter(
-					(o) =>
-						o.label.toLowerCase().includes(q) || (o.hint?.toLowerCase().includes(q) ?? false)
-				)
-			: options;
-		return list.slice(0, maxResults);
+	const queryNorm = $derived(query.trim().toLowerCase());
+	const canSearch = $derived(minChars === 0 || queryNorm.length >= minChars);
+
+	function score(label: string, hint: string | undefined, q: string): number {
+		const l = label.toLowerCase();
+		const h = hint?.toLowerCase() ?? '';
+		if (l === q) return 1000;
+		if (l.startsWith(q)) return 800 - Math.min(l.length, 100);
+		const words = l.split(/[\s/._-]+/);
+		if (words.some((w) => w.startsWith(q))) return 600;
+		if (l.includes(q)) return 400 - l.indexOf(q);
+		if (h.startsWith(q)) return 300;
+		if (h.includes(q)) return 200;
+		return 0;
+	}
+
+	const ranked = $derived.by(() => {
+		if (!canSearch) return [] as { value: string; label: string; hint?: string }[];
+		const q = queryNorm;
+		if (!q) {
+			return options.slice(0, maxResults);
+		}
+		return options
+			.map((o) => ({ o, s: score(o.label, o.hint, q) }))
+			.filter((x) => x.s > 0)
+			.sort((a, b) => b.s - a.s || a.o.label.localeCompare(b.o.label, 'es'))
+			.slice(0, maxResults)
+			.map((x) => x.o);
 	});
 
 	const totalMatches = $derived.by(() => {
-		const q = query.trim().toLowerCase();
+		if (!canSearch) return 0;
+		const q = queryNorm;
 		if (!q) return options.length;
-		return options.filter(
-			(o) => o.label.toLowerCase().includes(q) || (o.hint?.toLowerCase().includes(q) ?? false)
-		).length;
+		return options.filter((o) => score(o.label, o.hint, q) > 0).length;
 	});
+
+	const inputPlaceholder = $derived(
+		selectedLabel
+			? selectedLabel
+			: minChars > 0
+				? `${placeholder} (escribe para buscar)`
+				: placeholder
+	);
 
 	function pick(v: string) {
 		value = v;
@@ -52,7 +81,15 @@
 	function clear() {
 		value = '';
 		query = '';
+		open = true;
 		onChange?.('');
+	}
+
+	function onFocus() {
+		if (disabled) return;
+		open = true;
+		// Empezar búsqueda limpia; la selección sigue visible en el placeholder
+		query = '';
 	}
 </script>
 
@@ -60,24 +97,33 @@
 	<input
 		type="text"
 		class="input"
-		placeholder={selectedLabel || placeholder}
+		placeholder={inputPlaceholder}
 		bind:value={query}
 		{disabled}
-		onfocus={() => {
+		onfocus={onFocus}
+		oninput={() => {
 			if (!disabled) open = true;
 		}}
-		onblur={() => setTimeout(() => (open = false), 150)}
+		onblur={() => setTimeout(() => (open = false), 180)}
 		autocomplete="off"
 		aria-autocomplete="list"
+		spellcheck="false"
 	/>
 	{#if open && !disabled}
 		<ul class="list" role="listbox">
-			{#if filtered.length === 0}
-				<li class="empty">{emptyText}</li>
+			{#if !canSearch}
+				<li class="empty">
+					Escribe al menos {minChars} letra{minChars === 1 ? '' : 's'} para ver sugerencias
+					{#if options.length > 0}
+						({options.length.toLocaleString('es-ES')} opciones)
+					{/if}
+				</li>
+			{:else if ranked.length === 0}
+				<li class="empty">{queryNorm ? emptyText : 'Empieza a escribir para filtrar…'}</li>
 			{:else}
-				{#each filtered as opt (opt.value)}
+				{#each ranked as opt (opt.value)}
 					<li>
-						<button type="button" onclick={() => pick(opt.value)}>
+						<button type="button" onmousedown={(e) => e.preventDefault()} onclick={() => pick(opt.value)}>
 							<span class="label">{opt.label}</span>
 							{#if opt.hint}
 								<span class="hint">{opt.hint}</span>
@@ -85,8 +131,11 @@
 						</button>
 					</li>
 				{/each}
-				{#if totalMatches > filtered.length}
-					<li class="more">Mostrando {filtered.length} de {totalMatches}. Afina la búsqueda.</li>
+				{#if totalMatches > ranked.length}
+					<li class="more">
+						Mostrando {ranked.length} de {totalMatches.toLocaleString('es-ES')}. Sigue escribiendo para
+						afinar.
+					</li>
 				{/if}
 			{/if}
 		</ul>
@@ -168,6 +217,7 @@
 		padding: 12px 14px;
 		font-size: 13px;
 		color: var(--text3);
+		line-height: 1.4;
 	}
 
 	.clear {
