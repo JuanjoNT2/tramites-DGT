@@ -1,23 +1,10 @@
-<section class="section">
-	<div class="wrap card pad">
-		<h1>Aviso legal</h1>
-		<p class="legal">Documento legal en preparación. Versión demostración del nuevo sitio.</p>
-	</div>
-</section>
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
-<style>
-	.pad {
-		max-width: 720px;
-		margin: 0 auto;
-		padding: 40px;
-	}
-	h1 {
-		font-size: 28px;
-		font-weight: 800;
-		margin-bottom: 16px;
-	}
-	.legal {
-		color: var(--text2);
-		line-height: 1.6;
-	}
-</style>
+	onMount(() => {
+		goto('/aviso-legal', { replaceState: true });
+	});
+</script>
+
+<p>Redirigiendo al <a href="/aviso-legal">aviso legal</a>…</p>
