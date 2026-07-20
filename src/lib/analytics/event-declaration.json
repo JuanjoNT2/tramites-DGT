@@ -61,6 +61,20 @@
       ]
     },
     {
+      "path": "/etiqueta-vmp",
+      "page_type": "landing_servicio",
+      "content_group": "servicios",
+      "tramite": "etiqueta-vmp",
+      "label": "Etiqueta VMP (patinete)",
+      "events": [
+        "page_view",
+        "cta_click"
+      ],
+      "ctas": [
+        "landing_solicitar_ahora"
+      ]
+    },
+    {
       "path": "/informe-trafico",
       "page_type": "landing_servicio",
       "content_group": "servicios",
@@ -126,6 +140,24 @@
       "content_group": "conversion",
       "tramite": "etiqueta",
       "label": "Funnel etiqueta",
+      "events": [
+        "page_view",
+        "cta_click",
+        "form_started",
+        "form_step_viewed",
+        "form_step_completed",
+        "form_abandoned",
+        "form_submitted",
+        "payment_started"
+      ],
+      "ctas": []
+    },
+    {
+      "path": "/tramitar/etiqueta-vmp",
+      "page_type": "funnel_tramite",
+      "content_group": "conversion",
+      "tramite": "etiqueta-vmp",
+      "label": "Funnel etiqueta VMP",
       "events": [
         "page_view",
         "cta_click",

@@ -28,6 +28,16 @@ export const services: Service[] = [
 		image: '/images/services/etiqueta.webp'
 	},
 	{
+		id: 'etiqueta-vmp',
+		slug: 'etiqueta-vmp',
+		title: 'Etiqueta VMP (patinete)',
+		description:
+			'Inscripción y etiqueta identificativa de tu patinete eléctrico (VMP) según la normativa DGT',
+		landingPath: '/etiqueta-vmp',
+		tramitarPath: '/tramitar/etiqueta-vmp',
+		image: '/images/services/etiqueta-vmp.webp'
+	},
+	{
 		id: 'informe',
 		slug: 'informe-trafico',
 		title: 'Informe de Vehículo DGT',

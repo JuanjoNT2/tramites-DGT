@@ -88,6 +88,10 @@ export const PAGE_TAGS: PageTag[] = [
 		tramite: 'etiqueta',
 		ctas: [CtaIds.LANDING_SOLICITAR]
 	}),
+	tag('/etiqueta-vmp', 'landing_servicio', 'servicios', 'Etiqueta VMP (patinete)', {
+		tramite: 'etiqueta-vmp',
+		ctas: [CtaIds.LANDING_SOLICITAR]
+	}),
 	tag('/informe-trafico', 'landing_servicio', 'servicios', 'Informe de vehículo DGT', {
 		tramite: 'informe',
 		ctas: [CtaIds.LANDING_SOLICITAR]
@@ -132,6 +136,10 @@ export const PAGE_TAGS: PageTag[] = [
 	}),
 	tag('/tramitar/etiqueta', 'funnel_tramite', 'conversion', 'Funnel etiqueta', {
 		tramite: 'etiqueta',
+		events: funnelEvents
+	}),
+	tag('/tramitar/etiqueta-vmp', 'funnel_tramite', 'conversion', 'Funnel etiqueta VMP', {
+		tramite: 'etiqueta-vmp',
 		events: funnelEvents
 	}),
 	tag('/tramitar/informe-dgt', 'funnel_tramite', 'conversion', 'Funnel informe', {

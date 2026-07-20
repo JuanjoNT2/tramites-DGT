@@ -21,7 +21,7 @@
 	} from '$lib/utils/validators';
 	import { funnel, initAnalytics } from '$lib/analytics';
 
-	type Variant = 'etiqueta' | 'informe' | 'duplicado' | 'cancelacion';
+	type Variant = 'etiqueta' | 'etiqueta-vmp' | 'informe' | 'duplicado' | 'cancelacion';
 
 	let {
 		title,
@@ -38,6 +38,7 @@
 	const storageKey = $derived(`dgt-wizard-${tipo}`);
 	const summaryStep = $derived(steps.length - 1);
 	const paymentStep = $derived(steps.length);
+	const isEtiquetaShip = $derived(variant === 'etiqueta' || variant === 'etiqueta-vmp');
 
 	let step = $state(1);
 	let done = $state(false);
@@ -48,6 +49,11 @@
 	let matricula = $state('');
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
 	let distintivoTipo = $state('');
+	let vmpCertificado = $state<'si' | 'no'>('si');
+	let vmpNumCertificado = $state('');
+	let vmpNumSerie = $state('');
+	let vmpMarca = $state('');
+	let vmpModelo = $state('');
 	let motivoDuplicado = $state('');
 	let clasePermiso = $state('');
 	let fechaCaducidad = $state('');
@@ -83,6 +89,16 @@
 	const priceLines = $derived.by(() => {
 		if (variant === 'etiqueta') {
 			const p = tramitePricing.etiqueta;
+			return {
+				lines: [
+					{ label: p.label, amount: p.service },
+					{ label: 'Envío', amount: shippingPrice }
+				],
+				total: p.service + shippingPrice
+			};
+		}
+		if (variant === 'etiqueta-vmp') {
+			const p = tramitePricing.etiquetaVmp;
 			return {
 				lines: [
 					{ label: p.label, amount: p.service },
@@ -168,6 +184,14 @@
 			if (!errors.matricula) distintivoTipo = mockDistintivo(matricula);
 		}
 
+		if (variant === 'etiqueta-vmp' && step === 1) {
+			errors.vmpNumSerie = validateRequired(vmpNumSerie, 'El número de serie');
+			errors.vmpMarca = validateRequired(vmpMarca, 'La marca');
+			if (vmpCertificado === 'si') {
+				errors.vmpNumCertificado = validateRequired(vmpNumCertificado, 'El número de certificado');
+			}
+		}
+
 		if (variant === 'informe' && step === 1) {
 			errors.matricula = validateMatricula(matricula);
 		}
@@ -205,7 +229,13 @@
 		}
 
 		const addressStep = 3;
-		if (step === addressStep && (variant === 'etiqueta' || variant === 'informe' || variant === 'duplicado')) {
+		if (
+			step === addressStep &&
+			(variant === 'etiqueta' ||
+				variant === 'etiqueta-vmp' ||
+				variant === 'informe' ||
+				variant === 'duplicado')
+		) {
 			if (!provincia) errors.provincia = 'Selecciona la provincia';
 			errors.municipio = validateRequired(municipio, 'El municipio');
 			errors.direccion = validateRequired(direccion, 'La dirección');
@@ -261,6 +291,11 @@
 					tipo,
 					variant,
 					matricula,
+					vmpCertificado,
+					vmpNumCertificado,
+					vmpNumSerie,
+					vmpMarca,
+					vmpModelo,
 					email,
 					nif,
 					nombre,
@@ -313,6 +348,37 @@
 							<p>Distintivo estimado: <strong>{distintivoTipo || mockDistintivo(matricula)}</strong></p>
 						</div>
 					{/if}
+				{:else if variant === 'etiqueta-vmp' && step === 1}
+					<p class="info">
+						Datos de tu Vehículo de Movilidad Personal (patinete). Si no está certificado, podrás
+						inscribirlo de forma temporal según la normativa DGT.
+					</p>
+					<FormField label="¿El patinete tiene certificado de circulación DGT?" required>
+						<RadioCards
+							name="vmpCertificado"
+							bind:value={vmpCertificado}
+							options={[
+								{ value: 'si', label: 'Sí, está certificado' },
+								{ value: 'no', label: 'No certificado (inscripción temporal)' }
+							]}
+						/>
+					</FormField>
+					{#if vmpCertificado === 'si'}
+						<FormField label="Número de certificado" error={errors.vmpNumCertificado} required>
+							<input bind:value={vmpNumCertificado} placeholder="Según chapa / ficha técnica" />
+						</FormField>
+					{/if}
+					<FormField label="Número de serie" error={errors.vmpNumSerie} required>
+						<input bind:value={vmpNumSerie} placeholder="Número de serie del VMP" />
+					</FormField>
+					<div class="row-2">
+						<FormField label="Marca" error={errors.vmpMarca} required>
+							<input bind:value={vmpMarca} />
+						</FormField>
+						<FormField label="Modelo">
+							<input bind:value={vmpModelo} />
+						</FormField>
+					</div>
 				{:else if variant === 'informe' && step === 1}
 					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
 						<input bind:value={matricula} placeholder="3990WDS" />
@@ -458,7 +524,7 @@
 					<FormField label="Código postal" error={errors.cp} required>
 						<input bind:value={cp} />
 					</FormField>
-					{#if variant === 'etiqueta'}
+					{#if isEtiquetaShip}
 						<FormField label="Tipo de envío" required>
 							<RadioCards
 								name="tipoEnvio"
@@ -499,7 +565,20 @@
 					</div>
 				{:else if step === summaryStep}
 					<ul class="sum">
-						<li><span>Matrícula</span><strong>{matricula || '—'}</strong></li>
+						{#if variant === 'etiqueta-vmp'}
+							<li>
+								<span>VMP</span><strong
+									>{vmpMarca}
+									{vmpModelo || ''} · {vmpCertificado === 'si' ? 'Certificado' : 'No certificado'}</strong
+								>
+							</li>
+							<li><span>Nº serie</span><strong>{vmpNumSerie || '—'}</strong></li>
+							{#if vmpCertificado === 'si'}
+								<li><span>Nº certificado</span><strong>{vmpNumCertificado || '—'}</strong></li>
+							{/if}
+						{:else}
+							<li><span>Matrícula</span><strong>{matricula || '—'}</strong></li>
+						{/if}
 						<li><span>Solicitante</span><strong>{nombre} {apellido1}</strong></li>
 						<li><span>Email</span><strong>{email}</strong></li>
 						<li><span>Total</span><strong>{formatEur(priceLines.total)}</strong></li>

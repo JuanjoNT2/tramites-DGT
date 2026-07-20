@@ -52,6 +52,13 @@ export const STATIC_SEO_PAGES: StaticSeoPage[] = [
 		priority: 0.9
 	},
 	{
+		path: '/etiqueta-vmp',
+		title: pageTitle('Etiqueta VMP (patinete)'),
+		description:
+			'Inscribe tu patinete eléctrico (VMP) y obtén la etiqueta identificativa DGT. Gestión online y envío a domicilio.',
+		priority: 0.9
+	},
+	{
 		path: '/informe-trafico',
 		title: pageTitle('Informe de Vehículo DGT'),
 		description:
@@ -172,6 +179,13 @@ export const STATIC_SEO_PAGES: StaticSeoPage[] = [
 		title: pageTitle('Solicitar etiqueta medioambiental'),
 		description:
 			'Solicita la etiqueta medioambiental DGT online. Formulario guiado y envío a domicilio.',
+		priority: 0.7
+	},
+	{
+		path: '/tramitar/etiqueta-vmp',
+		title: pageTitle('Solicitar etiqueta VMP (patinete)'),
+		description:
+			'Formulario guiado para inscripción y etiqueta identificativa de tu patinete eléctrico (VMP).',
 		priority: 0.7
 	},
 	{

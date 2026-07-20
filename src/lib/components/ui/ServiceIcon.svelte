@@ -22,6 +22,13 @@
 	{:else if id === 'etiqueta'}
 		<path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5v-9Z" />
 		<circle cx="15" cy="9" r="1.25" fill="currentColor" stroke="none" />
+	{:else if id === 'etiqueta-vmp'}
+		<path d="M5 16h10" />
+		<circle cx="7" cy="16" r="2.5" />
+		<circle cx="15" cy="16" r="2.5" />
+		<path d="M9.5 16 12 9h3" />
+		<path d="M12 9v3" />
+		<path d="M15 9h2.5v2" />
 	{:else if id === 'informe'}
 		<path d="M7 3h7l3 3v15H7V3Z" />
 		<path d="M14 3v4h4" />

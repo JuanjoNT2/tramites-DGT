@@ -1,5 +1,64 @@
 [
   {
+    "slug": "etiqueta-identificativa-patinete-vmp-dgt",
+    "title": "Etiqueta identificativa del patinete (VMP): cómo obtenerla con la DGT",
+    "excerpt": "Si tienes un patinete eléctrico, la DGT exige inscripción en el registro de VMP y una etiqueta identificativa. Te explicamos el proceso paso a paso.",
+    "description": "Guía para obtener la etiqueta identificativa del patinete eléctrico (VMP) según la DGT: inscripción en el registro, certificado, tasa y pegatina física.",
+    "date": "20/07/2026",
+    "datetime": "2026-07-20",
+    "image": "https://images.unsplash.com/photo-1571068316344-75bc76f77890?auto=format&fit=crop&w=1600&q=80",
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Los patinetes eléctricos han pasado de ser una moda urbana a un medio de transporte regulado. La Dirección General de Tráfico (DGT) los clasifica como Vehículos de Movilidad Personal (VMP) y exige, además de casco y normas de circulación, un trámite clave: la inscripción en el Registro de Vehículos Personales Ligeros y la etiqueta identificativa que actúa como matrícula adhesiva del vehículo."
+      },
+      {
+        "type": "h2",
+        "text": "Qué es un VMP y por qué necesita etiqueta"
+      },
+      {
+        "type": "p",
+        "text": "Un VMP es un vehículo de una o más ruedas, con una sola plaza, impulsado solo por motor eléctrico y con velocidad máxima entre 6 y 25 km/h. No es lo mismo que la etiqueta medioambiental 0, ECO, C o B de los coches: aquí hablamos de una etiqueta identificativa con un número único (formato tipo M XXXX LLL) que debe ir visible en el patinete."
+      },
+      {
+        "type": "p",
+        "text": "Esta inscripción es el paso previo para contratar el seguro obligatorio de responsabilidad civil. Circular sin seguro o sin los requisitos del registro puede acarrear sanciones económicas y la inmovilización del vehículo."
+      },
+      {
+        "type": "h2",
+        "text": "Pasos para inscribir el patinete y obtener la etiqueta"
+      },
+      {
+        "type": "p",
+        "text": "El trámite se realiza en la sede electrónica de la DGT (con cl@ve, DNI electrónico o certificado). Necesitarás los datos del titular (o del tutor legal si el propietario es menor) y los del vehículo: número de certificado y número de serie, que suelen figurar en la chapa de marcaje y en la ficha técnica."
+      },
+      {
+        "type": "p",
+        "text": "Tras abonar la tasa administrativa correspondiente, la DGT emite un certificado de inscripción digital en PDF. Con ese documento puedes encargar la etiqueta física en un centro autorizado de expedición de placas (manipulador de placas) y colocarla en el porta-identificador del VMP."
+      },
+      {
+        "type": "h2",
+        "text": "Patines certificados y no certificados"
+      },
+      {
+        "type": "p",
+        "text": "Si tu patinete está certificado por un laboratorio autorizado, llevará chapa identificativa troquelada y podrás inscribirlo con normalidad. Los modelos anteriores a la certificación obligatoria pueden inscribirse de forma excepcional como no certificados, con validez temporal (según la normativa vigente, hasta el 22 de enero de 2027). En ese caso, el certificado de inscripción lo reflejará expresamente."
+      },
+      {
+        "type": "h2",
+        "text": "Cómo te ayudamos en Trámites DGT Online"
+      },
+      {
+        "type": "p",
+        "text": "En nuestra plataforma puedes iniciar el trámite de Etiqueta VMP (patinete) de forma guiada: indicas si el vehículo está certificado, aportas número de serie y datos del titular, eliges el envío de la etiqueta y completas la solicitud online. Así evitas desplazamientos y dejas el proceso en manos de un flujo claro, paso a paso."
+      },
+      {
+        "type": "p",
+        "text": "Si ya tienes claro que necesitas la etiqueta identificativa de tu patinete, entra en Etiqueta VMP y empieza el formulario. Si además quieres otros trámites del vehículo o del carnet, en Trámites DGT Online también gestionamos transferencias, distintivo medioambiental, informes DGT y más."
+      }
+    ]
+  },
+  {
     "slug": "como-entender-el-informe-de-vehiculo-de-la-dgt",
     "title": "¿Cómo entender el informe de vehículo de la DGT?",
     "excerpt": "Cuando vas a comprar un coche de segunda mano, una de las mejores cosas que puedes hacer para asegurarte de",
