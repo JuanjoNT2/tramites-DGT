@@ -1,3 +1,12 @@
+<script lang="ts">
+	import SeoHead from '$lib/components/SeoHead.svelte';
+	import { getStaticSeo } from '$lib/seo/site';
+
+	const seo = getStaticSeo('/politica-de-devoluciones')!;
+</script>
+
+<SeoHead title={seo.title} description={seo.description} path={seo.path} />
+
 <section class="section">
 	<div class="wrap card pad">
 		<h1>Política de devoluciones</h1>

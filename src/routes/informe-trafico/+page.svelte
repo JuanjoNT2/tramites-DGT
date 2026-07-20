@@ -1,10 +1,22 @@
 <script lang="ts">
 	import TramiteLanding from '$lib/components/TramiteLanding.svelte';
+	import SeoHead from '$lib/components/SeoHead.svelte';
+	import { getStaticSeo, serviceJsonLd } from '$lib/seo/site';
+
+	const seo = getStaticSeo('/informe-trafico')!;
 </script>
 
-<svelte:head>
-	<title>Informe de Vehículo DGT | Trámites DGT Online</title>
-</svelte:head>
+<SeoHead
+	title={seo.title}
+	description={seo.description}
+	path={seo.path}
+	image="/images/services/informe.webp"
+	jsonLd={serviceJsonLd({
+		name: 'Informe de Vehículo DGT',
+		description: seo.description,
+		path: seo.path
+	})}
+/>
 
 <TramiteLanding
 	tramite="informe"

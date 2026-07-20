@@ -16,7 +16,10 @@
 		validateRequired
 	} from '$lib/utils/validators';
 	import { funnel, initAnalytics } from '$lib/analytics';
+	import SeoHead from '$lib/components/SeoHead.svelte';
+	import { getStaticSeo } from '$lib/seo/site';
 
+	const seo = getStaticSeo('/tramitar/transferencia')!;
 	const STORAGE_KEY = 'dgt-transfer-wizard';
 	const stepLabels = [
 		'Tipo de vehículo',
@@ -214,9 +217,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Transferencia de vehículos online | Trámites DGT Online</title>
-</svelte:head>
+<SeoHead title={seo.title} description={seo.description} path={seo.path} />
 
 <section class="section">
 	<div class="wrap layout">

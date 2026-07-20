@@ -3,17 +3,14 @@
 	import { services, advantages, testimonials, processSteps } from '$lib/data/services';
 	import ServiceIcon from '$lib/components/ui/ServiceIcon.svelte';
 	import TestimonialsCarousel from '$lib/components/TestimonialsCarousel.svelte';
+	import SeoHead from '$lib/components/SeoHead.svelte';
+	import { getStaticSeo } from '$lib/seo/site';
 
 	let activeStep = $state(0);
+	const seo = getStaticSeo('/')!;
 </script>
 
-<svelte:head>
-	<title>Trámites DGT Online | Trámites de Vehículo en Pocos Minutos</title>
-	<meta
-		name="description"
-		content="Realiza trámites de vehículo 100% online: transferencias, etiqueta medioambiental, informe DGT y más. Sin cita previa, sin esperas."
-	/>
-</svelte:head>
+<SeoHead title={seo.title} description={seo.description} path={seo.path} />
 
 <section class="hero">
 	<div class="hero-bg" aria-hidden="true"></div>

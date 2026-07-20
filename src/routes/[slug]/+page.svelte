@@ -1,26 +1,30 @@
 <script lang="ts">
 	import { CtaIds, trackClick } from '$lib/analytics';
 	import { services } from '$lib/data/services';
+	import SeoHead from '$lib/components/SeoHead.svelte';
+	import { articleJsonLd, DEFAULT_DESCRIPTION, pageTitle } from '$lib/seo/site';
 
 	let { data } = $props();
 	const post = $derived(data.post);
 	const related = $derived(data.related);
+	const seoTitle = $derived(pageTitle(post.title));
+	const seoDescription = $derived(post.description || post.excerpt || DEFAULT_DESCRIPTION);
 </script>
 
-<svelte:head>
-	<title>{post.title} | Trámites DGT Online</title>
-	{#if post.description}
-		<meta name="description" content={post.description} />
-	{/if}
-	<link rel="canonical" href="https://tramitesdgtonline.com/{post.slug}/" />
-	<meta property="og:title" content="{post.title} | Trámites DGT Online" />
-	{#if post.description}
-		<meta property="og:description" content={post.description} />
-	{/if}
-	{#if post.image}
-		<meta property="og:image" content={post.image} />
-	{/if}
-</svelte:head>
+<SeoHead
+	title={seoTitle}
+	description={seoDescription}
+	path={`/${post.slug}`}
+	image={post.image || undefined}
+	type="article"
+	jsonLd={articleJsonLd({
+		title: post.title,
+		description: seoDescription,
+		path: `/${post.slug}`,
+		image: post.image,
+		datePublished: post.datetime || undefined
+	})}
+/>
 
 <article class="section article">
 	<div class="wrap article-wrap">

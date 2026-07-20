@@ -8,10 +8,14 @@
 	import Nav from '$lib/components/layout/Nav.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import { initAnalytics, trackPageView } from '$lib/analytics';
+	import { organizationJsonLd, websiteJsonLd } from '$lib/seo/site';
 
 	let { children } = $props();
 
 	const isAdmin = $derived(page.url.pathname.startsWith('/admin'));
+	const siteLd = $derived(
+		isAdmin ? null : [organizationJsonLd(), websiteJsonLd()]
+	);
 
 	function injectGtm(id: string) {
 		if (document.getElementById('gtm-script')) return;
@@ -54,6 +58,11 @@
 		href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap"
 		rel="stylesheet"
 	/>
+	{#if siteLd}
+		{#each siteLd as item}
+			{@html `<script type="application/ld+json">${JSON.stringify(item).replace(/</g, '\\u003c')}</script>`}
+		{/each}
+	{/if}
 </svelte:head>
 
 {#if isAdmin}

@@ -1,3 +1,12 @@
+<script lang="ts">
+	import SeoHead from '$lib/components/SeoHead.svelte';
+	import { getStaticSeo } from '$lib/seo/site';
+
+	const seo = getStaticSeo('/quienes-somos')!;
+</script>
+
+<SeoHead title={seo.title} description={seo.description} path={seo.path} />
+
 <section class="section">
 	<div class="wrap prose card pad">
 		<h1>Quiénes somos</h1>

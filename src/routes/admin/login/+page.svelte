@@ -20,7 +20,7 @@
 			<input type="password" name="password" required autocomplete="current-password" />
 		</label>
 		<button type="submit">Entrar</button>
-		<p class="hint">Define ADMIN_PASSWORD en .env (por defecto local: admin)</p>
+		<p class="hint">En local: ADMIN_PASSWORD (default solo en dev). En producción es obligatorio y fuerte.</p>
 	</form>
 </div>
 

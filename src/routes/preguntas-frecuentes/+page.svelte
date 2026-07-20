@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SeoHead from '$lib/components/SeoHead.svelte';
+	import { faqPageJsonLd, getStaticSeo } from '$lib/seo/site';
+
 	const faqs = [
 		{
 			q: '¿Cuánto tarda una transferencia de vehículo?',
@@ -17,11 +20,16 @@
 			a: 'Sí, nuestro presupuesto incluye el Impuesto de Transmisiones Patrimoniales, tasas DGT y tramitación.'
 		}
 	];
+
+	const seo = getStaticSeo('/preguntas-frecuentes')!;
 </script>
 
-<svelte:head>
-	<title>Preguntas frecuentes | Trámites DGT Online</title>
-</svelte:head>
+<SeoHead
+	title={seo.title}
+	description={seo.description}
+	path={seo.path}
+	jsonLd={faqPageJsonLd(faqs)}
+/>
 
 <section class="section">
 	<div class="wrap">

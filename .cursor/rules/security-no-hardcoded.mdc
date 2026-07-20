@@ -1,0 +1,12 @@
+---
+description: Prohibido hardcodear secretos; usar env y security:scan
+alwaysApply: true
+---
+
+# Seguridad — no hardcodear secretos
+
+- Nunca commits de API keys, JWT, passwords, connection strings o private keys.
+- Credenciales solo en `.env` / Vercel env (ver `.env.example`).
+- En producción/preview: `ADMIN_PASSWORD` (≥12) y `ADMIN_SESSION_SECRET` (≥32) obligatorios.
+- Dominio SEO: `PUBLIC_SITE_ORIGIN` (no `*.vercel.app`).
+- Antes de PR/deploy: `npm run security:scan` (debe salir OK).

@@ -4,8 +4,12 @@
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
+	import SeoHead from '$lib/components/SeoHead.svelte';
 	import { vehicleBrands, ccaaList, combustibles } from '$lib/data/vehicles';
 	import { calculateTransferPrice } from '$lib/utils/pricing';
+	import { getStaticSeo } from '$lib/seo/site';
+
+	const seo = getStaticSeo('/calcular/precio-transferencia')!;
 
 	const steps = ['Tipo de vehículo', 'Datos del vehículo', 'Operación', 'Resultado'];
 	let step = $state(1);
@@ -49,9 +53,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Calcular precio de transferencia | Trámites DGT Online</title>
-</svelte:head>
+<SeoHead title={seo.title} description={seo.description} path={seo.path} />
 
 <section class="section">
 	<div class="wrap layout">

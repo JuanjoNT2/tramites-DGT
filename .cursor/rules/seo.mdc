@@ -1,0 +1,39 @@
+---
+description: Convenciones SEO on-page para mantener posicionamiento en tramitesdgtonline.com
+alwaysApply: true
+---
+
+# SEO — Trámites DGT Online
+
+## Dominio y URLs
+
+- Canonical siempre `https://tramitesdgtonline.com` (nunca `*.vercel.app`).
+- Canonicals con trailing slash (`/ruta/`).
+- No inventar slugs: usar `services.ts` y redirects de `hooks.server.ts`.
+- Aliases redirigidos no van al sitemap.
+
+## Meta obligatoria (páginas indexables)
+
+Usar `SeoHead` de `$lib/components/SeoHead.svelte`:
+
+- `title`: único, formato `Tema | Trámites DGT Online`, ≤ ~60 chars
+- `description`: ~150–160 chars
+- `path`: ruta canónica (ej. `/transferencia-vehiculos`)
+- Un solo `h1` por página
+
+## Indexación
+
+- Público: indexable por defecto
+- `/admin/*`: `noindex,nofollow` (ya en páginas admin)
+
+## Imágenes
+
+- Preferir WebP; below-the-fold con `loading="lazy"`
+- `alt` descriptivo en contenido (no vacío si aporta contexto)
+
+## Checklist al crear/editar página pública
+
+1. `SeoHead` con title, description, path
+2. Un `h1`
+3. Si es contenido nuevo indexable → incluir en `STATIC_SEO_PAGES` (`src/lib/seo/site.ts`) o en `posts.json`
+4. No hardcodear meta sueltas; reutilizar `SeoHead`

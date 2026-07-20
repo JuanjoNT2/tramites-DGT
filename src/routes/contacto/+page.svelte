@@ -1,6 +1,10 @@
 <script lang="ts">
 	import FormField from '$lib/components/ui/FormField.svelte';
+	import SeoHead from '$lib/components/SeoHead.svelte';
 	import { validateEmail, validateRequired } from '$lib/utils/validators';
+	import { getStaticSeo } from '$lib/seo/site';
+
+	const seo = getStaticSeo('/contacto')!;
 
 	let nombre = $state('');
 	let email = $state('');
@@ -25,9 +29,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Contacto | Trámites DGT Online</title>
-</svelte:head>
+<SeoHead title={seo.title} description={seo.description} path={seo.path} />
 
 <section class="section">
 	<div class="wrap card pad">

@@ -20,6 +20,10 @@ npm run dev
 
 ## URLs principales (SEO)
 
+Dominio canónico: **https://tramitesdgtonline.com** (no usar el host de Vercel en canonicals).
+
+Convenciones on-page: [`.cursor/rules/seo.mdc`](.cursor/rules/seo.mdc). Componente: `SeoHead`. Sitemap: `/sitemap.xml`.
+
 | Ruta | Contenido |
 |------|-----------|
 | `/` | Home estética |
@@ -56,7 +60,10 @@ Sin Supabase, en local los eventos van a `.data/analytics/`.
 ## Deploy
 
 ```bash
+npm run security:scan   # anti-hardcoded (obligatorio en CI/local antes de prod)
 npx vercel --prod --yes
 ```
+
+En Vercel (Production/Preview) define `ADMIN_PASSWORD` (≥12), `ADMIN_SESSION_SECRET` (≥32) y `PUBLIC_SITE_ORIGIN=https://tramitesdgtonline.com`.
 
 https://tramites-dgt-v2.vercel.app
