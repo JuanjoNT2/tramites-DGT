@@ -1,0 +1,366 @@
+[
+  {
+    "id": "1",
+    "name": "Abarth"
+  },
+  {
+    "id": "2",
+    "name": "Alfa Romeo"
+  },
+  {
+    "id": "3",
+    "name": "Alpine"
+  },
+  {
+    "id": "4",
+    "name": "Aro"
+  },
+  {
+    "id": "5",
+    "name": "Aston Martin"
+  },
+  {
+    "id": "6",
+    "name": "Audi"
+  },
+  {
+    "id": "7",
+    "name": "Austin"
+  },
+  {
+    "id": "8",
+    "name": "Bentley"
+  },
+  {
+    "id": "9",
+    "name": "BMW"
+  },
+  {
+    "id": "10",
+    "name": "BMWi"
+  },
+  {
+    "id": "11",
+    "name": "BYD"
+  },
+  {
+    "id": "12",
+    "name": "Cadillac"
+  },
+  {
+    "id": "13",
+    "name": "Caterham"
+  },
+  {
+    "id": "14",
+    "name": "Chevrolet"
+  },
+  {
+    "id": "15",
+    "name": "Chrysler"
+  },
+  {
+    "id": "16",
+    "name": "Citroen"
+  },
+  {
+    "id": "17",
+    "name": "Corvette"
+  },
+  {
+    "id": "18",
+    "name": "Cupra"
+  },
+  {
+    "id": "19",
+    "name": "Dacia"
+  },
+  {
+    "id": "20",
+    "name": "Daewoo"
+  },
+  {
+    "id": "21",
+    "name": "Daihatsu"
+  },
+  {
+    "id": "22",
+    "name": "Daimler"
+  },
+  {
+    "id": "23",
+    "name": "De Tomaso"
+  },
+  {
+    "id": "89",
+    "name": "DFSK MOTORS"
+  },
+  {
+    "id": "24",
+    "name": "Dodge"
+  },
+  {
+    "id": "25",
+    "name": "DR Motor"
+  },
+  {
+    "id": "26",
+    "name": "DS"
+  },
+  {
+    "id": "27",
+    "name": "Ferrari"
+  },
+  {
+    "id": "28",
+    "name": "Fiat"
+  },
+  {
+    "id": "29",
+    "name": "Fisker"
+  },
+  {
+    "id": "30",
+    "name": "Ford"
+  },
+  {
+    "id": "31",
+    "name": "FSM"
+  },
+  {
+    "id": "32",
+    "name": "Galloper"
+  },
+  {
+    "id": "85",
+    "name": "GREEN TOUR"
+  },
+  {
+    "id": "33",
+    "name": "Honda"
+  },
+  {
+    "id": "34",
+    "name": "Hummer"
+  },
+  {
+    "id": "35",
+    "name": "Hurtan"
+  },
+  {
+    "id": "36",
+    "name": "Hyundai"
+  },
+  {
+    "id": "37",
+    "name": "Infiniti"
+  },
+  {
+    "id": "38",
+    "name": "Innocenti"
+  },
+  {
+    "id": "39",
+    "name": "Isuzu"
+  },
+  {
+    "id": "40",
+    "name": "Iveco"
+  },
+  {
+    "id": "90",
+    "name": "JAC"
+  },
+  {
+    "id": "41",
+    "name": "Jaguar"
+  },
+  {
+    "id": "42",
+    "name": "Jeep"
+  },
+  {
+    "id": "43",
+    "name": "Kia"
+  },
+  {
+    "id": "44",
+    "name": "Lada"
+  },
+  {
+    "id": "45",
+    "name": "Lamborghini"
+  },
+  {
+    "id": "46",
+    "name": "Lancia"
+  },
+  {
+    "id": "47",
+    "name": "Land Rover"
+  },
+  {
+    "id": "86",
+    "name": "LEVC"
+  },
+  {
+    "id": "48",
+    "name": "Lexus"
+  },
+  {
+    "id": "91",
+    "name": "LINK & CO"
+  },
+  {
+    "id": "49",
+    "name": "Lotus"
+  },
+  {
+    "id": "50",
+    "name": "Mahindra"
+  },
+  {
+    "id": "51",
+    "name": "Maserati"
+  },
+  {
+    "id": "87",
+    "name": "MAXUS"
+  },
+  {
+    "id": "52",
+    "name": "Maybach"
+  },
+  {
+    "id": "53",
+    "name": "Mazda"
+  },
+  {
+    "id": "54",
+    "name": "Mclaren"
+  },
+  {
+    "id": "55",
+    "name": "Mercedes"
+  },
+  {
+    "id": "56",
+    "name": "Mini"
+  },
+  {
+    "id": "57",
+    "name": "Mitsubishi"
+  },
+  {
+    "id": "58",
+    "name": "Mk Sportscar"
+  },
+  {
+    "id": "59",
+    "name": "Morgan"
+  },
+  {
+    "id": "60",
+    "name": "Nissan"
+  },
+  {
+    "id": "61",
+    "name": "Opel"
+  },
+  {
+    "id": "62",
+    "name": "Peugeot"
+  },
+  {
+    "id": "63",
+    "name": "Pgo"
+  },
+  {
+    "id": "64",
+    "name": "Piaggio"
+  },
+  {
+    "id": "65",
+    "name": "Pontiac"
+  },
+  {
+    "id": "66",
+    "name": "Porsche"
+  },
+  {
+    "id": "84",
+    "name": "Qoros"
+  },
+  {
+    "id": "67",
+    "name": "Renault"
+  },
+  {
+    "id": "68",
+    "name": "Rolls-Royce"
+  },
+  {
+    "id": "69",
+    "name": "Rover"
+  },
+  {
+    "id": "70",
+    "name": "Saab"
+  },
+  {
+    "id": "71",
+    "name": "Santana"
+  },
+  {
+    "id": "72",
+    "name": "Seat"
+  },
+  {
+    "id": "73",
+    "name": "Skoda"
+  },
+  {
+    "id": "74",
+    "name": "Smart"
+  },
+  {
+    "id": "75",
+    "name": "Ssangyong"
+  },
+  {
+    "id": "76",
+    "name": "Subaru"
+  },
+  {
+    "id": "77",
+    "name": "Suzuki"
+  },
+  {
+    "id": "78",
+    "name": "Tata"
+  },
+  {
+    "id": "79",
+    "name": "Tesla"
+  },
+  {
+    "id": "80",
+    "name": "Think"
+  },
+  {
+    "id": "81",
+    "name": "Toyota"
+  },
+  {
+    "id": "82",
+    "name": "Volkswagen"
+  },
+  {
+    "id": "83",
+    "name": "Volvo"
+  },
+  {
+    "id": "88",
+    "name": "ZHIDOU"
+  }
+]

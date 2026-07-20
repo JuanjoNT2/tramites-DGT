@@ -2,56 +2,107 @@
 	let {
 		options,
 		value = $bindable(''),
-		placeholder = 'Buscar…'
+		placeholder = 'Buscar…',
+		disabled = false,
+		maxResults = 40,
+		emptyText = 'Sin resultados',
+		onChange
 	}: {
-		options: { value: string; label: string }[];
+		options: { value: string; label: string; hint?: string }[];
 		value?: string;
 		placeholder?: string;
+		disabled?: boolean;
+		maxResults?: number;
+		emptyText?: string;
+		onChange?: (value: string) => void;
 	} = $props();
 
 	let query = $state('');
 	let open = $state(false);
 
-	const filtered = $derived(
-		options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase())).slice(0, 12)
-	);
+	const selected = $derived(options.find((o) => o.value === value));
+	const selectedLabel = $derived(selected?.label ?? '');
 
-	const selectedLabel = $derived(options.find((o) => o.value === value)?.label ?? '');
+	const filtered = $derived.by(() => {
+		const q = query.trim().toLowerCase();
+		const list = q
+			? options.filter(
+					(o) =>
+						o.label.toLowerCase().includes(q) || (o.hint?.toLowerCase().includes(q) ?? false)
+				)
+			: options;
+		return list.slice(0, maxResults);
+	});
+
+	const totalMatches = $derived.by(() => {
+		const q = query.trim().toLowerCase();
+		if (!q) return options.length;
+		return options.filter(
+			(o) => o.label.toLowerCase().includes(q) || (o.hint?.toLowerCase().includes(q) ?? false)
+		).length;
+	});
 
 	function pick(v: string) {
 		value = v;
 		query = '';
 		open = false;
+		onChange?.(v);
+	}
+
+	function clear() {
+		value = '';
+		query = '';
+		onChange?.('');
 	}
 </script>
 
-<div class="search-select">
+<div class="search-select" class:disabled>
 	<input
 		type="text"
 		class="input"
 		placeholder={selectedLabel || placeholder}
 		bind:value={query}
-		onfocus={() => (open = true)}
+		{disabled}
+		onfocus={() => {
+			if (!disabled) open = true;
+		}}
 		onblur={() => setTimeout(() => (open = false), 150)}
 		autocomplete="off"
+		aria-autocomplete="list"
 	/>
-	{#if open && filtered.length > 0}
+	{#if open && !disabled}
 		<ul class="list" role="listbox">
-			{#each filtered as opt (opt.value)}
-				<li>
-					<button type="button" onclick={() => pick(opt.value)}>{opt.label}</button>
-				</li>
-			{/each}
+			{#if filtered.length === 0}
+				<li class="empty">{emptyText}</li>
+			{:else}
+				{#each filtered as opt (opt.value)}
+					<li>
+						<button type="button" onclick={() => pick(opt.value)}>
+							<span class="label">{opt.label}</span>
+							{#if opt.hint}
+								<span class="hint">{opt.hint}</span>
+							{/if}
+						</button>
+					</li>
+				{/each}
+				{#if totalMatches > filtered.length}
+					<li class="more">Mostrando {filtered.length} de {totalMatches}. Afina la búsqueda.</li>
+				{/if}
+			{/if}
 		</ul>
 	{/if}
-	{#if value}
-		<button type="button" class="clear" onclick={() => (value = '')} aria-label="Limpiar">×</button>
+	{#if value && !disabled}
+		<button type="button" class="clear" onclick={clear} aria-label="Limpiar">×</button>
 	{/if}
 </div>
 
 <style>
 	.search-select {
 		position: relative;
+	}
+
+	.search-select.disabled {
+		opacity: 0.65;
 	}
 
 	.input {
@@ -80,7 +131,7 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
 		box-shadow: var(--shadow-lg);
-		max-height: 240px;
+		max-height: 320px;
 		overflow-y: auto;
 		list-style: none;
 	}
@@ -88,15 +139,35 @@
 	.list button {
 		width: 100%;
 		text-align: left;
-		padding: 12px 14px;
+		padding: 10px 14px;
 		border: none;
 		background: none;
-		font-size: 15px;
+		font-size: 14px;
 		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 	}
 
 	.list button:hover {
 		background: var(--primary-dim);
+	}
+
+	.label {
+		line-height: 1.35;
+		color: var(--text);
+	}
+
+	.hint {
+		font-size: 12px;
+		color: var(--text3);
+	}
+
+	.empty,
+	.more {
+		padding: 12px 14px;
+		font-size: 13px;
+		color: var(--text3);
 	}
 
 	.clear {

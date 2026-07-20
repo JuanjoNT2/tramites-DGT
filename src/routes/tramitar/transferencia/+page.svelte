@@ -5,7 +5,9 @@
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
-	import { vehicleBrands, ccaaList, combustibles } from '$lib/data/vehicles';
+	import VehicleModelPicker from '$lib/components/VehicleModelPicker.svelte';
+	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
+	import { ccaaList } from '$lib/data/vehicles';
 	import { calculateTransferPrice } from '$lib/utils/pricing';
 	import {
 		validateEmail,
@@ -43,9 +45,29 @@
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
 	let matricula = $state('');
 	let bastidor = $state('');
-	let marca = $state('');
-	let modelo = $state('');
-	let combustible = $state('');
+	let marcaId = $state('');
+	let marcaNombre = $state('');
+	let combustibleId = $state('');
+	let combustibleNombre = $state('');
+	let modeloId = $state('');
+	let modeloNombre = $state('');
+	let modeloMeta = $state<{
+		id: string;
+		label: string;
+		cilindrada: string;
+		cilindros: string;
+		combustible: string;
+		potenciaKw: string;
+		potenciaCv: string;
+		potenciaCvf: string;
+		precioBase: string;
+		categoria: string;
+	} | null>(null);
+	let marcaMotoId = $state('');
+	let marcaMotoNombre = $state('');
+	let modeloMotoId = $state('');
+	let modeloMotoNombre = $state('');
+	let cilindradaMoto = $state('');
 	let fechaMatricula = $state('');
 	let ccaaId = $state('');
 	let precioVenta = $state(8000);
@@ -66,13 +88,6 @@
 	let skipDocs = $state(false);
 	let acceptPrivacy = $state(false);
 
-	const brandOptions = vehicleBrands.map((b) => ({ value: b.id, label: b.name }));
-	const modelOptions = $derived(
-		(vehicleBrands.find((b) => b.id === marca)?.models ?? []).map((m) => ({
-			value: m,
-			label: m
-		}))
-	);
 	const ccaaOptions = ccaaList.map((c) => ({ value: c.id, label: c.name }));
 
 	const breakdown = $derived(
@@ -123,7 +138,22 @@
 		try {
 			localStorage.setItem(
 				STORAGE_KEY,
-				JSON.stringify({ step, tipoVehiculo, matricula, bastidor, marca, modelo, email })
+				JSON.stringify({
+					step,
+					tipoVehiculo,
+					matricula,
+					bastidor,
+					marcaId,
+					marcaNombre,
+					modeloId,
+					modeloNombre,
+					marcaMotoId,
+					marcaMotoNombre,
+					modeloMotoId,
+					modeloMotoNombre,
+					cilindradaMoto,
+					email
+				})
 			);
 		} catch {}
 	}
@@ -135,8 +165,16 @@
 			errors.bastidor = validateBastidor(bastidor);
 		}
 		if (step === 3) {
-			if (!marca) errors.marca = 'Selecciona una marca';
-			if (!modelo) errors.modelo = 'Selecciona un modelo';
+			if (tipoVehiculo === 'coche') {
+				errors.marca = validateRequired(marcaId, 'La marca');
+				errors.combustible = validateRequired(combustibleId, 'El combustible');
+				errors.modelo = validateRequired(modeloId, 'El modelo');
+			} else {
+				errors.marca = validateRequired(marcaMotoId, 'La marca');
+				errors.modelo = validateRequired(modeloMotoNombre, 'El modelo');
+				errors.cilindrada = validateRequired(cilindradaMoto, 'La cilindrada');
+			}
+			errors.fechaMatricula = validateRequired(fechaMatricula, 'La fecha de matrícula');
 		}
 		if (step === 5) {
 			errors.email = validateEmail(email);
@@ -191,8 +229,13 @@
 					tipo: 'transferencia',
 					tipoVehiculo,
 					matricula,
-					marca,
-					modelo,
+					marca: tipoVehiculo === 'coche' ? marcaNombre : marcaMotoNombre,
+					modelo: tipoVehiculo === 'coche' ? modeloNombre : modeloMotoNombre,
+					marcaId: tipoVehiculo === 'coche' ? marcaId : marcaMotoId,
+					modeloId: tipoVehiculo === 'coche' ? modeloId : modeloMotoId || undefined,
+					combustible: tipoVehiculo === 'coche' ? combustibleNombre : undefined,
+					modeloMeta: tipoVehiculo === 'coche' ? modeloMeta : undefined,
+					cilindrada: tipoVehiculo === 'moto' ? cilindradaMoto : undefined,
 					email,
 					rol,
 					precioVenta,
@@ -258,21 +301,36 @@
 						<input bind:value={bastidor} placeholder="VF1XXXXXXXXXXXXXX" maxlength="17" />
 					</FormField>
 				{:else if step === 3}
-					<FormField label="Marca" error={errors.marca} required>
-						<SearchSelect options={brandOptions} bind:value={marca} placeholder="Buscar marca…" />
-					</FormField>
-					<FormField label="Modelo" error={errors.modelo} required>
-						<SearchSelect options={modelOptions} bind:value={modelo} />
-					</FormField>
-					<FormField label="Combustible" required>
-						<select bind:value={combustible}>
-							<option value="">Selecciona…</option>
-							{#each combustibles as c}
-								<option value={c}>{c}</option>
-							{/each}
-						</select>
-					</FormField>
-					<FormField label="Fecha primera matrícula" required>
+					{#if tipoVehiculo === 'coche'}
+						<VehicleModelPicker
+							bind:marcaId
+							bind:marcaNombre
+							bind:combustibleId
+							bind:combustibleNombre
+							bind:modeloId
+							bind:modeloNombre
+							bind:modeloMeta
+							errors={{
+								marca: errors.marca,
+								combustible: errors.combustible,
+								modelo: errors.modelo
+							}}
+						/>
+					{:else}
+						<MotoModelPicker
+							bind:marcaId={marcaMotoId}
+							bind:marcaNombre={marcaMotoNombre}
+							bind:modeloId={modeloMotoId}
+							bind:modeloNombre={modeloMotoNombre}
+							bind:cilindrada={cilindradaMoto}
+							errors={{
+								marca: errors.marca,
+								modelo: errors.modelo,
+								cilindrada: errors.cilindrada
+							}}
+						/>
+					{/if}
+					<FormField label="Fecha primera matrícula" error={errors.fechaMatricula} required>
 						<input bind:value={fechaMatricula} placeholder="dd/mm/aaaa" />
 					</FormField>
 				{:else if step === 4}
@@ -367,7 +425,16 @@
 					<div class="summary">
 						<h2>Resumen de tu solicitud</h2>
 						<ul>
-							<li><span>Vehículo</span><span>{matricula || '—'} · {marca}</span></li>
+							<li>
+								<span>Vehículo</span>
+								<span
+									>{matricula || '—'} · {tipoVehiculo === 'coche'
+										? [marcaNombre, modeloNombre].filter(Boolean).join(' ') || '—'
+										: [marcaMotoNombre, modeloMotoNombre, cilindradaMoto ? `${cilindradaMoto} cc` : '']
+												.filter(Boolean)
+												.join(' ') || '—'}</span
+								>
+							</li>
 							<li><span>Rol</span><span>{rol}</span></li>
 							<li><span>Email</span><span>{email}</span></li>
 							<li><span>Total estimado</span><span>{breakdown ? `${breakdown.total} €` : '—'}</span></li>

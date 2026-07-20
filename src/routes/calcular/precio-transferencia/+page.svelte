@@ -4,8 +4,10 @@
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
+	import VehicleModelPicker from '$lib/components/VehicleModelPicker.svelte';
+	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
 	import SeoHead from '$lib/components/SeoHead.svelte';
-	import { vehicleBrands, ccaaList, combustibles } from '$lib/data/vehicles';
+	import { ccaaList } from '$lib/data/vehicles';
 	import { calculateTransferPrice } from '$lib/utils/pricing';
 	import { getStaticSeo } from '$lib/seo/site';
 
@@ -15,9 +17,29 @@
 	let step = $state(1);
 
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
-	let marca = $state('');
-	let modelo = $state('');
-	let combustible = $state('');
+	let marcaId = $state('');
+	let marcaNombre = $state('');
+	let combustibleId = $state('');
+	let combustibleNombre = $state('');
+	let modeloId = $state('');
+	let modeloNombre = $state('');
+	let modeloMeta = $state<{
+		id: string;
+		label: string;
+		cilindrada: string;
+		cilindros: string;
+		combustible: string;
+		potenciaKw: string;
+		potenciaCv: string;
+		potenciaCvf: string;
+		precioBase: string;
+		categoria: string;
+	} | null>(null);
+	let marcaMotoId = $state('');
+	let marcaMotoNombre = $state('');
+	let modeloMotoId = $state('');
+	let modeloMotoNombre = $state('');
+	let cilindradaMoto = $state('');
 	let fechaMatricula = $state('');
 	let ccaaId = $state('');
 	let precioVenta = $state(8000);
@@ -25,13 +47,6 @@
 	let facturaEmpresa = $state('no');
 	let incluirInforme = $state('si');
 
-	const brandOptions = $derived(vehicleBrands.map((b) => ({ value: b.id, label: b.name })));
-	const modelOptions = $derived(
-		(vehicleBrands.find((b) => b.id === marca)?.models ?? []).map((m) => ({
-			value: m,
-			label: m
-		}))
-	);
 	const ccaaOptions = ccaaList.map((c) => ({ value: c.id, label: c.name }));
 
 	const breakdown = $derived(
@@ -73,24 +88,25 @@
 					/>
 				</FormField>
 			{:else if step === 2}
-				<FormField label="Marca" required>
-					<SearchSelect options={brandOptions} bind:value={marca} placeholder="Buscar marca…" />
-				</FormField>
-				<FormField label="Modelo" required>
-					<SearchSelect
-						options={modelOptions}
-						bind:value={modelo}
-						placeholder={marca ? 'Buscar modelo…' : 'Primero elige marca'}
+				{#if tipoVehiculo === 'coche'}
+					<VehicleModelPicker
+						bind:marcaId
+						bind:marcaNombre
+						bind:combustibleId
+						bind:combustibleNombre
+						bind:modeloId
+						bind:modeloNombre
+						bind:modeloMeta
 					/>
-				</FormField>
-				<FormField label="Combustible" required>
-					<select bind:value={combustible}>
-						<option value="">Selecciona…</option>
-						{#each combustibles as c}
-							<option value={c}>{c}</option>
-						{/each}
-					</select>
-				</FormField>
+				{:else}
+					<MotoModelPicker
+						bind:marcaId={marcaMotoId}
+						bind:marcaNombre={marcaMotoNombre}
+						bind:modeloId={modeloMotoId}
+						bind:modeloNombre={modeloMotoNombre}
+						bind:cilindrada={cilindradaMoto}
+					/>
+				{/if}
 				<FormField label="Fecha primera matrícula" hint="Formato: dd/mm/aaaa" required>
 					<input type="text" bind:value={fechaMatricula} placeholder="15/03/2018" />
 				</FormField>
@@ -130,6 +146,15 @@
 						{breakdown ? `${breakdown.total.toLocaleString('es-ES')} €` : '—'}
 					</p>
 					<p class="sub">Presupuesto estimado de transferencia</p>
+					{#if tipoVehiculo === 'coche' && modeloNombre}
+						<p class="picked">{marcaNombre} · {modeloNombre}</p>
+					{:else if tipoVehiculo === 'moto' && (marcaMotoNombre || modeloMotoNombre)}
+						<p class="picked">
+							{[marcaMotoNombre, modeloMotoNombre, cilindradaMoto ? `${cilindradaMoto} cc` : '']
+								.filter(Boolean)
+								.join(' · ')}
+						</p>
+					{/if}
 					<a class="btn big" href="/tramitar/transferencia">Tramitar ahora</a>
 					<button type="button" class="btn ghost big" onclick={() => (step = 1)}>Nuevo cálculo</button>
 				</div>
@@ -190,14 +215,20 @@
 
 	.sub {
 		color: var(--text2);
-		margin: 8px 0 24px;
+		margin: 8px 0 12px;
+	}
+
+	.picked {
+		font-size: 14px;
+		color: var(--text2);
+		margin: 0 0 20px;
+		padding: 0 12px;
 	}
 
 	.result .btn {
 		margin: 6px;
 	}
 
-	/* CTA principal: mismos colores globales (.btn) — texto blanco sobre primary */
 	.result a.btn:not(.ghost) {
 		background: var(--primary);
 		color: #fff;
