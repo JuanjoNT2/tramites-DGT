@@ -6,7 +6,7 @@
 		variant = 'white',
 		height = 56
 	}: {
-		variant?: 'default' | 'white' | 'mark';
+		variant?: 'default' | 'white' | 'dark' | 'mark';
 		height?: number;
 	} = $props();
 
@@ -18,7 +18,7 @@
 {#if isMark}
 	<img class="logo mark" src="/favicon.png" alt="Trámites DGT Online" style="height: {height}px" />
 {:else}
-	<div class="lockup">
+	<div class="lockup" class:on-light={!onDark}>
 		<img
 			class="wordmark"
 			src={src}
@@ -59,6 +59,10 @@
 		line-height: 1.2;
 		white-space: nowrap;
 		color: rgba(255, 255, 255, 0.72);
+	}
+
+	.lockup.on-light .powered {
+		color: rgba(26, 43, 60, 0.55);
 	}
 
 	.brand {

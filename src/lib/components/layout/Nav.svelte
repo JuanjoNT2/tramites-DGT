@@ -43,7 +43,7 @@
 <header class="nav">
 	<div class="wrap nav-in">
 		<a class="brand" href="/" onclick={closeMobile}>
-			<Logo variant="white" height={58} />
+			<Logo variant="dark" height={58} />
 		</a>
 
 		<nav class="links" aria-label="Principal">
@@ -243,8 +243,9 @@
 		position: sticky;
 		top: 0;
 		z-index: 100;
-		background: #003050;
-		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28);
+		background: #f3f7fa;
+		border-bottom: 1px solid rgba(0, 48, 80, 0.1);
+		box-shadow: 0 2px 16px rgba(0, 48, 80, 0.08);
 	}
 
 	.nav-in {
@@ -275,7 +276,7 @@
 	.drop-btn {
 		font-size: 14px;
 		font-weight: 600;
-		color: rgba(255, 255, 255, 0.94);
+		color: var(--ink);
 		background: none;
 		border: none;
 		cursor: pointer;
@@ -286,7 +287,7 @@
 	.links > a:hover,
 	.drop-btn:hover,
 	.dropdown:focus-within .drop-btn {
-		color: var(--brand-teal);
+		color: var(--primary-dark);
 	}
 
 	.dropdown {
@@ -308,11 +309,11 @@
 		content: '';
 		position: absolute;
 		inset: 10px 0 0;
-		background: #003050;
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: #fff;
+		border: 1px solid rgba(0, 48, 80, 0.1);
 		border-top: 3px solid var(--brand-teal);
 		border-radius: var(--radius);
-		box-shadow: var(--shadow-lg);
+		box-shadow: 0 12px 32px rgba(0, 48, 80, 0.14);
 		z-index: -1;
 	}
 
@@ -327,7 +328,7 @@
 		padding: 10px 16px;
 		font-size: 14px;
 		font-weight: 600;
-		color: rgba(255, 255, 255, 0.92);
+		color: var(--ink);
 	}
 
 	.drop-menu a:first-child {
@@ -339,8 +340,8 @@
 	}
 
 	.drop-menu a:hover {
-		background: rgba(0, 198, 209, 0.14);
-		color: var(--brand-teal);
+		background: var(--primary-dim);
+		color: var(--primary-dark);
 	}
 
 	.cta {
@@ -360,7 +361,7 @@
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		color: #fff;
+		color: var(--ink);
 		flex-shrink: 0;
 	}
 
@@ -398,8 +399,8 @@
 
 	.mobile-panel {
 		display: none;
-		border-top: 1px solid rgba(255, 255, 255, 0.1);
-		background: #00263d;
+		border-top: 1px solid rgba(0, 48, 80, 0.1);
+		background: #eef3f7;
 		max-height: calc(100vh - 84px);
 		overflow-y: auto;
 	}
@@ -419,7 +420,7 @@
 		padding: 14px 20px;
 		font-size: 16px;
 		font-weight: 600;
-		color: rgba(255, 255, 255, 0.94);
+		color: var(--ink);
 		background: none;
 		border: none;
 		text-align: left;
@@ -428,15 +429,15 @@
 
 	.mobile-nav > a:hover,
 	.mobile-toggle:hover {
-		color: var(--brand-teal);
-		background: rgba(0, 198, 209, 0.08);
+		color: var(--primary-dark);
+		background: rgba(0, 198, 209, 0.1);
 	}
 
 	.mobile-sub {
 		display: flex;
 		flex-direction: column;
 		padding: 0 0 8px;
-		background: rgba(0, 0, 0, 0.18);
+		background: rgba(0, 48, 80, 0.04);
 	}
 
 	.mobile-sub a {
@@ -444,11 +445,11 @@
 		padding: 12px 20px 12px 32px;
 		font-size: 14px;
 		font-weight: 600;
-		color: rgba(255, 255, 255, 0.88);
+		color: var(--ink);
 	}
 
 	.mobile-sub a:hover {
-		color: var(--brand-teal);
+		color: var(--primary-dark);
 		background: rgba(0, 198, 209, 0.1);
 	}
 
