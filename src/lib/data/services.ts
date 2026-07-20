@@ -34,7 +34,7 @@ export const services: Service[] = [
 		description: 'Emitido directamente por la DGT y autentificado por nosotros',
 		landingPath: '/informe-trafico',
 		tramitarPath: '/tramitar/informe-dgt',
-		image: '/images/services/informe.png'
+		image: '/images/services/informe.webp'
 	},
 	{
 		id: 'duplicado',
@@ -43,7 +43,7 @@ export const services: Service[] = [
 		description: 'Solicita un duplicado de tu carnet de conducir',
 		landingPath: '/duplicado-de-carnet-de-conducir',
 		tramitarPath: '/tramitar/duplicado-carnet',
-		image: '/images/services/duplicado.jpg'
+		image: '/images/services/duplicado.webp'
 	},
 	{
 		id: 'cancelacion',
@@ -52,7 +52,7 @@ export const services: Service[] = [
 		description: 'Cancela la reserva de dominio a la entidad de crédito',
 		landingPath: '/cancelacion-de-reserva-de-dominio',
 		tramitarPath: '/tramitar/cancelacion-reserva',
-		image: '/images/services/cancelacion.jpg'
+		image: '/images/services/cancelacion.webp'
 	}
 ];
 
@@ -77,28 +77,28 @@ export const processSteps = [
 		label: 'Calcula tu presupuesto',
 		title: 'Calcula tu presupuesto',
 		desc: 'Ingresa los datos técnicos del vehículo que quieres adquirir y calcula el presupuesto de la transferencia.',
-		image: '/images/steps/presupuesto.png'
+		image: '/images/steps/presupuesto.webp'
 	},
 	{
 		id: 'datos',
 		label: 'Introduce los datos',
 		title: 'Introduce los datos',
 		desc: 'Introduce los datos del comprador, vendedor y matrícula y elige la forma de pago.',
-		image: '/images/steps/datos.png'
+		image: '/images/steps/datos.webp'
 	},
 	{
 		id: 'identidad',
 		label: 'Verifica tu identidad',
 		title: 'Verifica tu identidad',
 		desc: 'Verifica tu identidad de forma segura con DNI o NIE para continuar el trámite.',
-		image: '/images/steps/identidad.png'
+		image: '/images/steps/identidad.webp'
 	},
 	{
 		id: 'listo',
 		label: 'Conduce tu nuevo vehículo',
 		title: 'Conduce tu nuevo vehículo',
 		desc: '¡Listo! Solo espera el permiso de circulación con nuevos datos; podrás conducir con el certificado que te enviamos.',
-		image: '/images/steps/listo.png'
+		image: '/images/steps/listo.webp'
 	}
 ];
 

@@ -28,7 +28,15 @@
 
 		{#if post.image}
 			<figure class="hero-img">
-				<img src={post.image} alt="" loading="eager" />
+				<img
+					src={post.image}
+					alt=""
+					width="1200"
+					height="675"
+					loading="eager"
+					fetchpriority="high"
+					decoding="async"
+				/>
 			</figure>
 		{/if}
 
@@ -101,7 +109,14 @@
 								})}
 						>
 							{#if r.image}
-								<img src={r.image} alt="" loading="lazy" />
+								<img
+									src={r.image}
+									alt=""
+									width="800"
+									height="600"
+									loading="lazy"
+									decoding="async"
+								/>
 							{/if}
 						</a>
 						<div class="rel-body">

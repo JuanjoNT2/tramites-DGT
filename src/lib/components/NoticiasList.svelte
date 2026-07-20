@@ -39,7 +39,15 @@
 						onclick={() => openPost(post.slug)}
 					>
 						{#if post.image}
-							<img class="thumb" src={post.image} alt="" loading="lazy" />
+							<img
+								class="thumb"
+								src={post.image}
+								alt=""
+								width="800"
+								height="600"
+								loading="lazy"
+								decoding="async"
+							/>
 						{:else}
 							<div class="thumb placeholder"></div>
 						{/if}

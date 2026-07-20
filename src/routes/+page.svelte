@@ -78,7 +78,16 @@
 
 	{#each services as s, i (s.id)}
 		<article class="feature" class:reverse={i % 2 === 1}>
-			<div class="feature-media" style="background-image: url('{s.image}')" role="img" aria-label={s.title}></div>
+			<div class="feature-media">
+				<img
+					src={s.image}
+					alt={s.title}
+					width="1200"
+					height="800"
+					loading="lazy"
+					decoding="async"
+				/>
+			</div>
 			<div class="feature-copy">
 				<div class="feature-copy-in">
 					<h3>{s.title}</h3>
@@ -142,7 +151,14 @@
 						<a class="btn big" href="/tramitar/transferencia">Transferir mi vehículo ahora</a>
 					</div>
 					<div class="step-visual">
-						<img src={step.image} alt={step.title} width="715" height="421" loading="lazy" />
+						<img
+							src={step.image}
+							alt={step.title}
+							width="715"
+							height="421"
+							loading="lazy"
+							decoding="async"
+						/>
 					</div>
 				</div>
 			{/if}
@@ -353,9 +369,17 @@
 	}
 
 	.feature-media {
-		background-size: cover;
-		background-position: center;
 		min-height: 280px;
+		overflow: hidden;
+		background: #00263d;
+	}
+
+	.feature-media img {
+		width: 100%;
+		height: 100%;
+		min-height: 280px;
+		object-fit: cover;
+		display: block;
 	}
 
 	.feature-copy {
