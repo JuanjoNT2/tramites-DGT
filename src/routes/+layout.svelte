@@ -12,10 +12,10 @@
 
 	let { children } = $props();
 
-	const isAdmin = $derived(page.url.pathname.startsWith('/admin'));
-	const siteLd = $derived(
-		isAdmin ? null : [organizationJsonLd(), websiteJsonLd()]
+	const isShell = $derived(
+		page.url.pathname.startsWith('/admin') || page.url.pathname.startsWith('/gestor')
 	);
+	const siteLd = $derived(isShell ? null : [organizationJsonLd(), websiteJsonLd()]);
 
 	function injectGtm(id: string) {
 		if (document.getElementById('gtm-script')) return;
@@ -34,15 +34,16 @@
 	}
 
 	onMount(() => {
-		if (isAdmin) return;
+		if (isShell) return;
 		initAnalytics();
 		const gtmId = env.PUBLIC_GTM_ID;
 		if (gtmId) injectGtm(gtmId);
 	});
 
 	afterNavigate(({ to }) => {
-		if (to?.url.pathname && !to.url.pathname.startsWith('/admin')) {
-			trackPageView(to.url.pathname);
+		const p = to?.url.pathname;
+		if (p && !p.startsWith('/admin') && !p.startsWith('/gestor')) {
+			trackPageView(p);
 		}
 	});
 </script>
@@ -65,7 +66,7 @@
 	{/if}
 </svelte:head>
 
-{#if isAdmin}
+{#if isShell}
 	{@render children()}
 {:else}
 	<Nav />

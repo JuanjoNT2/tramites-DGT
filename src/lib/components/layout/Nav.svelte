@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
 	import { CtaIds, trackClick } from '$lib/analytics';
+	import { isStaffRole } from '$lib/auth/roles';
 	import { services, calculators } from '$lib/data/services';
 	import Logo from '$lib/components/layout/Logo.svelte';
 
 	let open = $state(false);
 	let openTramites = $state(false);
 	let openCalculador = $state(false);
+
+	const user = $derived(page.data.user);
+	const profile = $derived(page.data.profile);
 
 	function closeMobile() {
 		open = false;
@@ -102,15 +107,30 @@
 			>
 		</nav>
 
-		<a
-			href="/tramitar/transferencia"
-			class="btn cta desktop-cta"
-			data-analytics={CtaIds.NAV_LOGIN}
-			onclick={() =>
-				trackClick(CtaIds.NAV_LOGIN, { tramite: 'transferencia', destination: '/tramitar/transferencia' })}
-		>
-			Iniciar sesión
-		</a>
+		{#if user}
+			<div class="account desktop-cta">
+				<a
+					href="/cuenta"
+					class="btn cta account-btn"
+					data-analytics={CtaIds.NAV_LOGIN}
+					onclick={() => trackClick(CtaIds.NAV_LOGIN, { destination: '/cuenta' })}
+				>
+					{user.email ?? 'Mi cuenta'}
+				</a>
+				{#if isStaffRole(profile?.role)}
+					<a href="/gestor" class="account-link">Gestor</a>
+				{/if}
+			</div>
+		{:else}
+			<a
+				href="/login"
+				class="btn cta desktop-cta"
+				data-analytics={CtaIds.NAV_LOGIN}
+				onclick={() => trackClick(CtaIds.NAV_LOGIN, { destination: '/login' })}
+			>
+				Iniciar sesión
+			</a>
+		{/if}
 
 		<button
 			type="button"
@@ -219,20 +239,32 @@
 						closeMobile();
 					}}>Contacto</a
 				>
-				<a
-					href="/tramitar/transferencia"
-					class="btn mobile-cta"
-					onclick={() => {
-						trackClick(CtaIds.NAV_LOGIN, {
-							tramite: 'transferencia',
-							destination: '/tramitar/transferencia',
-							nav: 'mobile'
-						});
-						closeMobile();
-					}}
-				>
-					Iniciar sesión
-				</a>
+				{#if user}
+					<a
+						href="/cuenta"
+						class="btn mobile-cta"
+						onclick={() => {
+							trackClick(CtaIds.NAV_LOGIN, { destination: '/cuenta', nav: 'mobile' });
+							closeMobile();
+						}}
+					>
+						{user.email ?? 'Mi cuenta'}
+					</a>
+					{#if isStaffRole(profile?.role)}
+						<a href="/gestor" class="mobile-staff" onclick={closeMobile}>Panel gestor</a>
+					{/if}
+				{:else}
+					<a
+						href="/login"
+						class="btn mobile-cta"
+						onclick={() => {
+							trackClick(CtaIds.NAV_LOGIN, { destination: '/login', nav: 'mobile' });
+							closeMobile();
+						}}
+					>
+						Iniciar sesión
+					</a>
+				{/if}
 			</nav>
 		</div>
 	{/if}
@@ -457,6 +489,35 @@
 		margin: 16px 20px 0;
 		height: 46px;
 		justify-content: center;
+	}
+
+	.account {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		max-width: 280px;
+	}
+
+	.account-btn {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 200px;
+	}
+
+	.account-link {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--navy, #003050);
+		text-decoration: none;
+	}
+
+	.mobile-staff {
+		display: block;
+		margin: 8px 20px 0;
+		padding: 10px 16px;
+		font-weight: 600;
+		color: var(--ink);
 	}
 
 	@media (max-width: 980px) {

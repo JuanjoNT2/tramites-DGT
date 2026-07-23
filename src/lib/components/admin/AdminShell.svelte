@@ -20,7 +20,8 @@
 		{ href: '/admin/eventos', label: 'Eventos' },
 		{ href: '/admin/conexiones', label: 'Conexiones' },
 		{ href: '/admin/etiquetado', label: 'Etiquetado' },
-		{ href: '/admin/datalayer', label: 'Data layer' }
+		{ href: '/admin/datalayer', label: 'Data layer' },
+		{ href: '/admin/usuarios', label: 'Usuarios' }
 	];
 
 	function withRange(href: string) {

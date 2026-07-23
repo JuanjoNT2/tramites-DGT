@@ -66,4 +66,6 @@ npx vercel --prod --yes
 
 En Vercel (Production/Preview) define `ADMIN_PASSWORD` (≥12), `ADMIN_SESSION_SECRET` (≥32) y `PUBLIC_SITE_ORIGIN=https://tramitesdgtonline.com`.
 
+Auth ciudadanos, panel gestor y solicitudes: ver [docs/deploy-auth-supabase.md](docs/deploy-auth-supabase.md).
+
 https://tramites-dgt-v2.vercel.app

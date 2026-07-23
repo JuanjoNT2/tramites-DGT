@@ -2,8 +2,29 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { env } from '$env/dynamic/private';
+import { getServiceSupabase } from '$lib/supabase/admin';
 
-export const POST: RequestHandler = async ({ request }) => {
+type LocalEntry = {
+	id: string;
+	tipo: string;
+	data: Record<string, unknown>;
+	user_id?: string | null;
+	email?: string | null;
+	created_at: string;
+};
+
+async function saveLocalFallback(entry: LocalEntry) {
+	const dir = path.join(process.cwd(), '.data');
+	if (!existsSync(dir)) await mkdir(dir, { recursive: true });
+	const file = path.join(dir, 'solicitudes.json');
+	let entries: LocalEntry[] = [];
+	if (existsSync(file)) entries = JSON.parse(await readFile(file, 'utf-8'));
+	entries.push(entry);
+	await writeFile(file, JSON.stringify(entries, null, 2));
+}
+
+export const POST: RequestHandler = async ({ request, locals }) => {
 	let body: Record<string, unknown>;
 	try {
 		body = await request.json();
@@ -11,26 +32,61 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Petición inválida' }, { status: 400 });
 	}
 
-	const dir = path.join(process.cwd(), '.data');
-	if (!existsSync(dir)) await mkdir(dir, { recursive: true });
-	const file = path.join(dir, 'solicitudes.json');
+	const tipo = String(body.tipo ?? 'desconocido');
+	const emailFromPayload =
+		typeof body.email === 'string' && body.email.trim()
+			? body.email.trim().toLowerCase()
+			: null;
+	const userId = locals.user?.id ?? null;
+	const email = emailFromPayload || locals.user?.email || null;
+	const id = crypto.randomUUID();
+	const created_at = new Date().toISOString();
 
-	let entries: { id: string; tipo: string; data: Record<string, unknown>; created_at: string }[] =
-		[];
-	if (existsSync(file)) entries = JSON.parse(await readFile(file, 'utf-8'));
+	const sb = getServiceSupabase();
+	if (sb) {
+		const { error } = await sb.from('solicitudes').insert({
+			id,
+			tipo,
+			payload: body,
+			user_id: userId,
+			email,
+			status: 'nueva',
+			created_at
+		});
 
-	const entry = {
-		id: crypto.randomUUID(),
-		tipo: (body.tipo as string) ?? 'desconocido',
+		if (error) {
+			console.error('[solicitud] supabase insert failed', error.message);
+			return json({ error: 'No se pudo registrar la solicitud.' }, { status: 500 });
+		}
+
+		return json({
+			ok: true,
+			id,
+			message: 'Solicitud registrada correctamente.'
+		});
+	}
+
+	// Dev local sin Supabase: fallback a disco. En preview/prod exigimos env.
+	const isProdLike = Boolean(env.VERCEL || env.NODE_ENV === 'production');
+	if (isProdLike) {
+		return json(
+			{ error: 'Almacén de solicitudes no configurado (SUPABASE_*).' },
+			{ status: 503 }
+		);
+	}
+
+	await saveLocalFallback({
+		id,
+		tipo,
 		data: body,
-		created_at: new Date().toISOString()
-	};
-	entries.push(entry);
-	await writeFile(file, JSON.stringify(entries, null, 2));
+		user_id: userId,
+		email,
+		created_at
+	});
 
 	return json({
 		ok: true,
-		id: entry.id,
-		message: 'Solicitud registrada correctamente (modo demostración).'
+		id,
+		message: 'Solicitud registrada correctamente (modo demostración local).'
 	});
 };
