@@ -51,8 +51,12 @@
 	<p class="sub">Guarda matrículas y datos para reutilizarlos en trámites.</p>
 </header>
 
-{#if msg}<p class="ok">{msg}</p>{/if}
-{#if err}<p class="err">{err}</p>{/if}
+{#if data.schemaHint}
+	<p class="warn">{data.schemaHint}</p>
+{/if}
+{#if data.error}
+	<p class="err">{data.error}</p>
+{/if}
 
 <form class="form card" onsubmit={add}>
 	<label>Matrícula<input bind:value={matricula} required placeholder="3990WDS" /></label>
@@ -178,6 +182,12 @@
 		background: #fde8e8;
 		color: #9b1c1c;
 		padding: 8px 10px;
+		border-radius: 8px;
+	}
+	.warn {
+		background: #fff4e5;
+		color: #7a4b00;
+		padding: 10px 12px;
 		border-radius: 8px;
 	}
 </style>

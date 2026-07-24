@@ -37,6 +37,10 @@
 	<button type="button" class="btn" onclick={markAll}>Marcar todas como leídas</button>
 </header>
 
+{#if data.schemaHint}
+	<p class="warn">{data.schemaHint}</p>
+{/if}
+
 <ul class="list">
 	{#each items as n}
 		<li class:unread={!n.read_at}>
@@ -120,5 +124,12 @@
 	.empty {
 		padding: 16px;
 		color: #5a6b7d;
+	}
+	.warn {
+		background: #fff4e5;
+		color: #7a4b00;
+		padding: 10px 12px;
+		border-radius: 8px;
+		margin-bottom: 12px;
 	}
 </style>

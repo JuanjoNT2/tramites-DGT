@@ -9,6 +9,10 @@
 	<p class="sub">Archivos asociados a tus trámites.</p>
 </header>
 
+{#if data.schemaHint}
+	<p class="warn">{data.schemaHint}</p>
+{/if}
+
 <div class="table-wrap">
 	<table>
 		<thead>
@@ -70,5 +74,12 @@
 	a {
 		font-weight: 700;
 		color: #003050;
+	}
+	.warn {
+		background: #fff4e5;
+		color: #7a4b00;
+		padding: 10px 12px;
+		border-radius: 8px;
+		margin-bottom: 12px;
 	}
 </style>

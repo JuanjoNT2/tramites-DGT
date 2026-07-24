@@ -10,6 +10,23 @@ import type {
 } from '$lib/supabase/types';
 import { SOLICITUD_STATUSES, SOLICITUD_STATUS_LABELS } from '$lib/supabase/types';
 
+/** PostgREST / Postgres: tabla o columna aún no migrada */
+export function isSchemaMissingError(err: { message?: string; code?: string } | null): boolean {
+	if (!err) return false;
+	const msg = (err.message || '').toLowerCase();
+	return (
+		err.code === 'PGRST205' ||
+		err.code === '42P01' ||
+		err.code === '42703' ||
+		msg.includes('does not exist') ||
+		msg.includes('schema cache') ||
+		msg.includes('could not find the table')
+	);
+}
+
+export const SCHEMA_HINT =
+	'Falta aplicar la migración SQL 20260724_panel_usuario.sql en el SQL Editor de Supabase.';
+
 export function requireUser(locals: App.Locals) {
 	if (!locals.user) throw error(401, 'Debes iniciar sesión');
 	return locals.user;
@@ -89,7 +106,10 @@ export async function updateProfileFields(
 		.eq('id', userId)
 		.select('*')
 		.maybeSingle();
-	if (err) throw error(500, err.message);
+	if (err) {
+		if (isSchemaMissingError(err)) throw error(503, SCHEMA_HINT);
+		throw error(500, err.message);
+	}
 	if (!data) throw error(404, 'Perfil no encontrado');
 	return data as Profile;
 }
@@ -101,7 +121,11 @@ export async function listVehiculos(userId: string): Promise<Vehiculo[]> {
 		.select('*')
 		.eq('user_id', userId)
 		.order('updated_at', { ascending: false });
-	if (err) throw error(500, err.message);
+	if (err) {
+		console.error('[vehiculos] list', err.message);
+		if (isSchemaMissingError(err)) return [];
+		throw error(500, err.message);
+	}
 	return (data ?? []) as Vehiculo[];
 }
 
@@ -217,7 +241,11 @@ export async function listDocsForUser(userId: string): Promise<SolicitudDocument
 		.eq('user_id', userId)
 		.order('created_at', { ascending: false })
 		.limit(200);
-	if (err) throw error(500, err.message);
+	if (err) {
+		console.error('[docs] list user', err.message);
+		if (isSchemaMissingError(err)) return [];
+		throw error(500, err.message);
+	}
 	return (data ?? []) as SolicitudDocumento[];
 }
 
@@ -228,7 +256,11 @@ export async function listDocsForSolicitud(solicitudId: string): Promise<Solicit
 		.select('*')
 		.eq('solicitud_id', solicitudId)
 		.order('created_at', { ascending: false });
-	if (err) throw error(500, err.message);
+	if (err) {
+		console.error('[docs] list solicitud', err.message);
+		if (isSchemaMissingError(err)) return [];
+		throw error(500, err.message);
+	}
 	return (data ?? []) as SolicitudDocumento[];
 }
 
@@ -240,7 +272,11 @@ export async function listNotificaciones(userId: string): Promise<Notificacion[]
 		.eq('user_id', userId)
 		.order('created_at', { ascending: false })
 		.limit(100);
-	if (err) throw error(500, err.message);
+	if (err) {
+		console.error('[notificaciones] list', err.message);
+		if (isSchemaMissingError(err)) return [];
+		throw error(500, err.message);
+	}
 	return (data ?? []) as Notificacion[];
 }
 
@@ -251,7 +287,11 @@ export async function countUnreadNotificaciones(userId: string): Promise<number>
 		.select('*', { count: 'exact', head: true })
 		.eq('user_id', userId)
 		.is('read_at', null);
-	if (err) throw error(500, err.message);
+	if (err) {
+		console.error('[notificaciones] count', err.message);
+		if (isSchemaMissingError(err)) return 0;
+		throw error(500, err.message);
+	}
 	return count ?? 0;
 }
 

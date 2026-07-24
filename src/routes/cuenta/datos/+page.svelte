@@ -48,6 +48,9 @@
 {#if !data.emailConfirmed}
 	<p class="warn">Email no verificado.</p>
 {/if}
+{#if data.schemaHint}
+	<p class="warn">{data.schemaHint}</p>
+{/if}
 {#if msg}<p class="ok">{msg}</p>{/if}
 {#if err}<p class="err">{err}</p>{/if}
 
