@@ -57,6 +57,8 @@
 {#if data.error}
 	<p class="err">{data.error}</p>
 {/if}
+{#if msg}<p class="ok">{msg}</p>{/if}
+{#if err}<p class="err">{err}</p>{/if}
 
 <form class="form card" onsubmit={add}>
 	<label>Matrícula<input bind:value={matricula} required placeholder="3990WDS" /></label>
