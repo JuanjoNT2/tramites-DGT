@@ -35,18 +35,34 @@ export const actions: Actions = {
 		}
 
 		const origin = siteOrigin();
-		const { data, error } = await locals.supabase.auth.signUp({
-			email,
-			password,
-			options: {
-				data: { full_name: fullName },
-				emailRedirectTo: `${origin}/auth/callback`
-			}
-		});
+		let data;
+		let error;
+		try {
+			const result = await locals.supabase.auth.signUp({
+				email,
+				password,
+				options: {
+					data: { full_name: fullName },
+					emailRedirectTo: `${origin}/auth/callback`
+				}
+			});
+			data = result.data;
+			error = result.error;
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e);
+			console.error('[registro] signUp threw', e);
+			return fail(500, {
+				error: `Error de conexión con Auth: ${msg || 'desconocido'}`,
+				email,
+				full_name: fullName
+			} as const);
+		}
 
 		if (error) {
+			const detail = [error.message, error.code, error.status].filter(Boolean).join(' · ');
+			console.error('[registro] signUp error', error);
 			return fail(400, {
-				error: error.message || 'No se pudo crear la cuenta.',
+				error: detail || 'No se pudo crear la cuenta (sin detalle de Auth).',
 				email,
 				full_name: fullName
 			} as const);
