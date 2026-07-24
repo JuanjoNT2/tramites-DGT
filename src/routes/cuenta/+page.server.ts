@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { siteOrigin } from '$lib/email/resend';
+import { authCallbackUrl } from '$lib/email/resend';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) throw redirect(303, '/login?next=/cuenta');
@@ -17,16 +17,15 @@ export const actions: Actions = {
 		throw redirect(303, '/');
 	},
 
-	resend: async ({ locals }) => {
+	resend: async ({ locals, url }) => {
 		if (!locals.user?.email || !locals.supabase) {
 			return fail(401, { error: 'No hay sesión.' });
 		}
 
-		const origin = siteOrigin();
 		const { error } = await locals.supabase.auth.resend({
 			type: 'signup',
 			email: locals.user.email,
-			options: { emailRedirectTo: `${origin}/auth/callback` }
+			options: { emailRedirectTo: authCallbackUrl(url) }
 		});
 
 		if (error) {
