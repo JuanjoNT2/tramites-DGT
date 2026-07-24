@@ -1,4 +1,5 @@
-import type { PageServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 import {
 	listNotificaciones,
 	listUserSolicitudes,
@@ -28,4 +29,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		emailConfirmed: Boolean(locals.user?.email_confirmed_at),
 		profile: locals.profile
 	};
+};
+
+export const actions: Actions = {
+	logout: async ({ locals }) => {
+		if (locals.supabase) await locals.supabase.auth.signOut();
+		throw redirect(303, '/');
+	}
 };

@@ -41,7 +41,7 @@
 				</a>
 			{/each}
 		</nav>
-		<form method="POST" action="?/logout" class="logout">
+		<form method="POST" action="/cuenta?/logout" class="logout">
 			<button type="submit">Cerrar sesión</button>
 		</form>
 		<a class="home" href="/">← Sitio público</a>

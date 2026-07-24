@@ -1,5 +1,4 @@
-import { redirect } from '@sveltejs/kit';
-import type { Actions, LayoutServerLoad } from './$types';
+import type { LayoutServerLoad } from './$types';
 import { countUnreadNotificaciones } from '$lib/cuenta/data';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
@@ -18,11 +17,4 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		unread,
 		profile: locals.profile
 	};
-};
-
-export const actions: Actions = {
-	logout: async ({ locals }) => {
-		if (locals.supabase) await locals.supabase.auth.signOut();
-		throw redirect(303, '/');
-	}
 };
