@@ -8,7 +8,12 @@
 	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import { ccaaList } from '$lib/data/vehicles';
-	import { calculateTransferPrice } from '$lib/utils/pricing';
+	import type { PriceBreakdown } from '$lib/utils/pricing';
+	import {
+		fetchFactorCorreccion,
+		buildTransferBreakdown,
+		looksLikeDate
+	} from '$lib/utils/transfer-price-client';
 	import { getStaticSeo } from '$lib/seo/site';
 
 	const seo = getStaticSeo('/calcular/precio-transferencia')!;
@@ -47,18 +52,69 @@
 	let facturaEmpresa = $state('no');
 	let incluirInforme = $state('si');
 
+	let factorCorreccion = $state<number | null>(null);
+	let fuenteDepreciacion = $state<string | null>(null);
+	let factorLoading = $state(false);
+	let factorError = $state<string | null>(null);
+
 	const ccaaOptions = ccaaList.map((c) => ({ value: c.id, label: c.name }));
 
-	const breakdown = $derived(
-		ccaaId && precioVenta > 0
-			? calculateTransferPrice({
-					precioVenta,
-					ccaaId,
-					tipoVehiculo,
-					incluirInforme: incluirInforme === 'si'
+	const breakdown = $derived.by((): PriceBreakdown | null => {
+		if (!ccaaId || !(precioVenta > 0)) return null;
+		const needsFactor = looksLikeDate(fechaMatricula.trim());
+		if (needsFactor && factorLoading) return null;
+		if (needsFactor && factorError) return null;
+		return buildTransferBreakdown({
+			precioVenta,
+			ccaaId,
+			tipoVehiculo,
+			incluirInforme: incluirInforme === 'si',
+			precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
+			factorCorreccion: needsFactor ? factorCorreccion : null,
+			facturaEmpresa: facturaEmpresa === 'si',
+			fuenteDepreciacion
+		});
+	});
+
+	$effect(() => {
+		const fm = fechaMatricula.trim();
+		const fv = fechaVenta.trim();
+		if (!fm || !looksLikeDate(fm) || (fv && !looksLikeDate(fv))) {
+			factorCorreccion = null;
+			fuenteDepreciacion = null;
+			factorError = null;
+			factorLoading = false;
+			return;
+		}
+
+		let cancelled = false;
+		factorLoading = true;
+		factorError = null;
+
+		const t = setTimeout(() => {
+			fetchFactorCorreccion(fm, fv || null)
+				.then((r) => {
+					if (cancelled) return;
+					factorCorreccion = r.factor;
+					fuenteDepreciacion = r.fuente;
+					factorError = null;
 				})
-			: null
-	);
+				.catch((e) => {
+					if (cancelled) return;
+					factorCorreccion = null;
+					fuenteDepreciacion = null;
+					factorError = e instanceof Error ? e.message : 'Error de depreciación oficial';
+				})
+				.finally(() => {
+					if (!cancelled) factorLoading = false;
+				});
+		}, 300);
+
+		return () => {
+			cancelled = true;
+			clearTimeout(t);
+		};
+	});
 
 	function next() {
 		if (step < 4) step++;
@@ -169,7 +225,7 @@
 				</div>
 			{/if}
 		</div>
-		<PriceSidebar {breakdown} />
+		<PriceSidebar {breakdown} loading={factorLoading} error={factorError} />
 	</div>
 </section>
 

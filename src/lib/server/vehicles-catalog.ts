@@ -135,6 +135,90 @@ export async function listModels(marcaId: string, combustibleId: string): Promis
 	return models;
 }
 
+export type FactorCorreccion = {
+	factor: number;
+	fechaMatricula: string;
+	fechaVenta: string;
+	diffAniosDias: string | null;
+	fuente: string;
+};
+
+const factorCache = new Map<string, { at: number; value: FactorCorreccion }>();
+
+/** Convierte yyyy-mm-dd o dd/mm/yyyy a dd/mm/yyyy (formato del upstream). */
+export function toUpstreamDate(input: string): string | null {
+	const s = input.trim();
+	if (!s) return null;
+	const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+	if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+	const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+	if (dmy) {
+		const d = dmy[1].padStart(2, '0');
+		const m = dmy[2].padStart(2, '0');
+		return `${d}/${m}/${dmy[3]}`;
+	}
+	return null;
+}
+
+/**
+ * Factor de corrección Anexo IV (Orden Hacienda precios medios),
+ * vía el mismo upstream oficial que usa la web de gestión.
+ */
+export async function getFactorCorreccion(
+	fechaMatriculaRaw: string,
+	fechaVentaRaw?: string | null
+): Promise<FactorCorreccion> {
+	const fechaMatricula = toUpstreamDate(fechaMatriculaRaw);
+	if (!fechaMatricula) {
+		throw new Error('Fecha de matrícula inválida (usa dd/mm/aaaa o aaaa-mm-dd)');
+	}
+
+	const ventaRaw =
+		fechaVentaRaw?.trim() ||
+		(() => {
+			const n = new Date();
+			return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}/${n.getFullYear()}`;
+		})();
+	const fechaVenta = toUpstreamDate(ventaRaw);
+	if (!fechaVenta) {
+		throw new Error('Fecha de venta inválida (usa dd/mm/aaaa o aaaa-mm-dd)');
+	}
+
+	const cacheKey = `${fechaMatricula}|${fechaVenta}`;
+	const cached = factorCache.get(cacheKey);
+	if (cached && stillFresh(cached.at)) return cached.value;
+
+	const data = (await postUpstream('ajax_post_depreciacion_fecha_primera_matricula.php', {
+		fecha_matricula: fechaMatricula,
+		fecha_venta: fechaVenta
+	})) as {
+		error?: number;
+		error_fecha_mayor?: number;
+		factor_correcion_porcent?: number | null;
+		fecha_matricula?: string | null;
+		fecha_venta?: string | null;
+		diff_anios_dias?: string | null;
+	};
+
+	if (data.error === 1 || data.factor_correcion_porcent == null) {
+		if (data.error_fecha_mayor === 1) {
+			throw new Error('La fecha de matrícula no puede ser posterior a la de venta');
+		}
+		throw new Error('No se pudo obtener la depreciación oficial');
+	}
+
+	const value: FactorCorreccion = {
+		factor: Number(data.factor_correcion_porcent),
+		fechaMatricula: data.fecha_matricula ?? fechaMatricula,
+		fechaVenta: data.fecha_venta ?? fechaVenta,
+		diffAniosDias: data.diff_anios_dias ?? null,
+		fuente: 'Orden HAC Anexo IV (vía gestión.tramitesdgtonline.com)'
+	};
+
+	factorCache.set(cacheKey, { at: Date.now(), value });
+	return value;
+}
+
 export async function listMotoModels(marcaId: string): Promise<MotoModel[]> {
 	const brand = listMotoBrands().find((b) => b.id === marcaId);
 	if (!brand) throw new Error('Marca de moto no encontrada');

@@ -8,7 +8,12 @@
 	import VehicleModelPicker from '$lib/components/VehicleModelPicker.svelte';
 	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
 	import { ccaaList } from '$lib/data/vehicles';
-	import { calculateTransferPrice } from '$lib/utils/pricing';
+	import type { PriceBreakdown } from '$lib/utils/pricing';
+	import {
+		fetchFactorCorreccion,
+		buildTransferBreakdown,
+		looksLikeDate
+	} from '$lib/utils/transfer-price-client';
 	import {
 		validateEmail,
 		validateMatricula,
@@ -89,18 +94,69 @@
 	let skipDocs = $state(false);
 	let acceptPrivacy = $state(false);
 
+	let factorCorreccion = $state<number | null>(null);
+	let fuenteDepreciacion = $state<string | null>(null);
+	let factorLoading = $state(false);
+	let factorError = $state<string | null>(null);
+
 	const ccaaOptions = ccaaList.map((c) => ({ value: c.id, label: c.name }));
 
-	const breakdown = $derived(
-		ccaaId && precioVenta > 0
-			? calculateTransferPrice({
-					precioVenta,
-					ccaaId,
-					tipoVehiculo,
-					incluirInforme: incluirInforme === 'si'
+	const breakdown = $derived.by((): PriceBreakdown | null => {
+		if (!ccaaId || !(precioVenta > 0)) return null;
+		const needsFactor = looksLikeDate(fechaMatricula.trim());
+		if (needsFactor && factorLoading) return null;
+		if (needsFactor && factorError) return null;
+		return buildTransferBreakdown({
+			precioVenta,
+			ccaaId,
+			tipoVehiculo,
+			incluirInforme: incluirInforme === 'si',
+			precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
+			factorCorreccion: needsFactor ? factorCorreccion : null,
+			facturaEmpresa: facturaEmpresa === 'si',
+			fuenteDepreciacion
+		});
+	});
+
+	$effect(() => {
+		const fm = fechaMatricula.trim();
+		const fv = fechaVenta.trim();
+		if (!fm || !looksLikeDate(fm) || (fv && !looksLikeDate(fv))) {
+			factorCorreccion = null;
+			fuenteDepreciacion = null;
+			factorError = null;
+			factorLoading = false;
+			return;
+		}
+
+		let cancelled = false;
+		factorLoading = true;
+		factorError = null;
+
+		const t = setTimeout(() => {
+			fetchFactorCorreccion(fm, fv || null)
+				.then((r) => {
+					if (cancelled) return;
+					factorCorreccion = r.factor;
+					fuenteDepreciacion = r.fuente;
+					factorError = null;
 				})
-			: null
-	);
+				.catch((e) => {
+					if (cancelled) return;
+					factorCorreccion = null;
+					fuenteDepreciacion = null;
+					factorError = e instanceof Error ? e.message : 'Error de depreciación oficial';
+				})
+				.finally(() => {
+					if (!cancelled) factorLoading = false;
+				});
+		}, 300);
+
+		return () => {
+			cancelled = true;
+			clearTimeout(t);
+		};
+	});
 
 	onMount(() => {
 		initAnalytics();
@@ -258,9 +314,23 @@
 					cp,
 					skipDocs,
 					acceptPrivacy,
-					breakdown
+					breakdown,
+					precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
+					factorCorreccion,
+					fuenteDepreciacion,
+					metaFiscal: breakdown
+						? {
+								valoracionReal: breakdown.valoracionReal,
+								baseImponible: breakdown.baseImponible,
+								itpAmount: breakdown.itpAmount,
+								sinValorBoe: breakdown.sinValorBoe,
+								fuente: breakdown.fuente,
+								ordenReferencia: 'HAC/1501/2025'
+							}
+						: null
 				})
 			});
+
 			const data = await res.json();
 			if (res.ok) {
 				done = true;
@@ -367,6 +437,16 @@
 					</FormField>
 					<FormField label="Fecha de venta" required>
 						<input type="date" bind:value={fechaVenta} />
+					</FormField>
+					<FormField label="¿Vendedor empresa/autónomo con factura?">
+						<RadioCards
+							name="factura"
+							bind:value={facturaEmpresa}
+							options={[
+								{ value: 'si', label: 'Sí' },
+								{ value: 'no', label: 'No' }
+							]}
+						/>
 					</FormField>
 					<FormField label="¿Incluir informe DGT?">
 						<RadioCards
@@ -484,7 +564,9 @@
 				</div>
 			{/if}
 		</div>
-		{#if !done}<PriceSidebar {breakdown} />{/if}
+		{#if !done}
+			<PriceSidebar {breakdown} loading={factorLoading} error={factorError} />
+		{/if}
 	</div>
 </section>
 
