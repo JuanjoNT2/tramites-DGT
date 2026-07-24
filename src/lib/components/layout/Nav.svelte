@@ -12,6 +12,14 @@
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
+	const displayName = $derived.by(() => {
+		const name = profile?.full_name?.trim();
+		if (name) return name.split(/\s+/)[0] || name;
+		const email = user?.email;
+		if (!email) return 'Mi cuenta';
+		return email.split('@')[0] || 'Mi cuenta';
+	});
+	const accountLabel = $derived(`Hola, ${displayName}`);
 
 	function closeMobile() {
 		open = false;
@@ -112,10 +120,12 @@
 				<a
 					href="/cuenta"
 					class="btn cta account-btn"
+					title={user.email ?? 'Mi cuenta'}
+					aria-label={`Sesión iniciada como ${displayName}`}
 					data-analytics={CtaIds.NAV_LOGIN}
 					onclick={() => trackClick(CtaIds.NAV_LOGIN, { destination: '/cuenta' })}
 				>
-					{user.email ?? 'Mi cuenta'}
+					{accountLabel}
 				</a>
 				{#if isStaffRole(profile?.role)}
 					<a href="/gestor" class="account-link">Gestor</a>
@@ -243,12 +253,14 @@
 					<a
 						href="/cuenta"
 						class="btn mobile-cta"
+						title={user.email ?? 'Mi cuenta'}
+						aria-label={`Sesión iniciada como ${displayName}`}
 						onclick={() => {
 							trackClick(CtaIds.NAV_LOGIN, { destination: '/cuenta', nav: 'mobile' });
 							closeMobile();
 						}}
 					>
-						{user.email ?? 'Mi cuenta'}
+						{accountLabel}
 					</a>
 					{#if isStaffRole(profile?.role)}
 						<a href="/gestor" class="mobile-staff" onclick={closeMobile}>Panel gestor</a>
@@ -502,7 +514,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		max-width: 200px;
+		max-width: 220px;
 	}
 
 	.account-link {

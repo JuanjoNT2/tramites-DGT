@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { authCallbackUrl } from '$lib/email/resend';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	if (locals.user) throw redirect(303, '/cuenta');
+	if (locals.user) throw redirect(303, '/');
 	return {};
 };
 
@@ -83,7 +83,7 @@ export const actions: Actions = {
 
 		// Si el proyecto no exige confirmación, ya hay sesión
 		if (data.session) {
-			throw redirect(303, '/cuenta');
+			throw redirect(303, '/');
 		}
 
 		return {

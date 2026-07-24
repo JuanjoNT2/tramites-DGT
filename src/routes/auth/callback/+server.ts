@@ -4,12 +4,12 @@ import { siteOrigin } from '$lib/email/resend';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
 	const code = url.searchParams.get('code');
-	const next = url.searchParams.get('next') || '/cuenta';
+	const next = url.searchParams.get('next') || '/';
 
 	if (code && locals.supabase) {
 		const { error } = await locals.supabase.auth.exchangeCodeForSession(code);
 		if (!error) {
-			throw redirect(303, next.startsWith('/') ? next : '/cuenta');
+			throw redirect(303, next.startsWith('/') ? next : '/');
 		}
 	}
 
@@ -19,7 +19,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	if (token_hash && type && locals.supabase) {
 		const { error } = await locals.supabase.auth.verifyOtp({ token_hash, type });
 		if (!error) {
-			throw redirect(303, next.startsWith('/') ? next : '/cuenta');
+			throw redirect(303, next.startsWith('/') ? next : '/');
 		}
 	}
 
