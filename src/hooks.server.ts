@@ -69,6 +69,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
+	const isCuenta = path === '/cuenta' || path.startsWith('/cuenta/');
+	if (isCuenta && !event.locals.user) {
+		throw redirect(303, `/login?next=${encodeURIComponent(event.url.pathname + event.url.search)}`);
+	}
+
 	return resolve(event, {
 		filterSerializedResponseHeaders(name) {
 			return name === 'content-range' || name === 'x-supabase-api-version';

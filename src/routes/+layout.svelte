@@ -13,7 +13,9 @@
 	let { children } = $props();
 
 	const isShell = $derived(
-		page.url.pathname.startsWith('/admin') || page.url.pathname.startsWith('/gestor')
+		page.url.pathname.startsWith('/admin') ||
+			page.url.pathname.startsWith('/gestor') ||
+			page.url.pathname.startsWith('/cuenta')
 	);
 	const siteLd = $derived(isShell ? null : [organizationJsonLd(), websiteJsonLd()]);
 
@@ -42,7 +44,12 @@
 
 	afterNavigate(({ to }) => {
 		const p = to?.url.pathname;
-		if (p && !p.startsWith('/admin') && !p.startsWith('/gestor')) {
+		if (
+			p &&
+			!p.startsWith('/admin') &&
+			!p.startsWith('/gestor') &&
+			!p.startsWith('/cuenta')
+		) {
 			trackPageView(p);
 		}
 	});

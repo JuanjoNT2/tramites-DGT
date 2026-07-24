@@ -40,6 +40,7 @@
 	let submitting = $state(false);
 	let done = $state(false);
 	let orderId = $state('');
+	let cuentaUrl = $state<string | null>(null);
 
 	// Form state
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
@@ -229,23 +230,42 @@
 					tipo: 'transferencia',
 					tipoVehiculo,
 					matricula,
+					bastidor,
 					marca: tipoVehiculo === 'coche' ? marcaNombre : marcaMotoNombre,
 					modelo: tipoVehiculo === 'coche' ? modeloNombre : modeloMotoNombre,
 					marcaId: tipoVehiculo === 'coche' ? marcaId : marcaMotoId,
 					modeloId: tipoVehiculo === 'coche' ? modeloId : modeloMotoId || undefined,
 					combustible: tipoVehiculo === 'coche' ? combustibleNombre : undefined,
+					combustibleId: tipoVehiculo === 'coche' ? combustibleId : undefined,
 					modeloMeta: tipoVehiculo === 'coche' ? modeloMeta : undefined,
 					cilindrada: tipoVehiculo === 'moto' ? cilindradaMoto : undefined,
-					email,
-					rol,
+					fechaMatricula,
+					ccaaId,
 					precioVenta,
-					ccaaId
+					fechaVenta,
+					facturaEmpresa,
+					incluirInforme,
+					email,
+					nif,
+					nombre,
+					apellido1,
+					telefono,
+					rol,
+					otraParteEmail,
+					provincia,
+					municipio,
+					direccion,
+					cp,
+					skipDocs,
+					acceptPrivacy,
+					breakdown
 				})
 			});
 			const data = await res.json();
 			if (res.ok) {
 				done = true;
 				orderId = data.id;
+				cuentaUrl = data.cuentaUrl ?? null;
 				funnel.submitted({
 					tramite: 'transferencia',
 					step: 9,
@@ -271,7 +291,12 @@
 					<h1>¡Solicitud registrada!</h1>
 					<p>Nº de orden: <strong>{orderId}</strong></p>
 					<p class="sub">Modo demostración — conectar pasarela de pago en producción.</p>
-					<a href="/" class="btn">Volver al inicio</a>
+					<div class="ok-actions">
+						{#if cuentaUrl}
+							<a href={cuentaUrl} class="btn">Ver en mi área</a>
+						{/if}
+						<a href="/" class="btn secondary">Volver al inicio</a>
+					</div>
 				</div>
 			{:else}
 				<StepProgress current={step} total={9} labels={stepLabels} />
@@ -553,6 +578,17 @@
 	.success .sub {
 		color: var(--text2);
 		margin: 12px 0 24px;
+	}
+	.ok-actions {
+		display: flex;
+		gap: 10px;
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+	a.btn.secondary {
+		background: transparent;
+		border: 1px solid var(--navy, #003050);
+		color: var(--navy, #003050);
 	}
 	@media (max-width: 900px) {
 		.layout {

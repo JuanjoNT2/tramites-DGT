@@ -2,13 +2,15 @@
 
 Checklist para producción / preview en Vercel del flujo de registro, solicitudes y panel gestor.
 
-## 1. Migración SQL
+## Panel de usuario (migración adicional)
 
-En el proyecto Supabase `gawfttwqyejunscftman` (SQL Editor o CLI), ejecutar:
+Ejecutar también en SQL Editor:
 
-`supabase/migrations/20260721_profiles_solicitudes.sql`
+`supabase/migrations/20260724_panel_usuario.sql`
 
-Crea `profiles` (con trigger al registrarse), `solicitudes`, índices y RLS sin policies públicas (acceso solo service role desde el servidor).
+Amplía `profiles`, estados de `solicitudes`, tablas `vehiculos`, `solicitud_documentos`, `notificaciones` y bucket Storage `tramite-docs`.
+
+Roles: solo **admin** (Supabase Auth role) cambia estados de trámite; **gestor** ve/exporta/docs.
 
 ## 2. Variables en Vercel
 

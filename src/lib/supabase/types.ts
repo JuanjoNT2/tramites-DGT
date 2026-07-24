@@ -1,10 +1,22 @@
 export type UserRole = 'user' | 'gestor' | 'admin';
 
+export type SolicitudStatus = 'nueva' | 'en_curso' | 'realizada' | 'cancelada';
+
+export type ProfileDireccion = {
+	calle?: string;
+	cp?: string;
+	ciudad?: string;
+	provincia?: string;
+};
+
 export type Profile = {
 	id: string;
 	email: string | null;
 	full_name: string | null;
 	role: UserRole;
+	telefono?: string | null;
+	nif?: string | null;
+	direccion?: ProfileDireccion | Record<string, unknown> | null;
 	created_at: string;
 	updated_at: string;
 };
@@ -15,8 +27,58 @@ export type Solicitud = {
 	payload: Record<string, unknown>;
 	user_id: string | null;
 	email: string | null;
-	status: string;
+	status: SolicitudStatus | string;
 	created_at: string;
+	updated_at?: string;
+};
+
+export type Vehiculo = {
+	id: string;
+	user_id: string;
+	matricula: string;
+	tipo: string;
+	marca: string | null;
+	modelo: string | null;
+	bastidor: string | null;
+	meta: Record<string, unknown>;
+	created_at: string;
+	updated_at: string;
+};
+
+export type SolicitudDocumento = {
+	id: string;
+	solicitud_id: string;
+	user_id: string | null;
+	nombre: string;
+	path: string;
+	mime: string | null;
+	uploaded_by: 'user' | 'gestor' | 'admin';
+	created_at: string;
+};
+
+export type Notificacion = {
+	id: string;
+	user_id: string;
+	tipo: string;
+	titulo: string;
+	cuerpo: string | null;
+	link: string | null;
+	read_at: string | null;
+	created_at: string;
+};
+
+export const SOLICITUD_STATUSES: SolicitudStatus[] = [
+	'nueva',
+	'en_curso',
+	'realizada',
+	'cancelada'
+];
+
+export const SOLICITUD_STATUS_LABELS: Record<SolicitudStatus, string> = {
+	nueva: 'Nueva',
+	en_curso: 'En curso',
+	realizada: 'Realizada',
+	cancelada: 'Cancelada'
 };
 
 export const SOLICITUD_TIPOS = [
@@ -44,3 +106,11 @@ export const SOLICITUD_TIPO_LABELS: Record<string, string> = {
 	cancelacion: 'Cancelación reserva dominio',
 	contacto: 'Contacto'
 };
+
+export function isEnCursoStatus(status: string): boolean {
+	return status === 'nueva' || status === 'en_curso';
+}
+
+export function isRealizadoStatus(status: string): boolean {
+	return status === 'realizada' || status === 'cancelada';
+}

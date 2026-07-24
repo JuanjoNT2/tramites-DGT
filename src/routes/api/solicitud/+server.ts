@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { env } from '$env/dynamic/private';
 import { getServiceSupabase } from '$lib/supabase/admin';
+import { upsertVehiculoFromPayload } from '$lib/cuenta/data';
 
 type LocalEntry = {
 	id: string;
@@ -59,14 +60,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			return json({ error: 'No se pudo registrar la solicitud.' }, { status: 500 });
 		}
 
+		if (userId) {
+			await upsertVehiculoFromPayload(userId, body).catch(() => null);
+		}
+
 		return json({
 			ok: true,
 			id,
-			message: 'Solicitud registrada correctamente.'
+			message: 'Solicitud registrada correctamente.',
+			cuentaUrl: userId ? `/cuenta/tramites/${id}` : null
 		});
 	}
 
-	// Dev local sin Supabase: fallback a disco. En preview/prod exigimos env.
 	const isProdLike = Boolean(env.VERCEL || env.NODE_ENV === 'production');
 	if (isProdLike) {
 		return json(
@@ -87,6 +92,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	return json({
 		ok: true,
 		id,
-		message: 'Solicitud registrada correctamente (modo demostración local).'
+		message: 'Solicitud registrada correctamente (modo demostración local).',
+		cuentaUrl: userId ? `/cuenta/tramites/${id}` : null
 	});
 };

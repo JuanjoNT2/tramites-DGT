@@ -31,13 +31,37 @@
 	<p class="err">{data.error}</p>
 {/if}
 
+<form class="filters" method="GET">
+	<input type="hidden" name="tipo" value={data.tipo} />
+	<label>
+		Estado
+		<select name="status">
+			<option value="todos" selected={data.status === 'todos'}>Todos</option>
+			{#each data.statuses as st}
+				<option value={st} selected={data.status === st}>{data.statusLabels[st]}</option>
+			{/each}
+		</select>
+	</label>
+	<label>
+		Buscar
+		<input type="search" name="q" value={data.q} placeholder="email, matrícula, user id…" />
+	</label>
+	<button type="submit" class="btn secondary">Filtrar</button>
+</form>
+
 <nav class="tabs" aria-label="Tipos de solicitud">
-	<a href="/gestor?tipo=todos" class:active={data.tipo === 'todos'}>
+	<a
+		href={`/gestor?tipo=todos&status=${encodeURIComponent(data.status)}&q=${encodeURIComponent(data.q)}`}
+		class:active={data.tipo === 'todos'}
+	>
 		Todos
 		<span>{Object.values(data.counts).reduce((a, b) => a + b, 0)}</span>
 	</a>
 	{#each data.tipos as t}
-		<a href={`/gestor?tipo=${t}`} class:active={data.tipo === t}>
+		<a
+			href={`/gestor?tipo=${t}&status=${encodeURIComponent(data.status)}&q=${encodeURIComponent(data.q)}`}
+			class:active={data.tipo === t}
+		>
 			{label(t)}
 			<span>{data.counts[t] ?? 0}</span>
 		</a>
@@ -119,6 +143,32 @@
 		color: #9b1c1c;
 		padding: 10px 12px;
 		border-radius: 8px;
+	}
+	.filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
+		align-items: end;
+		margin-bottom: 16px;
+		background: #fff;
+		border: 1px solid #d8e0e8;
+		border-radius: 12px;
+		padding: 12px 14px;
+	}
+	.filters label {
+		display: grid;
+		gap: 4px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: #5a6b7d;
+	}
+	.filters select,
+	.filters input {
+		padding: 8px 10px;
+		border: 1px solid #c5d0da;
+		border-radius: 8px;
+		font: inherit;
+		min-width: 180px;
 	}
 	.tabs {
 		display: flex;

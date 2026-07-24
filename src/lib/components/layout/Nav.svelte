@@ -9,6 +9,7 @@
 	let open = $state(false);
 	let openTramites = $state(false);
 	let openCalculador = $state(false);
+	let openAccount = $state(false);
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
@@ -25,6 +26,7 @@
 		open = false;
 		openTramites = false;
 		openCalculador = false;
+		openAccount = false;
 	}
 
 	function toggleMobile() {
@@ -116,19 +118,51 @@
 		</nav>
 
 		{#if user}
-			<div class="account desktop-cta">
-				<a
-					href="/cuenta"
+			<div class="account desktop-cta dropdown account-drop">
+				<button
+					type="button"
 					class="btn cta account-btn"
 					title={user.email ?? 'Mi cuenta'}
 					aria-label={`Sesión iniciada como ${displayName}`}
-					data-analytics={CtaIds.NAV_LOGIN}
-					onclick={() => trackClick(CtaIds.NAV_LOGIN, { destination: '/cuenta' })}
+					aria-expanded={openAccount}
+					onclick={() => (openAccount = !openAccount)}
 				>
-					{accountLabel}
-				</a>
-				{#if isStaffRole(profile?.role)}
-					<a href="/gestor" class="account-link">Gestor</a>
+					{accountLabel} ▾
+				</button>
+				{#if openAccount}
+					<div class="drop-menu account-menu" role="menu">
+						<a href="/cuenta" role="menuitem" onclick={() => (openAccount = false)}>Resumen</a>
+						<a
+							href="/cuenta/tramites?estado=en_curso"
+							role="menuitem"
+							onclick={() => (openAccount = false)}>Trámites en curso</a
+						>
+						<a
+							href="/cuenta/tramites?estado=realizados"
+							role="menuitem"
+							onclick={() => (openAccount = false)}>Trámites realizados</a
+						>
+						<a href="/cuenta/vehiculos" role="menuitem" onclick={() => (openAccount = false)}
+							>Mis vehículos</a
+						>
+						<a href="/cuenta/datos" role="menuitem" onclick={() => (openAccount = false)}
+							>Mis datos</a
+						>
+						<a href="/cuenta/documentos" role="menuitem" onclick={() => (openAccount = false)}
+							>Documentos</a
+						>
+						<a
+							href="/cuenta/notificaciones"
+							role="menuitem"
+							onclick={() => (openAccount = false)}>Notificaciones</a
+						>
+						{#if isStaffRole(profile?.role)}
+							<a href="/gestor" role="menuitem" onclick={() => (openAccount = false)}>Panel gestor</a>
+						{/if}
+						<form method="POST" action="/cuenta?/logout">
+							<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
+						</form>
+					</div>
 				{/if}
 			</div>
 		{:else}
@@ -250,21 +284,23 @@
 					}}>Contacto</a
 				>
 				{#if user}
-					<a
-						href="/cuenta"
-						class="btn mobile-cta"
-						title={user.email ?? 'Mi cuenta'}
-						aria-label={`Sesión iniciada como ${displayName}`}
-						onclick={() => {
-							trackClick(CtaIds.NAV_LOGIN, { destination: '/cuenta', nav: 'mobile' });
-							closeMobile();
-						}}
-					>
-						{accountLabel}
-					</a>
-					{#if isStaffRole(profile?.role)}
-						<a href="/gestor" class="mobile-staff" onclick={closeMobile}>Panel gestor</a>
-					{/if}
+					<a href="/cuenta" class="btn mobile-cta" onclick={closeMobile}>{accountLabel}</a>
+					<div class="mobile-sub account-mobile">
+						<a href="/cuenta/tramites?estado=en_curso" onclick={closeMobile}>Trámites en curso</a>
+						<a href="/cuenta/tramites?estado=realizados" onclick={closeMobile}
+							>Trámites realizados</a
+						>
+						<a href="/cuenta/vehiculos" onclick={closeMobile}>Mis vehículos</a>
+						<a href="/cuenta/datos" onclick={closeMobile}>Mis datos</a>
+						<a href="/cuenta/documentos" onclick={closeMobile}>Documentos</a>
+						<a href="/cuenta/notificaciones" onclick={closeMobile}>Notificaciones</a>
+						{#if isStaffRole(profile?.role)}
+							<a href="/gestor" onclick={closeMobile}>Panel gestor</a>
+						{/if}
+						<form method="POST" action="/cuenta?/logout">
+							<button type="submit" class="mobile-logout">Cerrar sesión</button>
+						</form>
+					</div>
 				{:else}
 					<a
 						href="/login"
@@ -508,6 +544,7 @@
 		align-items: center;
 		gap: 10px;
 		max-width: 280px;
+		position: relative;
 	}
 
 	.account-btn {
@@ -515,6 +552,51 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		max-width: 220px;
+		border: none;
+		cursor: pointer;
+	}
+
+	.account-menu {
+		right: 0;
+		left: auto;
+		min-width: 220px;
+	}
+
+	.account-menu a,
+	.logout-item {
+		display: block;
+		width: 100%;
+		text-align: left;
+		padding: 10px 14px;
+		border: none;
+		background: none;
+		font: inherit;
+		font-weight: 600;
+		color: var(--ink);
+		text-decoration: none;
+		cursor: pointer;
+	}
+
+	.account-menu a:hover,
+	.logout-item:hover {
+		background: rgba(0, 198, 209, 0.12);
+	}
+
+	.account-mobile {
+		margin: 0 0 8px;
+	}
+
+	.mobile-logout {
+		display: block;
+		width: 100%;
+		padding: 12px 20px 12px 32px;
+		text-align: left;
+		background: none;
+		border: none;
+		font: inherit;
+		font-weight: 600;
+		color: #9b1c1c;
+		cursor: pointer;
 	}
 
 	.account-link {

@@ -1,37 +1,31 @@
-import { fail, redirect } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
-import { authCallbackUrl } from '$lib/email/resend';
+import type { PageServerLoad } from './$types';
+import {
+	listNotificaciones,
+	listUserSolicitudes,
+	listVehiculos
+} from '$lib/cuenta/data';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user) throw redirect(303, '/login?next=/cuenta');
+	const userId = locals.user!.id;
+	const [enCurso, realizados, vehiculos, notificaciones] = await Promise.all([
+		listUserSolicitudes(userId, 'en_curso').catch(() => []),
+		listUserSolicitudes(userId, 'realizados').catch(() => []),
+		listVehiculos(userId).catch(() => []),
+		listNotificaciones(userId).catch(() => [])
+	]);
+
 	return {
-		email: locals.user.email,
-		profile: locals.profile,
-		emailConfirmed: Boolean(locals.user.email_confirmed_at)
+		counts: {
+			enCurso: enCurso.length,
+			realizados: realizados.length,
+			vehiculos: vehiculos.length,
+			unread: notificaciones.filter((n) => !n.read_at).length
+		},
+		recientes: [...enCurso, ...realizados]
+			.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+			.slice(0, 5),
+		notificaciones: notificaciones.slice(0, 5),
+		emailConfirmed: Boolean(locals.user?.email_confirmed_at),
+		profile: locals.profile
 	};
-};
-
-export const actions: Actions = {
-	logout: async ({ locals }) => {
-		if (locals.supabase) await locals.supabase.auth.signOut();
-		throw redirect(303, '/');
-	},
-
-	resend: async ({ locals, url }) => {
-		if (!locals.user?.email || !locals.supabase) {
-			return fail(401, { error: 'No hay sesión.' });
-		}
-
-		const { error } = await locals.supabase.auth.resend({
-			type: 'signup',
-			email: locals.user.email,
-			options: { emailRedirectTo: authCallbackUrl(url) }
-		});
-
-		if (error) {
-			return fail(400, { error: error.message });
-		}
-
-		return { ok: true as const, message: 'Te hemos reenviado el email de verificación.' };
-	}
 };

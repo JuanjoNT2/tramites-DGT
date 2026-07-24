@@ -43,6 +43,7 @@
 	let step = $state(1);
 	let done = $state(false);
 	let orderId = $state('');
+	let cuentaUrl = $state<string | null>(null);
 	let errors = $state<Record<string, string | null>>({});
 	let submitting = $state(false);
 
@@ -291,22 +292,47 @@
 					tipo,
 					variant,
 					matricula,
+					tipoVehiculo,
+					distintivoTipo,
 					vmpCertificado,
 					vmpNumCertificado,
 					vmpNumSerie,
 					vmpMarca,
 					vmpModelo,
+					motivoDuplicado,
+					clasePermiso,
+					fechaCaducidad,
 					email,
 					nif,
 					nombre,
 					apellido1,
 					apellido2,
 					telefono,
+					sexo,
+					fechaNacimiento,
+					provincia,
+					municipio,
+					pueblo,
+					tipoVia,
+					direccion,
+					numero,
+					piso,
+					puerta,
+					bloque,
+					escalera,
+					cp,
+					localidad,
+					tipoEnvio,
+					cartaFinalizacion,
+					docsConfirmados,
+					acceptPrivacy,
+					priceLines: priceLines.lines,
 					total: priceLines.total
 				})
 			});
 			const data = await res.json();
 			orderId = data.id ?? '';
+			cuentaUrl = data.cuentaUrl ?? null;
 			done = true;
 			funnel.submitted({
 				tramite: tipo,
@@ -333,7 +359,12 @@
 					<h1>Solicitud enviada</h1>
 					<p>Tu solicitud se ha registrado correctamente. Te contactaremos en breve.</p>
 					{#if orderId}<p class="ref">Referencia: <strong>{orderId}</strong></p>{/if}
-					<a href="/" class="btn">Volver al inicio</a>
+					<div class="ok-actions">
+						{#if cuentaUrl}
+							<a href={cuentaUrl} class="btn">Ver en mi área</a>
+						{/if}
+						<a href="/" class="btn secondary">Volver al inicio</a>
+					</div>
 				</div>
 			{:else}
 				<StepProgress current={step} total={steps.length} labels={steps} />
@@ -752,6 +783,18 @@
 	.ok {
 		text-align: center;
 		padding: 32px;
+	}
+	.ok-actions {
+		display: flex;
+		gap: 10px;
+		justify-content: center;
+		flex-wrap: wrap;
+		margin-top: 8px;
+	}
+	a.btn.secondary {
+		background: transparent;
+		border: 1px solid var(--navy, #003050);
+		color: var(--navy, #003050);
 	}
 	.ref {
 		margin: 12px 0 20px;
