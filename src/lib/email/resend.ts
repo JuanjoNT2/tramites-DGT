@@ -16,6 +16,15 @@ export function siteOrigin(): string {
 	return (publicEnv.PUBLIC_SITE_ORIGIN || 'https://tramitesdgtonline.com').replace(/\/$/, '');
 }
 
+/** Origen del request actual (mejor para auth en preview Vercel). */
+export function requestOrigin(url: URL): string {
+	return url.origin.replace(/\/$/, '');
+}
+
+export function authCallbackUrl(url: URL): string {
+	return `${requestOrigin(url)}/auth/callback`;
+}
+
 export async function sendVerificationReminder(to: string, confirmUrl: string): Promise<boolean> {
 	const resend = getResendClient();
 	if (!resend) return false;

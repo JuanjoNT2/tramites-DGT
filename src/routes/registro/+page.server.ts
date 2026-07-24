@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { siteOrigin } from '$lib/email/resend';
+import { authCallbackUrl } from '$lib/email/resend';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (locals.user) throw redirect(303, '/cuenta');
@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	default: async ({ request, locals, url }) => {
 		if (!locals.supabase) {
 			return fail(503, { error: 'Auth no configurada (faltan variables PUBLIC_SUPABASE_*).' });
 		}
@@ -34,7 +34,7 @@ export const actions: Actions = {
 			} as const);
 		}
 
-		const origin = siteOrigin();
+		const emailRedirectTo = authCallbackUrl(url);
 		let data;
 		let error;
 		try {
@@ -43,7 +43,7 @@ export const actions: Actions = {
 				password,
 				options: {
 					data: { full_name: fullName },
-					emailRedirectTo: `${origin}/auth/callback`
+					emailRedirectTo
 				}
 			});
 			data = result.data;
@@ -59,10 +59,23 @@ export const actions: Actions = {
 		}
 
 		if (error) {
-			const detail = [error.message, error.code, error.status].filter(Boolean).join(' · ');
-			console.error('[registro] signUp error', error);
+			const detail = [
+				typeof error.message === 'string' && error.message !== '{}'
+					? error.message
+					: null,
+				error.code,
+				error.status,
+				!error.message || error.message === '{}'
+					? JSON.stringify({ name: error.name, status: error.status, code: error.code })
+					: null
+			]
+				.filter(Boolean)
+				.join(' · ');
+			console.error('[registro] signUp error', { error, emailRedirectTo });
 			return fail(400, {
-				error: detail || 'No se pudo crear la cuenta (sin detalle de Auth).',
+				error:
+					detail ||
+					'No se pudo crear la cuenta. Revisa SMTP SendGrid y Auth Logs en Supabase.',
 				email,
 				full_name: fullName
 			} as const);
