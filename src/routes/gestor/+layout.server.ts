@@ -1,5 +1,4 @@
-import type { Actions, LayoutServerLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
+import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	const path = url.pathname;
@@ -16,11 +15,4 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		role: locals.profile?.role ?? null,
 		vista
 	};
-};
-
-export const actions: Actions = {
-	logout: async ({ locals }) => {
-		if (locals.supabase) await locals.supabase.auth.signOut();
-		throw redirect(303, '/login');
-	}
 };

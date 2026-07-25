@@ -1,4 +1,5 @@
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
 import { loadGestorClientes, type GestorVista } from '$lib/gestor/clients';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -31,4 +32,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		error,
 		title: titles[vista]
 	};
+};
+
+export const actions: Actions = {
+	logout: async ({ locals }) => {
+		if (locals.supabase) await locals.supabase.auth.signOut();
+		throw redirect(303, '/login');
+	}
 };
