@@ -5,6 +5,7 @@ import { isStaffRole } from '$lib/auth/roles';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { createSupabaseServerClient } from '$lib/supabase/server';
 import type { Profile } from '$lib/supabase/types';
+import { claimAnonymousSolicitudes } from '$lib/cuenta/data';
 
 /** Aliases legacy → URLs SEO oficiales (sin clonar WordPress) */
 const REDIRECTS: Record<string, string> = {
@@ -46,6 +47,20 @@ export const handle: Handle = async ({ event, resolve }) => {
 			} = await event.locals.supabase.auth.getSession();
 			event.locals.session = session;
 			event.locals.profile = await loadProfile(user.id);
+			// Enlazar trámites hechos como invitado (una vez por sesión/cookie)
+			if (!event.cookies.get('tdgt_claim')) {
+				claimAnonymousSolicitudes(user.id, user.email)
+					.then(() => {
+						event.cookies.set('tdgt_claim', '1', {
+							path: '/',
+							maxAge: 60 * 60 * 24 * 30,
+							httpOnly: true,
+							sameSite: 'lax',
+							secure: event.url.protocol === 'https:'
+						});
+					})
+					.catch(() => null);
+			}
 		}
 	}
 
@@ -72,6 +87,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const isCuenta = path === '/cuenta' || path.startsWith('/cuenta/');
 	if (isCuenta && !event.locals.user) {
 		throw redirect(303, `/login?next=${encodeURIComponent(event.url.pathname + event.url.search)}`);
+	}
+	// Gestor/admin Auth no usan el área ciudadano (Mis vehículos, etc.)
+	if (isCuenta && event.locals.user && isStaffRole(event.locals.profile?.role)) {
+		const dest =
+			path === '/cuenta/seguridad' || path.startsWith('/cuenta/seguridad/')
+				? '/gestor/seguridad'
+				: '/gestor';
+		throw redirect(303, dest);
 	}
 
 	return resolve(event, {

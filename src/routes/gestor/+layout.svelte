@@ -8,6 +8,6 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<GestorShell email={data.email}>
+<GestorShell email={data.email} role={data.role} vista={data.vista}>
 	{@render children()}
 </GestorShell>

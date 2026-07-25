@@ -22,7 +22,7 @@
 		</p>
 	</div>
 	<div class="wrap">
-		<div class="service-row">
+		<div class="service-row" id="servicios">
 			{#each services as s (s.id)}
 				<article class="service-card">
 					<div class="icon-circle">

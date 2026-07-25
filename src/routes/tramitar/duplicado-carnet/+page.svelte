@@ -13,5 +13,5 @@
 	title="Duplicado de carnet de conducir"
 	tipo="duplicado-carnet"
 	variant="duplicado"
-	steps={['Motivo', 'Solicitante', 'Dirección', 'Resumen', 'Pago']}
+	steps={['Motivo', 'Solicitante', 'Dirección', 'Resumen']}
 />

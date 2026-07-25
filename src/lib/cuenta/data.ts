@@ -50,7 +50,7 @@ export async function listUserSolicitudes(
 		.order('created_at', { ascending: false })
 		.limit(200);
 
-	if (filter === 'en_curso') q = q.in('status', ['nueva', 'en_curso']);
+	if (filter === 'en_curso') q = q.in('status', ['nueva', 'en_curso', 'pendiente_pago', 'pagada']);
 	if (filter === 'realizados') q = q.in('status', ['realizada', 'cancelada']);
 
 	const { data, error: err } = await q;
@@ -69,6 +69,34 @@ export async function getUserSolicitud(userId: string, id: string): Promise<Soli
 	if (err) throw error(500, err.message);
 	if (!data) throw error(404, 'Solicitud no encontrada');
 	return data as Solicitud;
+}
+
+/** Asocia solicitudes anónimas (mismo email, sin user_id) al usuario que inicia sesión. */
+export async function claimAnonymousSolicitudes(userId: string, email: string | null | undefined) {
+	const normalized = (email || '').trim().toLowerCase();
+	if (!normalized) return 0;
+	const sb = getServiceSupabase();
+	if (!sb) return 0;
+	const { data, error: err } = await sb
+		.from('solicitudes')
+		.update({ user_id: userId })
+		.is('user_id', null)
+		.ilike('email', normalized)
+		.select('id');
+	if (err) {
+		console.error('[claim] solicitudes', err.message);
+		return 0;
+	}
+	return (data || []).length;
+}
+
+export function canUserUploadDocs(status: string): boolean {
+	return (
+		status === 'nueva' ||
+		status === 'en_curso' ||
+		status === 'pendiente_pago' ||
+		status === 'pagada'
+	);
 }
 
 export async function updateUserSolicitudPayload(

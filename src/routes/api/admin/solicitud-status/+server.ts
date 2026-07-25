@@ -20,7 +20,10 @@ export const PATCH: RequestHandler = async ({ request, locals }) => {
 	const id = body.id;
 	const status = body.status as SolicitudStatus | undefined;
 	if (!id || !status || !SOLICITUD_STATUSES.includes(status)) {
-		return json({ error: 'id y status (nueva|en_curso|realizada|cancelada) requeridos' }, { status: 400 });
+		return json(
+			{ error: 'id y status (nueva|pendiente_pago|pagada|en_curso|realizada|cancelada) requeridos' },
+			{ status: 400 }
+		);
 	}
 
 	const item = await adminUpdateSolicitudStatus(id, status);

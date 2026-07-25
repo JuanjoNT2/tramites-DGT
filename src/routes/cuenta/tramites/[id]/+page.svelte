@@ -13,9 +13,12 @@
 		payloadText = JSON.stringify(data.item.payload ?? {}, null, 2);
 	});
 
+	const HIDDEN_KEYS = new Set(['accessToken', 'raw', 'acceptPrivacy']);
+
 	function entries(obj: Record<string, unknown>, prefix = ''): [string, string][] {
 		const out: [string, string][] = [];
 		for (const [k, v] of Object.entries(obj)) {
+			if (HIDDEN_KEYS.has(k)) continue;
 			const key = prefix ? `${prefix}.${k}` : k;
 			if (v != null && typeof v === 'object' && !Array.isArray(v)) {
 				out.push(...entries(v as Record<string, unknown>, key));
@@ -60,6 +63,11 @@
 			{SOLICITUD_STATUS_LABELS[s.status as SolicitudStatus] || s.status} ·
 			{new Date(s.created_at).toLocaleString('es-ES')}
 		</p>
+		{#if data.pagoUrl}
+			<p class="pay-cta">
+				<a class="btn" href={data.pagoUrl}>Pagar / reintentar pago</a>
+			</p>
+		{/if}
 	</div>
 </header>
 
@@ -106,12 +114,14 @@
 			<li class="empty">Sin documentos.</li>
 		{/each}
 	</ul>
-	{#if s.status === 'nueva' || s.status === 'en_curso'}
+	{#if data.canUpload}
 		<label class="upload">
 			Subir documento
 			<input type="file" onchange={uploadDoc} disabled={uploading} />
 		</label>
 		{#if uploadMsg}<p class="msg">{uploadMsg}</p>{/if}
+	{:else}
+		<p class="empty">No se pueden subir documentos en el estado actual.</p>
 	{/if}
 </section>
 
@@ -131,6 +141,18 @@
 	.sub {
 		margin: 0;
 		color: #5a6b7d;
+	}
+	.pay-cta {
+		margin: 12px 0 0;
+	}
+	.pay-cta .btn {
+		display: inline-flex;
+		padding: 10px 14px;
+		background: #00c6d1;
+		color: #003050;
+		font-weight: 800;
+		border-radius: 8px;
+		text-decoration: none;
 	}
 	.card {
 		background: #fff;

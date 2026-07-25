@@ -73,7 +73,7 @@
 	}
 </script>
 
-<p class="back"><a href="/gestor">← Volver al listado</a></p>
+<p class="back"><a href="/gestor/tramites?vista=pendientes">← Volver a trámites</a></p>
 
 <header class="head">
 	<div>
@@ -89,7 +89,16 @@
 <dl class="meta">
 	<div><dt>Estado</dt><dd>{data.statusLabels[s.status as SolicitudStatus] || s.status}</dd></div>
 	<div><dt>Email</dt><dd>{s.email || '—'}</dd></div>
-	<div><dt>Usuario</dt><dd>{s.user_id || 'anónimo'}</dd></div>
+	<div>
+		<dt>Cliente</dt>
+		<dd>
+			{#if s.user_id}
+				<a href="/gestor/cliente/{s.user_id}">Ver ficha del cliente</a>
+			{:else}
+				anónimo
+			{/if}
+		</dd>
+	</div>
 	<div><dt>Fecha</dt><dd>{new Date(s.created_at).toLocaleString('es-ES')}</dd></div>
 </dl>
 
@@ -109,18 +118,61 @@
 
 {#if data.citizen}
 	<section class="card">
-		<h2>Datos del ciudadano</h2>
+		<h2>Datos del cliente</h2>
 		<table>
 			<tbody>
 				<tr><th>Nombre</th><td>{data.citizen.full_name || '—'}</td></tr>
 				<tr><th>Email</th><td>{data.citizen.email || '—'}</td></tr>
 				<tr><th>Teléfono</th><td>{data.citizen.telefono || '—'}</td></tr>
 				<tr><th>NIF</th><td>{data.citizen.nif || '—'}</td></tr>
-				<tr><th>Rol</th><td>{data.citizen.role}</td></tr>
 			</tbody>
 		</table>
 	</section>
 {/if}
+
+<section class="card">
+	<h2>Vehículos del cliente ({data.vehiculos.length})</h2>
+	{#if data.vehiculos.length}
+		<table>
+			<thead>
+				<tr>
+					<th>Matrícula</th>
+					<th>Tipo</th>
+					<th>Marca</th>
+					<th>Modelo</th>
+					<th>Bastidor</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.vehiculos as v}
+					<tr>
+						<td>
+							{v.matricula}
+							{#if String(s.payload?.matricula ?? '').toUpperCase() === v.matricula.toUpperCase()}
+								<span class="tag">de este trámite</span>
+							{/if}
+						</td>
+						<td>{v.tipo}</td>
+						<td>{v.marca || '—'}</td>
+						<td>{v.modelo || '—'}</td>
+						<td>{v.bastidor || '—'}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{:else}
+		<p class="empty">
+			{#if s.user_id}
+				Este usuario no tiene vehículos registrados en su cuenta.
+			{:else}
+				Solicitud anónima: no hay cuenta vinculada. Revisa la matrícula en el formulario.
+			{/if}
+		</p>
+		{#if s.payload?.matricula}
+			<p class="hint">Matrícula del trámite: <strong>{String(s.payload.matricula)}</strong></p>
+		{/if}
+	{/if}
+</section>
 
 <section class="card">
 	<h2>Campos del formulario</h2>
@@ -269,6 +321,22 @@
 	}
 	.empty {
 		color: #5a6b7d;
+	}
+	.hint {
+		margin: 8px 0 0;
+		font-size: 0.9rem;
+		color: #5a6b7d;
+	}
+	.tag {
+		display: inline-block;
+		margin-left: 8px;
+		padding: 2px 8px;
+		border-radius: 999px;
+		background: #e0f7fa;
+		color: #006064;
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
 	}
 	.upload {
 		display: grid;

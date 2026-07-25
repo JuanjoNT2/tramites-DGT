@@ -1,16 +1,20 @@
 <script lang="ts">
 	import StepProgress from '$lib/components/ui/StepProgress.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
+	import PaymentStep from '$lib/components/ui/PaymentStep.svelte';
 	import { validateEmail, validateMatricula, validateRequired } from '$lib/utils/validators';
+	import { createSolicitudAndStartPayment, postToRedsys } from '$lib/pago/client';
 
 	let {
 		title,
 		tipo,
-		steps
+		steps,
+		amount = 29.95
 	}: {
 		title: string;
 		tipo: string;
 		steps: string[];
+		amount?: number;
 	} = $props();
 
 	let step = $state(1);
@@ -19,6 +23,10 @@
 	let nombre = $state('');
 	let telefono = $state('');
 	let done = $state(false);
+	let submitting = $state(false);
+	let orderId = $state('');
+	let payMessage = $state<string | null>(null);
+	let payError = $state<string | null>(null);
 	let errors = $state<Record<string, string | null>>({});
 
 	function validate(): boolean {
@@ -33,12 +41,28 @@
 
 	async function submit() {
 		if (!validate()) return;
-		await fetch('/api/solicitud', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ tipo, matricula, email, nombre, telefono })
-		});
-		done = true;
+		submitting = true;
+		payError = null;
+		try {
+			const result = await createSolicitudAndStartPayment({
+				amount,
+				description: title,
+				payload: { tipo, matricula, email, nombre, telefono, total: amount }
+			});
+			if (!result.ok) {
+				payError = result.error;
+				return;
+			}
+			orderId = result.solicitudId;
+			if (result.mode === 'redirect') {
+				postToRedsys(result.redsys);
+				return;
+			}
+			payMessage = result.message;
+			done = true;
+		} finally {
+			submitting = false;
+		}
 	}
 </script>
 
@@ -50,8 +74,9 @@
 	<div class="wrap main card pad">
 		{#if done}
 			<div class="ok">
-				<h1>Solicitud enviada</h1>
-				<p>Te contactaremos pronto. (Modo demostración)</p>
+				<h1>Solicitud registrada</h1>
+				{#if payMessage}<p>{payMessage}</p>{/if}
+				{#if orderId}<p class="ref">Referencia: <strong>{orderId}</strong></p>{/if}
 				<a href="/" class="btn">Inicio</a>
 			</div>
 		{:else}
@@ -79,7 +104,8 @@
 					<li>Nombre: {nombre}</li>
 				</ul>
 			{:else}
-				<p class="info">Pago simulado — conectar pasarela en producción.</p>
+				{#if payError}<p class="err">{payError}</p>{/if}
+				<PaymentStep total={amount} loading={submitting} onPay={submit} />
 			{/if}
 			<div class="nav">
 				{#if step > 1}<button class="btn ghost" onclick={() => step--}>Anterior</button>{:else}<span
@@ -91,8 +117,6 @@
 							if (validate()) step++;
 						}}>Siguiente</button
 					>
-				{:else}
-					<button class="btn" onclick={submit}>Confirmar</button>
 				{/if}
 			</div>
 		{/if}
@@ -136,5 +160,15 @@
 	.ok {
 		text-align: center;
 		padding: 32px;
+	}
+	.ref {
+		font-size: 14px;
+		color: var(--text2);
+		margin: 12px 0;
+	}
+	.err {
+		color: #b42318;
+		font-size: 14px;
+		margin-bottom: 12px;
 	}
 </style>

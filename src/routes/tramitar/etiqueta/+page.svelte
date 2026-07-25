@@ -13,5 +13,5 @@
 	title="Distintivo ambiental"
 	tipo="etiqueta"
 	variant="etiqueta"
-	steps={['Vehículo', 'Solicitante', 'Dirección y envío', 'Resumen', 'Pago']}
+	steps={['Vehículo', 'Solicitante', 'Dirección y envío', 'Resumen']}
 />

@@ -1,15 +1,31 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import {
+	canUserUploadDocs,
 	getUserSolicitud,
 	listDocsForSolicitud,
 	updateUserSolicitudPayload
 } from '$lib/cuenta/data';
+import { getPayloadAccessToken } from '$lib/pago/access';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const item = await getUserSolicitud(locals.user!.id, params.id);
 	const docs = await listDocsForSolicitud(item.id).catch(() => []);
-	return { item, docs, canEdit: item.status === 'nueva' };
+	const token = getPayloadAccessToken(item.payload as Record<string, unknown>);
+	const needsPayment =
+		item.status === 'pendiente_pago' || item.status === 'nueva';
+	const pagoUrl = needsPayment
+		? token
+			? `/pago/${item.id}?t=${encodeURIComponent(token)}`
+			: `/pago/${item.id}`
+		: null;
+	return {
+		item,
+		docs,
+		canEdit: item.status === 'nueva',
+		canUpload: canUserUploadDocs(String(item.status)),
+		pagoUrl
+	};
 };
 
 export const actions: Actions = {

@@ -17,6 +17,7 @@
 		{ href: '/cuenta/tramites?estado=realizados', label: 'Trámites realizados' },
 		{ href: '/cuenta/vehiculos', label: 'Mis vehículos' },
 		{ href: '/cuenta/datos', label: 'Mis datos' },
+		{ href: '/cuenta/seguridad', label: 'Seguridad' },
 		{ href: '/cuenta/documentos', label: 'Documentos' },
 		{ href: '/cuenta/notificaciones', label: 'Notificaciones', badge: true }
 	];

@@ -1,5 +1,6 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import {
+	canUserUploadDocs,
 	getUserSolicitud,
 	listDocsForSolicitud,
 	listDocsForUser,
@@ -67,7 +68,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		ownerId = sol.user_id || user.id;
 	} else {
 		const sol = await getUserSolicitud(user.id, solicitudId);
-		if (sol.status !== 'nueva' && sol.status !== 'en_curso') {
+		if (!canUserUploadDocs(String(sol.status))) {
 			return json({ error: 'No puedes subir documentos en este estado' }, { status: 403 });
 		}
 	}

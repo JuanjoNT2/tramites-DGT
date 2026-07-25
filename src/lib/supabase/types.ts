@@ -1,6 +1,12 @@
 export type UserRole = 'user' | 'gestor' | 'admin';
 
-export type SolicitudStatus = 'nueva' | 'en_curso' | 'realizada' | 'cancelada';
+export type SolicitudStatus =
+	| 'nueva'
+	| 'en_curso'
+	| 'realizada'
+	| 'cancelada'
+	| 'pendiente_pago'
+	| 'pagada';
 
 export type ProfileDireccion = {
 	calle?: string;
@@ -69,6 +75,8 @@ export type Notificacion = {
 
 export const SOLICITUD_STATUSES: SolicitudStatus[] = [
 	'nueva',
+	'pendiente_pago',
+	'pagada',
 	'en_curso',
 	'realizada',
 	'cancelada'
@@ -76,6 +84,8 @@ export const SOLICITUD_STATUSES: SolicitudStatus[] = [
 
 export const SOLICITUD_STATUS_LABELS: Record<SolicitudStatus, string> = {
 	nueva: 'Nueva',
+	pendiente_pago: 'Pendiente de pago',
+	pagada: 'Pagada',
 	en_curso: 'En curso',
 	realizada: 'Realizada',
 	cancelada: 'Cancelada'
@@ -108,7 +118,12 @@ export const SOLICITUD_TIPO_LABELS: Record<string, string> = {
 };
 
 export function isEnCursoStatus(status: string): boolean {
-	return status === 'nueva' || status === 'en_curso';
+	return (
+		status === 'nueva' ||
+		status === 'en_curso' ||
+		status === 'pendiente_pago' ||
+		status === 'pagada'
+	);
 }
 
 export function isRealizadoStatus(status: string): boolean {

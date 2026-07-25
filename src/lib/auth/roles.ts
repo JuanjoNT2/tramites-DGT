@@ -9,7 +9,7 @@ export function canManageUsers(profile: Profile | null | undefined): boolean {
 }
 
 export function canChangeSolicitudStatus(profile: Profile | null | undefined): boolean {
-	return profile?.role === 'admin';
+	return isStaffRole(profile?.role);
 }
 
 export function canManageAllDocs(profile: Profile | null | undefined): boolean {

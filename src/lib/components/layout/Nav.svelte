@@ -131,37 +131,46 @@
 				</button>
 				{#if openAccount}
 					<div class="drop-menu account-menu" role="menu">
-						<a href="/cuenta" role="menuitem" onclick={() => (openAccount = false)}>Resumen</a>
-						<a
-							href="/cuenta/tramites?estado=en_curso"
-							role="menuitem"
-							onclick={() => (openAccount = false)}>Trámites en curso</a
-						>
-						<a
-							href="/cuenta/tramites?estado=realizados"
-							role="menuitem"
-							onclick={() => (openAccount = false)}>Trámites realizados</a
-						>
-						<a href="/cuenta/vehiculos" role="menuitem" onclick={() => (openAccount = false)}
-							>Mis vehículos</a
-						>
-						<a href="/cuenta/datos" role="menuitem" onclick={() => (openAccount = false)}
-							>Mis datos</a
-						>
-						<a href="/cuenta/documentos" role="menuitem" onclick={() => (openAccount = false)}
-							>Documentos</a
-						>
-						<a
-							href="/cuenta/notificaciones"
-							role="menuitem"
-							onclick={() => (openAccount = false)}>Notificaciones</a
-						>
 						{#if isStaffRole(profile?.role)}
-							<a href="/gestor" role="menuitem" onclick={() => (openAccount = false)}>Panel gestor</a>
+							<a href="/gestor" role="menuitem" onclick={() => (openAccount = false)}
+								>Panel gestor</a
+							>
+							<a href="/gestor/seguridad" role="menuitem" onclick={() => (openAccount = false)}
+								>Cambiar contraseña</a
+							>
+							<form method="POST" action="/gestor?/logout">
+								<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
+							</form>
+						{:else}
+							<a href="/cuenta" role="menuitem" onclick={() => (openAccount = false)}>Resumen</a>
+							<a
+								href="/cuenta/tramites?estado=en_curso"
+								role="menuitem"
+								onclick={() => (openAccount = false)}>Trámites en curso</a
+							>
+							<a
+								href="/cuenta/tramites?estado=realizados"
+								role="menuitem"
+								onclick={() => (openAccount = false)}>Trámites realizados</a
+							>
+							<a href="/cuenta/vehiculos" role="menuitem" onclick={() => (openAccount = false)}
+								>Mis vehículos</a
+							>
+							<a href="/cuenta/datos" role="menuitem" onclick={() => (openAccount = false)}
+								>Mis datos</a
+							>
+							<a href="/cuenta/documentos" role="menuitem" onclick={() => (openAccount = false)}
+								>Documentos</a
+							>
+							<a
+								href="/cuenta/notificaciones"
+								role="menuitem"
+								onclick={() => (openAccount = false)}>Notificaciones</a
+							>
+							<form method="POST" action="/cuenta?/logout">
+								<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
+							</form>
 						{/if}
-						<form method="POST" action="/cuenta?/logout">
-							<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
-						</form>
 					</div>
 				{/if}
 			</div>
@@ -284,23 +293,30 @@
 					}}>Contacto</a
 				>
 				{#if user}
-					<a href="/cuenta" class="btn mobile-cta" onclick={closeMobile}>{accountLabel}</a>
-					<div class="mobile-sub account-mobile">
-						<a href="/cuenta/tramites?estado=en_curso" onclick={closeMobile}>Trámites en curso</a>
-						<a href="/cuenta/tramites?estado=realizados" onclick={closeMobile}
-							>Trámites realizados</a
-						>
-						<a href="/cuenta/vehiculos" onclick={closeMobile}>Mis vehículos</a>
-						<a href="/cuenta/datos" onclick={closeMobile}>Mis datos</a>
-						<a href="/cuenta/documentos" onclick={closeMobile}>Documentos</a>
-						<a href="/cuenta/notificaciones" onclick={closeMobile}>Notificaciones</a>
-						{#if isStaffRole(profile?.role)}
-							<a href="/gestor" onclick={closeMobile}>Panel gestor</a>
-						{/if}
-						<form method="POST" action="/cuenta?/logout">
-							<button type="submit" class="mobile-logout">Cerrar sesión</button>
-						</form>
-					</div>
+					{#if isStaffRole(profile?.role)}
+						<a href="/gestor" class="btn mobile-cta" onclick={closeMobile}>Panel gestor</a>
+						<div class="mobile-sub account-mobile">
+							<a href="/gestor/seguridad" onclick={closeMobile}>Cambiar contraseña</a>
+							<form method="POST" action="/gestor?/logout">
+								<button type="submit" class="mobile-logout">Cerrar sesión</button>
+							</form>
+						</div>
+					{:else}
+						<a href="/cuenta" class="btn mobile-cta" onclick={closeMobile}>{accountLabel}</a>
+						<div class="mobile-sub account-mobile">
+							<a href="/cuenta/tramites?estado=en_curso" onclick={closeMobile}>Trámites en curso</a>
+							<a href="/cuenta/tramites?estado=realizados" onclick={closeMobile}
+								>Trámites realizados</a
+							>
+							<a href="/cuenta/vehiculos" onclick={closeMobile}>Mis vehículos</a>
+							<a href="/cuenta/datos" onclick={closeMobile}>Mis datos</a>
+							<a href="/cuenta/documentos" onclick={closeMobile}>Documentos</a>
+							<a href="/cuenta/notificaciones" onclick={closeMobile}>Notificaciones</a>
+							<form method="POST" action="/cuenta?/logout">
+								<button type="submit" class="mobile-logout">Cerrar sesión</button>
+							</form>
+						</div>
+					{/if}
 				{:else}
 					<a
 						href="/login"

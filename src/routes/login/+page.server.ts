@@ -1,10 +1,34 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { isStaffRole } from '$lib/auth/roles';
+import { getServiceSupabase } from '$lib/supabase/admin';
+
+async function resolvePostLoginRedirect(
+	userId: string,
+	nextRaw: string | null | undefined
+): Promise<string> {
+	const next = (nextRaw || '').startsWith('/') ? nextRaw! : '';
+	const sb = getServiceSupabase();
+	let role: string | null = null;
+	if (sb) {
+		const { data } = await sb.from('profiles').select('role').eq('id', userId).maybeSingle();
+		role = (data as { role?: string } | null)?.role ?? null;
+	}
+	if (isStaffRole(role)) {
+		if (next.startsWith('/gestor')) return next;
+		return '/gestor';
+	}
+	if (next.startsWith('/')) return next;
+	return '/cuenta';
+}
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	if (locals.user) {
-		const next = url.searchParams.get('next') || '/';
-		throw redirect(303, next);
+		const dest = await resolvePostLoginRedirect(
+			locals.user.id,
+			url.searchParams.get('next')
+		);
+		throw redirect(303, dest);
 	}
 	return { next: url.searchParams.get('next') || '/' };
 };
@@ -25,7 +49,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Email y contraseña son obligatorios.', email } as const);
 		}
 
-		const { error } = await locals.supabase.auth.signInWithPassword({ email, password });
+		const { data, error } = await locals.supabase.auth.signInWithPassword({ email, password });
 		if (error) {
 			return fail(400, {
 				error:
@@ -36,6 +60,12 @@ export const actions: Actions = {
 			} as const);
 		}
 
-		throw redirect(303, next.startsWith('/') ? next : '/');
+		const userId = data.user?.id;
+		const dest = userId
+			? await resolvePostLoginRedirect(userId, next)
+			: next.startsWith('/')
+				? next
+				: '/cuenta';
+		throw redirect(303, dest);
 	}
 };

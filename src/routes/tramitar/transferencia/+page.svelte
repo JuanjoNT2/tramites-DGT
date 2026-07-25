@@ -9,22 +9,38 @@
 	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
 	import { ccaaList } from '$lib/data/vehicles';
 	import type { PriceBreakdown } from '$lib/utils/pricing';
+	import { formatEur } from '$lib/utils/pricing';
 	import {
 		fetchFactorCorreccion,
 		buildTransferBreakdown,
 		looksLikeDate
 	} from '$lib/utils/transfer-price-client';
+	import { createSolicitud } from '$lib/pago/client';
+	import { goto } from '$app/navigation';
 	import {
 		validateEmail,
 		validateMatricula,
 		validateBastidor,
 		validateNifNie,
 		validatePhone,
-		validateRequired
+		validateRequired,
+		validateCodigoPostal,
+		validateDate,
+		validateDateOrder,
+		todayIso
 	} from '$lib/utils/validators';
 	import { funnel, initAnalytics } from '$lib/analytics';
 	import SeoHead from '$lib/components/SeoHead.svelte';
+	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
 	import { getStaticSeo } from '$lib/seo/site';
+	import {
+		clearDraft,
+		hasDraftStorageAck,
+		loadDraft,
+		looksLikeStartedDraft,
+		saveDraft,
+		setDraftStorageAck
+	} from '$lib/tramite/draft';
 
 	const seo = getStaticSeo('/tramitar/transferencia')!;
 	const STORAGE_KEY = 'dgt-transfer-wizard';
@@ -37,15 +53,13 @@
 		'La otra parte',
 		'Dirección',
 		'Documentos',
-		'Resumen y pago'
+		'Resumen'
 	];
 
 	let step = $state(1);
 	let errors = $state<Record<string, string | null>>({});
 	let submitting = $state(false);
-	let done = $state(false);
-	let orderId = $state('');
-	let cuentaUrl = $state<string | null>(null);
+	let payError = $state<string | null>(null);
 
 	// Form state
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
@@ -93,6 +107,9 @@
 	let cp = $state('');
 	let skipDocs = $state(false);
 	let acceptPrivacy = $state(false);
+	let showDraftNotice = $state(false);
+	let draftReady = $state(false);
+	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 	let factorCorreccion = $state<number | null>(null);
 	let fuenteDepreciacion = $state<string | null>(null);
@@ -169,82 +186,243 @@
 		});
 
 		const onLeave = () => {
-			if (!done) {
-				funnel.abandoned({
-					tramite: 'transferencia',
-					step,
-					step_name: stepLabels[step - 1],
-					total_steps: 9
-				});
-			}
+			funnel.abandoned({
+				tramite: 'transferencia',
+				step,
+				step_name: stepLabels[step - 1],
+				total_steps: 9
+			});
 		};
 		window.addEventListener('pagehide', onLeave);
 
-		try {
-			const saved = localStorage.getItem(STORAGE_KEY);
-			if (saved) {
-				const data = JSON.parse(saved);
-				step = data.step ?? 1;
-			}
-		} catch {}
+		if (hasDraftStorageAck()) draftReady = true;
+		const data = loadDraft<Record<string, unknown>>(STORAGE_KEY);
+		if (data) {
+			if (typeof data.step === 'number') step = data.step;
+			if (data.tipoVehiculo === 'coche' || data.tipoVehiculo === 'moto')
+				tipoVehiculo = data.tipoVehiculo;
+			if (typeof data.matricula === 'string') matricula = data.matricula;
+			if (typeof data.bastidor === 'string') bastidor = data.bastidor;
+			if (typeof data.marcaId === 'string') marcaId = data.marcaId;
+			if (typeof data.marcaNombre === 'string') marcaNombre = data.marcaNombre;
+			if (typeof data.combustibleId === 'string') combustibleId = data.combustibleId;
+			if (typeof data.combustibleNombre === 'string') combustibleNombre = data.combustibleNombre;
+			if (typeof data.modeloId === 'string') modeloId = data.modeloId;
+			if (typeof data.modeloNombre === 'string') modeloNombre = data.modeloNombre;
+			if (typeof data.marcaMotoId === 'string') marcaMotoId = data.marcaMotoId;
+			if (typeof data.marcaMotoNombre === 'string') marcaMotoNombre = data.marcaMotoNombre;
+			if (typeof data.modeloMotoId === 'string') modeloMotoId = data.modeloMotoId;
+			if (typeof data.modeloMotoNombre === 'string') modeloMotoNombre = data.modeloMotoNombre;
+			if (typeof data.cilindradaMoto === 'string') cilindradaMoto = data.cilindradaMoto;
+			if (typeof data.fechaMatricula === 'string') fechaMatricula = data.fechaMatricula;
+			if (typeof data.ccaaId === 'string') ccaaId = data.ccaaId;
+			if (typeof data.precioVenta === 'number') precioVenta = data.precioVenta;
+			if (typeof data.fechaVenta === 'string') fechaVenta = data.fechaVenta;
+			if (typeof data.facturaEmpresa === 'string') facturaEmpresa = data.facturaEmpresa;
+			if (typeof data.incluirInforme === 'string') incluirInforme = data.incluirInforme;
+			if (data.rol === 'comprador' || data.rol === 'vendedor') rol = data.rol;
+			if (typeof data.email === 'string') email = data.email;
+			if (typeof data.nif === 'string') nif = data.nif;
+			if (typeof data.nombre === 'string') nombre = data.nombre;
+			if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
+			if (typeof data.telefono === 'string') telefono = data.telefono;
+			if (typeof data.otraParteEmail === 'string') otraParteEmail = data.otraParteEmail;
+			if (typeof data.provincia === 'string') provincia = data.provincia;
+			if (typeof data.municipio === 'string') municipio = data.municipio;
+			if (typeof data.direccion === 'string') direccion = data.direccion;
+			if (typeof data.cp === 'string') cp = data.cp;
+			if (typeof data.skipDocs === 'boolean') skipDocs = data.skipDocs;
+			if (!hasDraftStorageAck()) showDraftNotice = true;
+		}
 
-		return () => window.removeEventListener('pagehide', onLeave);
+		return () => {
+			window.removeEventListener('pagehide', onLeave);
+			if (saveTimer) clearTimeout(saveTimer);
+		};
 	});
 
+	function draftSnapshot(): Record<string, unknown> {
+		return {
+			step,
+			tipoVehiculo,
+			matricula,
+			bastidor,
+			marcaId,
+			marcaNombre,
+			combustibleId,
+			combustibleNombre,
+			modeloId,
+			modeloNombre,
+			marcaMotoId,
+			marcaMotoNombre,
+			modeloMotoId,
+			modeloMotoNombre,
+			cilindradaMoto,
+			fechaMatricula,
+			ccaaId,
+			precioVenta,
+			fechaVenta,
+			facturaEmpresa,
+			incluirInforme,
+			rol,
+			email,
+			nif,
+			nombre,
+			apellido1,
+			telefono,
+			otraParteEmail,
+			provincia,
+			municipio,
+			direccion,
+			cp,
+			skipDocs
+		};
+	}
+
 	function save() {
-		try {
-			localStorage.setItem(
-				STORAGE_KEY,
-				JSON.stringify({
-					step,
-					tipoVehiculo,
-					matricula,
-					bastidor,
-					marcaId,
-					marcaNombre,
-					modeloId,
-					modeloNombre,
-					marcaMotoId,
-					marcaMotoNombre,
-					modeloMotoId,
-					modeloMotoNombre,
-					cilindradaMoto,
-					email
-				})
+		if (!draftReady) return;
+		saveDraft(STORAGE_KEY, draftSnapshot());
+	}
+
+	function scheduleSave() {
+		if (!draftReady) return;
+		if (saveTimer) clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => save(), 350);
+	}
+
+	function noteProgress(force = false) {
+		const started =
+			force ||
+			looksLikeStartedDraft(matricula) ||
+			looksLikeStartedDraft(bastidor) ||
+			looksLikeStartedDraft(email) ||
+			looksLikeStartedDraft(nombre) ||
+			step > 1;
+		if (!started) return;
+		if (!hasDraftStorageAck()) {
+			showDraftNotice = true;
+			return;
+		}
+		draftReady = true;
+		scheduleSave();
+	}
+
+	function confirmDraftNotice() {
+		setDraftStorageAck();
+		showDraftNotice = false;
+		draftReady = true;
+		save();
+	}
+
+	$effect(() => {
+		if (!draftReady) return;
+		void step;
+		void tipoVehiculo;
+		void matricula;
+		void bastidor;
+		void marcaId;
+		void marcaNombre;
+		void combustibleId;
+		void modeloId;
+		void modeloNombre;
+		void marcaMotoId;
+		void modeloMotoId;
+		void modeloMotoNombre;
+		void cilindradaMoto;
+		void fechaMatricula;
+		void ccaaId;
+		void precioVenta;
+		void fechaVenta;
+		void facturaEmpresa;
+		void incluirInforme;
+		void rol;
+		void email;
+		void nif;
+		void nombre;
+		void apellido1;
+		void telefono;
+		void otraParteEmail;
+		void provincia;
+		void municipio;
+		void direccion;
+		void cp;
+		void skipDocs;
+		scheduleSave();
+	});
+
+	function validateStepAt(s: number): Record<string, string | null> {
+		const e: Record<string, string | null> = {};
+		if (s === 2) {
+			e.matricula = validateMatricula(matricula);
+			e.bastidor = validateBastidor(bastidor);
+		}
+		if (s === 3) {
+			if (tipoVehiculo === 'coche') {
+				e.marca = validateRequired(marcaId, 'La marca');
+				e.combustible = validateRequired(combustibleId, 'El combustible');
+				e.modelo = validateRequired(modeloId, 'El modelo');
+			} else {
+				e.marca = validateRequired(marcaMotoId, 'La marca');
+				e.modelo = validateRequired(modeloMotoNombre || modeloMotoId, 'El modelo');
+				e.cilindrada = validateRequired(String(cilindradaMoto ?? ''), 'La cilindrada');
+			}
+			e.fechaMatricula = validateDate(fechaMatricula, {
+				label: 'La fecha de primera matrícula',
+				notFuture: true
+			});
+		}
+		if (s === 4) {
+			e.ccaa = validateRequired(ccaaId, 'La comunidad autónoma');
+			if (!(precioVenta > 0)) e.precioVenta = 'Indica un precio de venta mayor que 0';
+			e.fechaVenta = validateDate(fechaVenta, {
+				label: 'La fecha de venta',
+				notFuture: true
+			});
+			const order = validateDateOrder(
+				fechaMatricula,
+				fechaVenta,
+				'La fecha de matrícula no puede ser posterior a la de venta'
 			);
-		} catch {}
+			if (order) e.fechaVenta = order;
+		}
+		if (s === 5) {
+			e.email = validateEmail(email);
+			e.nif = validateNifNie(nif);
+			e.nombre = validateRequired(nombre, 'El nombre');
+			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
+			e.telefono = validatePhone(telefono);
+			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
+		}
+		if (s === 6 && otraParteEmail.trim()) {
+			e.otraParteEmail = validateEmail(otraParteEmail);
+		}
+		if (s === 7) {
+			e.provincia = validateRequired(provincia, 'La provincia');
+			e.municipio = validateRequired(municipio, 'El municipio');
+			e.direccion = validateRequired(direccion, 'La dirección');
+			e.cp = validateCodigoPostal(cp);
+		}
+		if (s === 9) {
+			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
+			if (!breakdown || !(breakdown.total > 0)) {
+				e.total = 'Completa CCAA, fechas y modelo para calcular el importe.';
+			}
+		}
+		return e;
 	}
 
 	function validateStep(): boolean {
-		errors = {};
-		if (step === 2) {
-			errors.matricula = validateMatricula(matricula);
-			errors.bastidor = validateBastidor(bastidor);
-		}
-		if (step === 3) {
-			if (tipoVehiculo === 'coche') {
-				errors.marca = validateRequired(marcaId, 'La marca');
-				errors.combustible = validateRequired(combustibleId, 'El combustible');
-				errors.modelo = validateRequired(modeloId, 'El modelo');
-			} else {
-				errors.marca = validateRequired(marcaMotoId, 'La marca');
-				errors.modelo = validateRequired(modeloMotoNombre || modeloMotoId, 'El modelo');
-				errors.cilindrada = validateRequired(String(cilindradaMoto ?? ''), 'La cilindrada');
-			}
-			errors.fechaMatricula = validateRequired(fechaMatricula, 'La fecha de matrícula');
-		}
-		if (step === 5) {
-			errors.email = validateEmail(email);
-			errors.nif = validateNifNie(nif);
-			errors.nombre = validateRequired(nombre, 'El nombre');
-			errors.telefono = validatePhone(telefono);
-			if (!acceptPrivacy) errors.privacy = 'Debes aceptar la política de privacidad';
-		}
-		if (step === 7) {
-			errors.direccion = validateRequired(direccion, 'La dirección');
-			errors.cp = validateRequired(cp, 'El código postal');
-		}
+		errors = validateStepAt(step);
 		return !Object.values(errors).some(Boolean);
+	}
+
+	function validateAllSteps(): boolean {
+		const merged: Record<string, string | null> = {};
+		for (let s = 2; s <= 9; s++) {
+			Object.assign(merged, validateStepAt(s));
+		}
+		errors = merged;
+		return !Object.values(merged).some(Boolean);
 	}
 
 	function next() {
@@ -255,6 +433,7 @@
 			step_name: stepLabels[step - 1],
 			total_steps: 9
 		});
+		noteProgress(true);
 		save();
 		if (step < 9) {
 			step++;
@@ -264,9 +443,6 @@
 				step_name: stepLabels[step - 1],
 				total_steps: 9
 			});
-			if (step === 9) {
-				funnel.paymentStarted({ tramite: 'transferencia', step: 9, total_steps: 9 });
-			}
 		}
 	}
 
@@ -275,20 +451,38 @@
 		save();
 	}
 
-	async function submit() {
-		if (!validateStep()) return;
+	async function continueToPayment() {
+		if (!validateAllSteps()) {
+			payError = 'Revisa los datos del formulario: hay campos incompletos o no válidos.';
+			return;
+		}
+		if (!breakdown || !(breakdown.total > 0)) {
+			payError = 'Completa CCAA, fechas y modelo para calcular el importe.';
+			return;
+		}
 		submitting = true;
+		payError = null;
 		try {
-			const res = await fetch('/api/solicitud', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
+			const marcaLabel = tipoVehiculo === 'coche' ? marcaNombre : marcaMotoNombre;
+			const modeloLabel = tipoVehiculo === 'coche' ? modeloNombre : modeloMotoNombre;
+			const priceLines = [
+				{ label: 'ITP', amount: breakdown.itpAmount },
+				{ label: 'Tramitación', amount: breakdown.tramitacion },
+				...(breakdown.informeDgt > 0
+					? [{ label: 'Informe DGT', amount: breakdown.informeDgt }]
+					: [])
+			];
+			const result = await createSolicitud({
+				amount: breakdown.total,
+				payload: {
 					tipo: 'transferencia',
 					tipoVehiculo,
 					matricula,
 					bastidor,
-					marca: tipoVehiculo === 'coche' ? marcaNombre : marcaMotoNombre,
-					modelo: tipoVehiculo === 'coche' ? modeloNombre : modeloMotoNombre,
+					marca: marcaLabel,
+					modelo: modeloLabel,
+					marcaNombre: marcaLabel,
+					modeloNombre: modeloLabel,
 					marcaId: tipoVehiculo === 'coche' ? marcaId : marcaMotoId,
 					modeloId: tipoVehiculo === 'coche' ? modeloId : modeloMotoId || undefined,
 					combustible: tipoVehiculo === 'coche' ? combustibleNombre : undefined,
@@ -315,35 +509,37 @@
 					skipDocs,
 					acceptPrivacy,
 					breakdown,
+					priceLines,
+					total: breakdown.total,
+					amount: breakdown.total,
 					precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
 					factorCorreccion,
 					fuenteDepreciacion,
-					metaFiscal: breakdown
-						? {
-								valoracionReal: breakdown.valoracionReal,
-								baseImponible: breakdown.baseImponible,
-								itpAmount: breakdown.itpAmount,
-								sinValorBoe: breakdown.sinValorBoe,
-								fuente: breakdown.fuente,
-								ordenReferencia: 'HAC/1501/2025'
-							}
-						: null
-				})
+					metaFiscal: {
+						valoracionReal: breakdown.valoracionReal,
+						baseImponible: breakdown.baseImponible,
+						itpAmount: breakdown.itpAmount,
+						sinValorBoe: breakdown.sinValorBoe,
+						fuente: breakdown.fuente,
+						ordenReferencia: 'HAC/1501/2025'
+					}
+				}
 			});
 
-			const data = await res.json();
-			if (res.ok) {
-				done = true;
-				orderId = data.id;
-				cuentaUrl = data.cuentaUrl ?? null;
-				funnel.submitted({
-					tramite: 'transferencia',
-					step: 9,
-					total_steps: 9,
-					order_id: orderId
-				});
-				localStorage.removeItem(STORAGE_KEY);
+			if (!result.ok) {
+				payError = result.error;
+				return;
 			}
+
+			funnel.submitted({
+				tramite: 'transferencia',
+				step: 9,
+				total_steps: 9,
+				order_id: result.solicitudId
+			});
+			funnel.paymentStarted({ tramite: 'transferencia', step: 9, total_steps: 9 });
+			clearDraft(STORAGE_KEY);
+			await goto(result.pagoUrl);
 		} finally {
 			submitting = false;
 		}
@@ -355,22 +551,8 @@
 <section class="section">
 	<div class="wrap layout">
 		<div class="main card pad">
-			{#if done}
-				<div class="success">
-					<div class="icon">✓</div>
-					<h1>¡Solicitud registrada!</h1>
-					<p>Nº de orden: <strong>{orderId}</strong></p>
-					<p class="sub">Modo demostración — conectar pasarela de pago en producción.</p>
-					<div class="ok-actions">
-						{#if cuentaUrl}
-							<a href={cuentaUrl} class="btn">Ver en mi área</a>
-						{/if}
-						<a href="/" class="btn secondary">Volver al inicio</a>
-					</div>
-				</div>
-			{:else}
-				<StepProgress current={step} total={9} labels={stepLabels} />
-				<h1>Transferencia de vehículos</h1>
+			<StepProgress current={step} total={9} labels={stepLabels} />
+			<h1>Transferencia de vehículos</h1>
 
 				{#if step === 1}
 					<FormField label="Tipo de vehículo" required>
@@ -385,7 +567,11 @@
 					</FormField>
 				{:else if step === 2}
 					<FormField label="Matrícula" error={errors.matricula} hint="Ej: 3990 WDS" required>
-						<input bind:value={matricula} placeholder="3990WDS" />
+						<input
+							bind:value={matricula}
+							placeholder="3990WDS"
+							oninput={() => noteProgress()}
+						/>
 					</FormField>
 					<FormField
 						label="Bastidor (VIN)"
@@ -393,7 +579,12 @@
 						hint="17 caracteres en la ficha técnica"
 						required
 					>
-						<input bind:value={bastidor} placeholder="VF1XXXXXXXXXXXXXX" maxlength="17" />
+						<input
+							bind:value={bastidor}
+							placeholder="VF1XXXXXXXXXXXXXX"
+							maxlength="17"
+							oninput={() => noteProgress()}
+						/>
 					</FormField>
 				{:else if step === 3}
 					{#if tipoVehiculo === 'coche'}
@@ -426,17 +617,17 @@
 						/>
 					{/if}
 					<FormField label="Fecha primera matrícula" error={errors.fechaMatricula} required>
-						<input bind:value={fechaMatricula} placeholder="dd/mm/aaaa" />
+						<input type="date" bind:value={fechaMatricula} max={todayIso()} />
 					</FormField>
 				{:else if step === 4}
-					<FormField label="CCAA del comprador" required>
+					<FormField label="CCAA del comprador" error={errors.ccaa} required>
 						<SearchSelect options={ccaaOptions} bind:value={ccaaId} />
 					</FormField>
-					<FormField label="Precio compraventa (€)" required>
+					<FormField label="Precio compraventa (€)" error={errors.precioVenta} required>
 						<input type="number" bind:value={precioVenta} min="0" />
 					</FormField>
-					<FormField label="Fecha de venta" required>
-						<input type="date" bind:value={fechaVenta} />
+					<FormField label="Fecha de venta" error={errors.fechaVenta} required>
+						<input type="date" bind:value={fechaVenta} max={todayIso()} />
 					</FormField>
 					<FormField label="¿Vendedor empresa/autónomo con factura?">
 						<RadioCards
@@ -478,7 +669,7 @@
 					<FormField label="Nombre" error={errors.nombre} required>
 						<input bind:value={nombre} />
 					</FormField>
-					<FormField label="Primer apellido" required>
+					<FormField label="Primer apellido" error={errors.apellido1} required>
 						<input bind:value={apellido1} />
 					</FormField>
 					<FormField label="Teléfono" error={errors.telefono} required>
@@ -494,14 +685,14 @@
 						Puedes invitar a la otra parte por email para que complete sus datos, o continuar y
 						añadirlos después.
 					</p>
-					<FormField label="Email de la otra parte (opcional)">
+					<FormField label="Email de la otra parte (opcional)" error={errors.otraParteEmail}>
 						<input type="email" bind:value={otraParteEmail} placeholder="vendedor@email.com" />
 					</FormField>
 				{:else if step === 7}
-					<FormField label="Provincia" required>
+					<FormField label="Provincia" error={errors.provincia} required>
 						<input bind:value={provincia} placeholder="Madrid" />
 					</FormField>
-					<FormField label="Municipio" required>
+					<FormField label="Municipio" error={errors.municipio} required>
 						<input bind:value={municipio} />
 					</FormField>
 					<FormField label="Dirección" error={errors.direccion} required>
@@ -529,6 +720,9 @@
 				{:else}
 					<div class="summary">
 						<h2>Resumen de tu solicitud</h2>
+						<p class="summary-lead">
+							Revisa los datos antes de continuar a la pasarela de pago.
+						</p>
 						<ul>
 							<li>
 								<span>Vehículo</span>
@@ -540,11 +734,33 @@
 												.join(' ') || '—'}</span
 								>
 							</li>
+							<li><span>Bastidor</span><span>{bastidor || '—'}</span></li>
 							<li><span>Rol</span><span>{rol}</span></li>
+							<li><span>Solicitante</span><span>{nombre} {apellido1}</span></li>
+							<li><span>NIF/NIE</span><span>{nif || '—'}</span></li>
 							<li><span>Email</span><span>{email}</span></li>
-							<li><span>Total estimado</span><span>{breakdown ? `${breakdown.total} €` : '—'}</span></li>
+							<li><span>Teléfono</span><span>{telefono || '—'}</span></li>
+							<li>
+								<span>Dirección</span>
+								<span>{[direccion, cp, municipio, provincia].filter(Boolean).join(', ') || '—'}</span>
+							</li>
+							<li><span>Total</span><span>{breakdown ? formatEur(breakdown.total) : '—'}</span></li>
 						</ul>
-						<p class="mock-pay">El pago con tarjeta se conectará cuando el backend esté disponible.</p>
+						<label class="check">
+							<input type="checkbox" bind:checked={acceptPrivacy} />
+							Acepto la <a href="/politica-de-privacidad" target="_blank">política de privacidad</a>
+						</label>
+						{#if errors.privacy}<p class="err">{errors.privacy}</p>{/if}
+						{#if errors.total}<p class="err">{errors.total}</p>{/if}
+						{#if payError}<p class="err">{payError}</p>{/if}
+						<button
+							type="button"
+							class="btn pay-cta"
+							onclick={continueToPayment}
+							disabled={submitting || !acceptPrivacy || !breakdown}
+						>
+							{submitting ? 'Registrando solicitud…' : 'Continuar a pasarela de pago'}
+						</button>
 					</div>
 				{/if}
 
@@ -556,19 +772,14 @@
 					{/if}
 					{#if step < 9}
 						<button type="button" class="btn" onclick={next}>Siguiente</button>
-					{:else}
-						<button type="button" class="btn" onclick={submit} disabled={submitting}>
-							{submitting ? 'Procesando…' : 'Confirmar solicitud'}
-						</button>
 					{/if}
 				</div>
-			{/if}
 		</div>
-		{#if !done}
-			<PriceSidebar {breakdown} loading={factorLoading} error={factorError} />
-		{/if}
+		<PriceSidebar {breakdown} loading={factorLoading} error={factorError} />
 	</div>
 </section>
+
+<DraftStorageNotice open={showDraftNotice} onconfirm={confirmDraftNotice} />
 
 <style>
 	.layout {
@@ -618,6 +829,11 @@
 		font-size: 13px;
 		margin-top: 8px;
 	}
+	.summary-lead {
+		margin: 0;
+		color: var(--text2);
+		font-size: 0.92rem;
+	}
 	.summary ul {
 		list-style: none;
 		margin: 20px 0;
@@ -625,6 +841,7 @@
 	.summary li {
 		display: flex;
 		justify-content: space-between;
+		gap: 12px;
 		padding: 12px 0;
 		border-bottom: 1px solid var(--border);
 		font-size: 15px;
@@ -632,10 +849,15 @@
 	.summary li span:first-child {
 		color: var(--text2);
 	}
-	.mock-pay {
-		font-size: 13px;
-		color: var(--text3);
+	.pay-cta {
+		width: 100%;
 		margin-top: 16px;
+		padding: 14px 18px;
+		font-weight: 800;
+	}
+	.pay-cta:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
 	}
 	.success {
 		text-align: center;

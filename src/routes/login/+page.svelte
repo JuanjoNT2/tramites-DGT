@@ -36,6 +36,9 @@
 		</form>
 
 		<p class="alt">
+			<a href="/recuperar-password">¿Olvidaste la contraseña?</a>
+		</p>
+		<p class="alt">
 			¿No tienes cuenta? <a href="/registro">Regístrate</a>
 		</p>
 	</div>

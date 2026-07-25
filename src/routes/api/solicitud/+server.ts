@@ -5,6 +5,9 @@ import path from 'node:path';
 import { env } from '$env/dynamic/private';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { upsertVehiculoFromPayload } from '$lib/cuenta/data';
+import { validateSolicitudPayload } from '$lib/server/solicitud-validate';
+import { sendOtraParteInviteEmail, sendSolicitudReceivedEmail } from '$lib/server/mailer';
+import { generatePagoAccessToken } from '$lib/pago/access';
 
 type LocalEntry = {
 	id: string;
@@ -34,14 +37,35 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	const tipo = String(body.tipo ?? 'desconocido');
-	const emailFromPayload =
-		typeof body.email === 'string' && body.email.trim()
-			? body.email.trim().toLowerCase()
-			: null;
+	const validated = validateSolicitudPayload(tipo, body);
+	if (!validated.ok) {
+		return json({ error: validated.error }, { status: 400 });
+	}
+
 	const userId = locals.user?.id ?? null;
-	const email = emailFromPayload || locals.user?.email || null;
+	const email = validated.email || locals.user?.email?.toLowerCase() || null;
+	if (email && !body.email) body.email = email;
+	if (validated.amount != null) {
+		body.amount = validated.amount;
+		body.total = validated.amount;
+		body.pago = {
+			...((body.pago as Record<string, unknown>) || {}),
+			amount: validated.amount,
+			currency: 'EUR'
+		};
+	}
+
+	const accessToken = generatePagoAccessToken();
+	body.accessToken = accessToken;
+
 	const id = crypto.randomUUID();
 	const created_at = new Date().toISOString();
+
+	const requestedStatus = typeof body.status === 'string' ? body.status : 'nueva';
+	const status =
+		requestedStatus === 'pendiente_pago' || requestedStatus === 'nueva'
+			? requestedStatus
+			: 'nueva';
 
 	const sb = getServiceSupabase();
 	if (sb) {
@@ -51,7 +75,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			payload: body,
 			user_id: userId,
 			email,
-			status: 'nueva',
+			status,
 			created_at
 		});
 
@@ -64,11 +88,34 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			await upsertVehiculoFromPayload(userId, body).catch(() => null);
 		}
 
+		if (email) {
+			sendSolicitudReceivedEmail({
+				to: email,
+				solicitudId: id,
+				tipo,
+				nombre: typeof body.nombre === 'string' ? body.nombre : null,
+				accessToken
+			}).catch((e) => console.error('[solicitud] email', e));
+		}
+
+		const otraParte =
+			typeof body.otraParteEmail === 'string' ? body.otraParteEmail.trim().toLowerCase() : '';
+		if (otraParte && otraParte !== email) {
+			sendOtraParteInviteEmail({
+				to: otraParte,
+				fromNombre: typeof body.nombre === 'string' ? body.nombre : 'Un usuario',
+				solicitudId: id,
+				accessToken
+			}).catch((e) => console.error('[solicitud] invite email', e));
+		}
+
 		return json({
 			ok: true,
 			id,
+			accessToken,
 			message: 'Solicitud registrada correctamente.',
-			cuentaUrl: userId ? `/cuenta/tramites/${id}` : null
+			cuentaUrl: userId ? `/cuenta/tramites/${id}` : null,
+			pagoUrl: `/pago/${id}?t=${encodeURIComponent(accessToken)}`
 		});
 	}
 
@@ -92,7 +139,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	return json({
 		ok: true,
 		id,
+		accessToken,
 		message: 'Solicitud registrada correctamente (modo demostración local).',
-		cuentaUrl: userId ? `/cuenta/tramites/${id}` : null
+		cuentaUrl: userId ? `/cuenta/tramites/${id}` : null,
+		pagoUrl: `/pago/${id}?t=${encodeURIComponent(accessToken)}`
 	});
 };

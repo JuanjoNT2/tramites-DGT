@@ -17,9 +17,23 @@
 		validateMatricula,
 		validateNifNie,
 		validatePhone,
-		validateRequired
+		validateRequired,
+		validateCodigoPostal,
+		validateDate,
+		todayIso
 	} from '$lib/utils/validators';
+	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
+	import { createSolicitud } from '$lib/pago/client';
 	import { funnel, initAnalytics } from '$lib/analytics';
+	import { goto } from '$app/navigation';
+	import {
+		clearDraft,
+		hasDraftStorageAck,
+		loadDraft,
+		looksLikeStartedDraft,
+		saveDraft,
+		setDraftStorageAck
+	} from '$lib/tramite/draft';
 
 	type Variant = 'etiqueta' | 'etiqueta-vmp' | 'informe' | 'duplicado' | 'cancelacion';
 
@@ -36,16 +50,14 @@
 	} = $props();
 
 	const storageKey = $derived(`dgt-wizard-${tipo}`);
-	const summaryStep = $derived(steps.length - 1);
-	const paymentStep = $derived(steps.length);
+	/** Último paso del wizard: resumen + CTA a pasarela */
+	const finalStep = $derived(steps.length);
 	const isEtiquetaShip = $derived(variant === 'etiqueta' || variant === 'etiqueta-vmp');
 
 	let step = $state(1);
-	let done = $state(false);
-	let orderId = $state('');
-	let cuentaUrl = $state<string | null>(null);
 	let errors = $state<Record<string, string | null>>({});
 	let submitting = $state(false);
+	let payError = $state<string | null>(null);
 
 	let matricula = $state('');
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
@@ -82,6 +94,9 @@
 	let cartaFinalizacion = $state('si');
 	let docsConfirmados = $state(false);
 	let acceptPrivacy = $state(false);
+	let showDraftNotice = $state(false);
+	let draftReady = $state(false);
+	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const shippingPrice = $derived(
 		shippingOptions.find((o) => o.value === tipoEnvio)?.price ?? 8.95
@@ -141,118 +156,281 @@
 		});
 
 		const onLeave = () => {
-			if (!done) {
-				funnel.abandoned({
-					tramite: tipo,
-					step,
-					step_name: steps[step - 1],
-					total_steps: steps.length
-				});
-			}
+			funnel.abandoned({
+				tramite: tipo,
+				step,
+				step_name: steps[step - 1],
+				total_steps: steps.length
+			});
 		};
 		window.addEventListener('pagehide', onLeave);
 
-		try {
-			const saved = localStorage.getItem(storageKey);
-			if (saved) {
-				const data = JSON.parse(saved);
-				if (data.step) step = data.step;
-				if (data.matricula) matricula = data.matricula;
-				if (data.email) email = data.email;
-				if (data.nombre) nombre = data.nombre;
-			}
-		} catch {}
+		if (hasDraftStorageAck()) draftReady = true;
+		const data = loadDraft<Record<string, unknown>>(storageKey);
+		if (data) {
+			if (typeof data.step === 'number') step = data.step;
+			if (typeof data.matricula === 'string') matricula = data.matricula;
+			if (typeof data.tipoVehiculo === 'string')
+				tipoVehiculo = data.tipoVehiculo as 'coche' | 'moto';
+			if (typeof data.distintivoTipo === 'string') distintivoTipo = data.distintivoTipo;
+			if (typeof data.vmpCertificado === 'string')
+				vmpCertificado = data.vmpCertificado as 'si' | 'no';
+			if (typeof data.vmpNumCertificado === 'string') vmpNumCertificado = data.vmpNumCertificado;
+			if (typeof data.vmpNumSerie === 'string') vmpNumSerie = data.vmpNumSerie;
+			if (typeof data.vmpMarca === 'string') vmpMarca = data.vmpMarca;
+			if (typeof data.vmpModelo === 'string') vmpModelo = data.vmpModelo;
+			if (typeof data.motivoDuplicado === 'string') motivoDuplicado = data.motivoDuplicado;
+			if (typeof data.clasePermiso === 'string') clasePermiso = data.clasePermiso;
+			if (typeof data.fechaCaducidad === 'string') fechaCaducidad = data.fechaCaducidad;
+			if (typeof data.email === 'string') email = data.email;
+			if (typeof data.nif === 'string') nif = data.nif;
+			if (typeof data.nombre === 'string') nombre = data.nombre;
+			if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
+			if (typeof data.apellido2 === 'string') apellido2 = data.apellido2;
+			if (typeof data.telefono === 'string') telefono = data.telefono;
+			if (typeof data.sexo === 'string') sexo = data.sexo;
+			if (typeof data.fechaNacimiento === 'string') fechaNacimiento = data.fechaNacimiento;
+			if (typeof data.provincia === 'string') provincia = data.provincia;
+			if (typeof data.municipio === 'string') municipio = data.municipio;
+			if (typeof data.pueblo === 'string') pueblo = data.pueblo;
+			if (typeof data.tipoVia === 'string') tipoVia = data.tipoVia;
+			if (typeof data.direccion === 'string') direccion = data.direccion;
+			if (typeof data.numero === 'string') numero = data.numero;
+			if (typeof data.piso === 'string') piso = data.piso;
+			if (typeof data.puerta === 'string') puerta = data.puerta;
+			if (typeof data.bloque === 'string') bloque = data.bloque;
+			if (typeof data.escalera === 'string') escalera = data.escalera;
+			if (typeof data.cp === 'string') cp = data.cp;
+			if (typeof data.localidad === 'string') localidad = data.localidad;
+			if (typeof data.tipoEnvio === 'string') tipoEnvio = data.tipoEnvio;
+			if (typeof data.cartaFinalizacion === 'string') cartaFinalizacion = data.cartaFinalizacion;
+			if (typeof data.docsConfirmados === 'boolean') docsConfirmados = data.docsConfirmados;
+			if (!hasDraftStorageAck()) showDraftNotice = true;
+		}
 
-		return () => window.removeEventListener('pagehide', onLeave);
+		return () => {
+			window.removeEventListener('pagehide', onLeave);
+			if (saveTimer) clearTimeout(saveTimer);
+		};
 	});
 
-	function save() {
-		try {
-			localStorage.setItem(storageKey, JSON.stringify({ step, matricula, email, nombre }));
-		} catch {}
+	function draftSnapshot(): Record<string, unknown> {
+		return {
+			step,
+			matricula,
+			tipoVehiculo,
+			distintivoTipo,
+			vmpCertificado,
+			vmpNumCertificado,
+			vmpNumSerie,
+			vmpMarca,
+			vmpModelo,
+			motivoDuplicado,
+			clasePermiso,
+			fechaCaducidad,
+			email,
+			nif,
+			nombre,
+			apellido1,
+			apellido2,
+			telefono,
+			sexo,
+			fechaNacimiento,
+			provincia,
+			municipio,
+			pueblo,
+			tipoVia,
+			direccion,
+			numero,
+			piso,
+			puerta,
+			bloque,
+			escalera,
+			cp,
+			localidad,
+			tipoEnvio,
+			cartaFinalizacion,
+			docsConfirmados
+		};
 	}
+
+	function save() {
+		if (!draftReady) return;
+		saveDraft(storageKey, draftSnapshot());
+	}
+
+	function scheduleSave() {
+		if (!draftReady) return;
+		if (saveTimer) clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => save(), 350);
+	}
+
+	function noteProgress() {
+		const started =
+			looksLikeStartedDraft(matricula) ||
+			looksLikeStartedDraft(vmpNumSerie) ||
+			looksLikeStartedDraft(email) ||
+			looksLikeStartedDraft(nombre) ||
+			looksLikeStartedDraft(nif) ||
+			looksLikeStartedDraft(motivoDuplicado);
+		if (!started) return;
+		if (!hasDraftStorageAck()) {
+			showDraftNotice = true;
+			return;
+		}
+		draftReady = true;
+		scheduleSave();
+	}
+
+	function confirmDraftNotice() {
+		setDraftStorageAck();
+		showDraftNotice = false;
+		draftReady = true;
+		save();
+	}
+
+	$effect(() => {
+		if (!draftReady) return;
+		void step;
+		void matricula;
+		void tipoVehiculo;
+		void distintivoTipo;
+		void vmpCertificado;
+		void vmpNumCertificado;
+		void vmpNumSerie;
+		void vmpMarca;
+		void vmpModelo;
+		void motivoDuplicado;
+		void clasePermiso;
+		void fechaCaducidad;
+		void email;
+		void nif;
+		void nombre;
+		void apellido1;
+		void apellido2;
+		void telefono;
+		void sexo;
+		void fechaNacimiento;
+		void provincia;
+		void municipio;
+		void pueblo;
+		void tipoVia;
+		void direccion;
+		void numero;
+		void piso;
+		void puerta;
+		void bloque;
+		void escalera;
+		void cp;
+		void localidad;
+		void tipoEnvio;
+		void cartaFinalizacion;
+		void docsConfirmados;
+		scheduleSave();
+	});
 
 	function mockDistintivo(mat: string): string {
 		const types = ['Etiqueta C', 'Etiqueta B', 'Etiqueta ECO', 'Etiqueta Cero'];
 		return types[mat.length % types.length];
 	}
 
-	function validateStep(): boolean {
-		errors = {};
+	function validateStepAt(s: number): Record<string, string | null> {
+		const e: Record<string, string | null> = {};
 
-		if (variant === 'etiqueta' && step === 1) {
-			errors.matricula = validateMatricula(matricula);
-			if (!errors.matricula) distintivoTipo = mockDistintivo(matricula);
+		if (variant === 'etiqueta' && s === 1) {
+			e.matricula = validateMatricula(matricula);
+			if (!e.matricula) distintivoTipo = mockDistintivo(matricula);
 		}
 
-		if (variant === 'etiqueta-vmp' && step === 1) {
-			errors.vmpNumSerie = validateRequired(vmpNumSerie, 'El número de serie');
-			errors.vmpMarca = validateRequired(vmpMarca, 'La marca');
+		if (variant === 'etiqueta-vmp' && s === 1) {
+			e.vmpNumSerie = validateRequired(vmpNumSerie, 'El número de serie');
+			e.vmpMarca = validateRequired(vmpMarca, 'La marca');
 			if (vmpCertificado === 'si') {
-				errors.vmpNumCertificado = validateRequired(vmpNumCertificado, 'El número de certificado');
+				e.vmpNumCertificado = validateRequired(vmpNumCertificado, 'El número de certificado');
 			}
 		}
 
-		if (variant === 'informe' && step === 1) {
-			errors.matricula = validateMatricula(matricula);
+		if (variant === 'informe' && s === 1) {
+			e.matricula = validateMatricula(matricula);
 		}
 
-		if (variant === 'cancelacion' && step === 1) {
-			errors.matricula = validateMatricula(matricula);
+		if (variant === 'cancelacion' && s === 1) {
+			e.matricula = validateMatricula(matricula);
 		}
 
-		if (variant === 'duplicado' && step === 1) {
-			if (!motivoDuplicado) errors.motivoDuplicado = 'Selecciona el tipo de duplicado';
-			if (!clasePermiso) errors.clasePermiso = 'Selecciona la clase de permiso';
-			if (!fechaCaducidad) errors.fechaCaducidad = 'Introduce la fecha de caducidad';
+		if (variant === 'duplicado' && s === 1) {
+			if (!motivoDuplicado) e.motivoDuplicado = 'Selecciona el tipo de duplicado';
+			if (!clasePermiso) e.clasePermiso = 'Selecciona la clase de permiso';
+			// Caducidad puede ser pasada (motivo pérdida/caducado); no exigir futuro
+			e.fechaCaducidad = validateDate(fechaCaducidad, {
+				label: 'La fecha de caducidad',
+				notFuture: false,
+				required: true
+			});
 		}
 
-		const personalStep = variant === 'duplicado' ? 2 : 2;
-		if (step === personalStep && variant !== 'cancelacion') {
-			errors.email = validateEmail(email);
-			errors.nif = validateNifNie(nif);
-			errors.nombre = validateRequired(nombre, 'El nombre');
-			errors.apellido1 = validateRequired(apellido1, 'El primer apellido');
-			errors.telefono = validatePhone(telefono);
-			if (!sexo) errors.sexo = 'Selecciona el sexo';
-			if (!fechaNacimiento) errors.fechaNacimiento = 'Introduce la fecha de nacimiento';
+		if (s === 2 && variant !== 'cancelacion') {
+			e.email = validateEmail(email);
+			e.nif = validateNifNie(nif);
+			e.nombre = validateRequired(nombre, 'El nombre');
+			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
+			e.telefono = validatePhone(telefono);
+			if (!sexo) e.sexo = 'Selecciona el sexo';
+			e.fechaNacimiento = validateDate(fechaNacimiento, {
+				label: 'La fecha de nacimiento',
+				notFuture: true,
+				minAgeYears: 16
+			});
 		}
 
-		if (variant === 'cancelacion' && step === 2) {
-			errors.email = validateEmail(email);
-			errors.nif = validateNifNie(nif);
-			errors.nombre = validateRequired(nombre, 'El nombre');
-			errors.apellido1 = validateRequired(apellido1, 'El primer apellido');
-			errors.telefono = validatePhone(telefono);
-			errors.direccion = validateRequired(direccion, 'La dirección');
-			errors.cp = validateRequired(cp, 'El código postal');
-			errors.localidad = validateRequired(localidad, 'La localidad');
+		if (variant === 'cancelacion' && s === 2) {
+			e.email = validateEmail(email);
+			e.nif = validateNifNie(nif);
+			e.nombre = validateRequired(nombre, 'El nombre');
+			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
+			e.telefono = validatePhone(telefono);
+			e.direccion = validateRequired(direccion, 'La dirección');
+			e.cp = validateCodigoPostal(cp);
+			e.localidad = validateRequired(localidad, 'La localidad');
 		}
 
-		const addressStep = 3;
 		if (
-			step === addressStep &&
+			s === 3 &&
 			(variant === 'etiqueta' ||
 				variant === 'etiqueta-vmp' ||
 				variant === 'informe' ||
 				variant === 'duplicado')
 		) {
-			if (!provincia) errors.provincia = 'Selecciona la provincia';
-			errors.municipio = validateRequired(municipio, 'El municipio');
-			errors.direccion = validateRequired(direccion, 'La dirección');
-			errors.numero = validateRequired(numero, 'El número');
-			errors.cp = validateRequired(cp, 'El código postal');
+			if (!provincia) e.provincia = 'Selecciona la provincia';
+			e.municipio = validateRequired(municipio, 'El municipio');
+			e.direccion = validateRequired(direccion, 'La dirección');
+			e.numero = validateRequired(numero, 'El número');
+			e.cp = validateCodigoPostal(cp);
 		}
 
-		if (variant === 'cancelacion' && step === 4) {
-			if (!docsConfirmados) errors.docs = 'Confirma la documentación requerida';
+		if (variant === 'cancelacion' && s === 4) {
+			if (!docsConfirmados) e.docs = 'Confirma la documentación requerida';
 		}
 
-		if (step === paymentStep) {
-			if (!acceptPrivacy) errors.privacy = 'Debes aceptar la política de privacidad';
+		if (s === finalStep) {
+			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
 		}
 
+		return e;
+	}
+
+	function validateStep(): boolean {
+		errors = validateStepAt(step);
 		return !Object.values(errors).some(Boolean);
+	}
+
+	function validateAllSteps(): boolean {
+		const merged: Record<string, string | null> = {};
+		for (let s = 1; s <= finalStep; s++) {
+			Object.assign(merged, validateStepAt(s));
+		}
+		errors = merged;
+		return !Object.values(merged).some(Boolean);
 	}
 
 	function next() {
@@ -263,16 +441,16 @@
 			step_name: steps[step - 1],
 			total_steps: steps.length
 		});
+		noteProgress();
 		save();
-		step++;
-		funnel.stepViewed({
-			tramite: tipo,
-			step,
-			step_name: steps[step - 1],
-			total_steps: steps.length
-		});
-		if (step === paymentStep) {
-			funnel.paymentStarted({ tramite: tipo, step, total_steps: steps.length });
+		if (step < finalStep) {
+			step++;
+			funnel.stepViewed({
+				tramite: tipo,
+				step,
+				step_name: steps[step - 1],
+				total_steps: steps.length
+			});
 		}
 	}
 
@@ -281,14 +459,17 @@
 		save();
 	}
 
-	async function submit() {
-		if (!validateStep()) return;
+	async function continueToPayment() {
+		if (!validateAllSteps()) {
+			payError = 'Revisa los datos del formulario: hay campos incompletos o no válidos.';
+			return;
+		}
 		submitting = true;
+		payError = null;
 		try {
-			const res = await fetch('/api/solicitud', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
+			const result = await createSolicitud({
+				amount: priceLines.total,
+				payload: {
 					tipo,
 					variant,
 					matricula,
@@ -327,20 +508,29 @@
 					docsConfirmados,
 					acceptPrivacy,
 					priceLines: priceLines.lines,
-					total: priceLines.total
-				})
+					total: priceLines.total,
+					amount: priceLines.total
+				}
 			});
-			const data = await res.json();
-			orderId = data.id ?? '';
-			cuentaUrl = data.cuentaUrl ?? null;
-			done = true;
+
+			if (!result.ok) {
+				payError = result.error;
+				return;
+			}
+
 			funnel.submitted({
 				tramite: tipo,
 				step,
 				total_steps: steps.length,
-				order_id: orderId
+				order_id: result.solicitudId
 			});
-			localStorage.removeItem(storageKey);
+			funnel.paymentStarted({
+				tramite: tipo,
+				step,
+				total_steps: steps.length
+			});
+			clearDraft(storageKey);
+			await goto(result.pagoUrl);
 		} finally {
 			submitting = false;
 		}
@@ -354,25 +544,12 @@
 <section class="section wizard-section">
 	<div class="wrap wizard-layout">
 		<div class="main card pad">
-			{#if done}
-				<div class="ok">
-					<h1>Solicitud enviada</h1>
-					<p>Tu solicitud se ha registrado correctamente. Te contactaremos en breve.</p>
-					{#if orderId}<p class="ref">Referencia: <strong>{orderId}</strong></p>{/if}
-					<div class="ok-actions">
-						{#if cuentaUrl}
-							<a href={cuentaUrl} class="btn">Ver en mi área</a>
-						{/if}
-						<a href="/" class="btn secondary">Volver al inicio</a>
-					</div>
-				</div>
-			{:else}
-				<StepProgress current={step} total={steps.length} labels={steps} />
-				<h1>{title}</h1>
+			<StepProgress current={step} total={steps.length} labels={steps} />
+			<h1>{title}</h1>
 
 				{#if variant === 'etiqueta' && step === 1}
 					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
-						<input bind:value={matricula} placeholder="3990WDS" />
+						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />
 					</FormField>
 					{#if matricula && !errors.matricula}
 						<div class="distintivo-info">
@@ -400,7 +577,11 @@
 						</FormField>
 					{/if}
 					<FormField label="Número de serie" error={errors.vmpNumSerie} required>
-						<input bind:value={vmpNumSerie} placeholder="Número de serie del VMP" />
+						<input
+							bind:value={vmpNumSerie}
+							placeholder="Número de serie del VMP"
+							oninput={noteProgress}
+						/>
 					</FormField>
 					<div class="row-2">
 						<FormField label="Marca" error={errors.vmpMarca} required>
@@ -412,7 +593,7 @@
 					</div>
 				{:else if variant === 'informe' && step === 1}
 					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
-						<input bind:value={matricula} placeholder="3990WDS" />
+						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />
 					</FormField>
 					<p class="info">Informe completo emitido por la DGT con autentificación adicional.</p>
 				{:else if variant === 'cancelacion' && step === 1}
@@ -427,7 +608,7 @@
 						/>
 					</FormField>
 					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
-						<input bind:value={matricula} />
+						<input bind:value={matricula} oninput={noteProgress} />
 					</FormField>
 				{:else if variant === 'duplicado' && step === 1}
 					<FormField label="Tipo de duplicado" error={errors.motivoDuplicado} required>
@@ -480,7 +661,7 @@
 							</select>
 						</FormField>
 						<FormField label="Fecha de nacimiento" error={errors.fechaNacimiento} required>
-							<input type="date" bind:value={fechaNacimiento} />
+							<input type="date" bind:value={fechaNacimiento} max={todayIso()} />
 						</FormField>
 					</div>
 				{:else if variant === 'cancelacion' && step === 2}
@@ -594,66 +775,106 @@
 						</label>
 						{#if errors.docs}<p class="field-error">{errors.docs}</p>{/if}
 					</div>
-				{:else if step === summaryStep}
-					<ul class="sum">
-						{#if variant === 'etiqueta-vmp'}
-							<li>
-								<span>VMP</span><strong
-									>{vmpMarca}
-									{vmpModelo || ''} · {vmpCertificado === 'si' ? 'Certificado' : 'No certificado'}</strong
-								>
-							</li>
-							<li><span>Nº serie</span><strong>{vmpNumSerie || '—'}</strong></li>
-							{#if vmpCertificado === 'si'}
-								<li><span>Nº certificado</span><strong>{vmpNumCertificado || '—'}</strong></li>
+				{:else if step === finalStep}
+					<div class="summary-final">
+						<h2>Resumen de tu solicitud</h2>
+						<p class="summary-lead">
+							Revisa los datos antes de continuar a la pasarela de pago.
+						</p>
+						<ul class="sum">
+							<li><span>Trámite</span><strong>{title}</strong></li>
+							{#if variant === 'etiqueta-vmp'}
+								<li>
+									<span>VMP</span><strong
+										>{vmpMarca}
+										{vmpModelo || ''} · {vmpCertificado === 'si'
+											? 'Certificado'
+											: 'No certificado'}</strong
+									>
+								</li>
+								<li><span>Nº serie</span><strong>{vmpNumSerie || '—'}</strong></li>
+								{#if vmpCertificado === 'si'}
+									<li><span>Nº certificado</span><strong>{vmpNumCertificado || '—'}</strong></li>
+								{/if}
+							{:else if variant === 'duplicado'}
+								<li><span>Motivo</span><strong>{motivoDuplicado || '—'}</strong></li>
+								<li><span>Clase permiso</span><strong>{clasePermiso || '—'}</strong></li>
+							{:else}
+								<li><span>Matrícula</span><strong>{matricula || '—'}</strong></li>
+								{#if distintivoTipo}
+									<li><span>Distintivo</span><strong>{distintivoTipo}</strong></li>
+								{/if}
 							{/if}
-						{:else}
-							<li><span>Matrícula</span><strong>{matricula || '—'}</strong></li>
-						{/if}
-						<li><span>Solicitante</span><strong>{nombre} {apellido1}</strong></li>
-						<li><span>Email</span><strong>{email}</strong></li>
-						<li><span>Total</span><strong>{formatEur(priceLines.total)}</strong></li>
-					</ul>
-				{:else if step === paymentStep}
-					<div class="pay-box">
-						<div class="pay-total">{formatEur(priceLines.total)}</div>
-						<p>Pago seguro con tarjeta (pasarela Redsys en producción)</p>
+							<li>
+								<span>Solicitante</span><strong>{nombre} {apellido1} {apellido2}</strong>
+							</li>
+							<li><span>NIF/NIE</span><strong>{nif || '—'}</strong></li>
+							<li><span>Email</span><strong>{email}</strong></li>
+							<li><span>Teléfono</span><strong>{telefono || '—'}</strong></li>
+							{#if direccion || cp}
+								<li>
+									<span>Dirección</span>
+									<strong
+										>{[tipoVia, direccion, numero, cp, municipio || localidad, provincia]
+											.filter(Boolean)
+											.join(', ')}</strong
+									>
+								</li>
+							{/if}
+							{#if isEtiquetaShip}
+								<li><span>Envío</span><strong>{tipoEnvio || '—'}</strong></li>
+							{/if}
+							{#each priceLines.lines as line}
+								<li>
+									<span>{line.label}</span><strong>{formatEur(line.amount)}</strong>
+								</li>
+							{/each}
+							<li class="total-row">
+								<span>Total</span><strong>{formatEur(priceLines.total)}</strong>
+							</li>
+						</ul>
+
+						<label class="check">
+							<input type="checkbox" bind:checked={acceptPrivacy} />
+							Acepto la <a href="/politica-de-privacidad" target="_blank">política de privacidad</a>
+						</label>
+						{#if errors.privacy}<p class="field-error">{errors.privacy}</p>{/if}
+						{#if payError}<p class="field-error">{payError}</p>{/if}
+
+						<button
+							type="button"
+							class="btn pay-cta"
+							onclick={continueToPayment}
+							disabled={submitting || !acceptPrivacy}
+						>
+							{submitting ? 'Registrando solicitud…' : 'Continuar a pasarela de pago'}
+						</button>
 					</div>
-					<label class="check">
-						<input type="checkbox" bind:checked={acceptPrivacy} />
-						Acepto la <a href="/legal/privacidad" target="_blank">política de privacidad</a>
-					</label>
-					{#if errors.privacy}<p class="field-error">{errors.privacy}</p>{/if}
 				{/if}
 
 				<div class="nav">
 					{#if step > 1}
 						<button type="button" class="btn ghost" onclick={prev}>Anterior</button>
 					{:else}<span></span>{/if}
-					{#if step < paymentStep}
+					{#if step < finalStep}
 						<button type="button" class="btn" onclick={next}>Siguiente</button>
-					{:else}
-						<button type="button" class="btn" disabled={submitting} onclick={submit}>
-							{submitting ? 'Procesando…' : 'Confirmar y pagar'}
-						</button>
 					{/if}
 				</div>
-			{/if}
 		</div>
 
-		{#if !done}
-			<aside class="sidebar card">
-				<h3>Importe</h3>
-				<div class="total">{formatEur(priceLines.total)}</div>
-				<ul class="lines">
-					{#each priceLines.lines as line}
-						<li><span>{line.label}</span><span>{formatEur(line.amount)}</span></li>
-					{/each}
-				</ul>
-			</aside>
-		{/if}
+		<aside class="sidebar card">
+			<h3>Importe</h3>
+			<div class="total">{formatEur(priceLines.total)}</div>
+			<ul class="lines">
+				{#each priceLines.lines as line}
+					<li><span>{line.label}</span><span>{formatEur(line.amount)}</span></li>
+				{/each}
+			</ul>
+		</aside>
 	</div>
 </section>
+
+<DraftStorageNotice open={showDraftNotice} onconfirm={confirmDraftNotice} />
 
 <style>
 	.wizard-section {
@@ -698,16 +919,52 @@
 		font-size: 14px;
 		margin-bottom: 12px;
 	}
+	.summary-final h2 {
+		margin: 0 0 6px;
+		font-size: 1.2rem;
+		color: #003050;
+	}
+	.summary-lead {
+		margin: 0 0 16px;
+		color: var(--text2);
+		font-size: 0.92rem;
+	}
 	.sum {
 		list-style: none;
+		margin: 0 0 18px;
+		padding: 0;
 	}
 	.sum li {
 		display: flex;
 		justify-content: space-between;
+		gap: 12px;
 		padding: 10px 0;
 		border-bottom: 1px solid var(--border-light);
 		font-size: 14px;
 		color: var(--text2);
+	}
+	.sum li strong {
+		text-align: right;
+		color: var(--ink, #1a2b3c);
+	}
+	.sum li.total-row {
+		font-size: 1.05rem;
+		border-bottom: none;
+		padding-top: 14px;
+	}
+	.sum li.total-row strong {
+		color: #00a8b3;
+		font-size: 1.15rem;
+	}
+	.pay-cta {
+		width: 100%;
+		margin-top: 8px;
+		padding: 14px 18px;
+		font-weight: 800;
+	}
+	.pay-cta:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
 	}
 	.docs-list ul {
 		margin: 0 0 16px 18px;

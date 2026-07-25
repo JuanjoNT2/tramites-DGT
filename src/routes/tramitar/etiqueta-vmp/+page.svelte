@@ -12,5 +12,5 @@
 	title="Etiqueta VMP (patinete)"
 	tipo="etiqueta-vmp"
 	variant="etiqueta-vmp"
-	steps={['Vehículo VMP', 'Solicitante', 'Dirección y envío', 'Resumen', 'Pago']}
+	steps={['Vehículo VMP', 'Solicitante', 'Dirección y envío', 'Resumen']}
 />

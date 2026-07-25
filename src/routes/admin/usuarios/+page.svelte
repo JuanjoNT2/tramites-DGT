@@ -7,46 +7,21 @@
 	let { data }: { data: PageData } = $props();
 	const range = $derived(resolveDateRange(page.url));
 	let profiles = $state<PageData['profiles']>([]);
-	let saving = $state<string | null>(null);
-	let message = $state<string | null>(null);
 	let errorMsg = $state<string | null>(null);
 
 	$effect(() => {
 		profiles = data.profiles;
 		errorMsg = data.error;
 	});
-
-	async function setRole(id: string, role: string) {
-		saving = id;
-		message = null;
-		errorMsg = null;
-		try {
-			const res = await fetch('/admin/api/usuarios', {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ id, role })
-			});
-			const body = await res.json();
-			if (!res.ok) throw new Error(body.error || 'Error al actualizar');
-			message = `Rol actualizado: ${body.email ?? id} → ${role}`;
-			profiles = profiles.map((p) => (p.id === id ? { ...p, role: role as typeof p.role } : p));
-		} catch (e) {
-			errorMsg = e instanceof Error ? e.message : 'Error';
-		} finally {
-			saving = null;
-		}
-	}
 </script>
 
-<AdminShell {range} title="Usuarios y permisos">
+<AdminShell {range} title="Usuarios">
 	<p class="intro">
-		Eleva ciudadanos a <strong>gestor</strong> para dar acceso al panel de documentación de
-		solicitudes. El panel de analítica sigue usando la contraseña compartida.
+		Consulta perfiles, vehículos y trámites. Los roles <strong>gestor</strong> /
+		<strong>admin</strong> Auth no se cambian desde la web: se asignan con el script de seed o en
+		Supabase.
 	</p>
 
-	{#if message}
-		<p class="ok">{message}</p>
-	{/if}
 	{#if errorMsg}
 		<p class="err">{errorMsg}</p>
 	{/if}
@@ -59,7 +34,7 @@
 					<th>Nombre</th>
 					<th>Rol</th>
 					<th>Alta</th>
-					<th>Acción</th>
+					<th>Detalle</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -69,16 +44,8 @@
 						<td>{p.full_name || '—'}</td>
 						<td><code>{p.role}</code></td>
 						<td>{new Date(p.created_at).toLocaleDateString('es-ES')}</td>
-						<td class="actions">
-							<select
-								value={p.role}
-								disabled={saving === p.id}
-								onchange={(e) => setRole(p.id, (e.currentTarget as HTMLSelectElement).value)}
-							>
-								<option value="user">user</option>
-								<option value="gestor">gestor</option>
-								<option value="admin">admin</option>
-							</select>
+						<td>
+							<a href="/admin/usuarios/{p.id}?{page.url.searchParams}">Ver vehículos y trámites</a>
 						</td>
 					</tr>
 				{:else}
@@ -96,12 +63,6 @@
 		margin: 0 0 16px;
 		color: #5a6b7d;
 		max-width: 720px;
-	}
-	.ok {
-		background: #e8f5ee;
-		color: #0f5132;
-		padding: 10px 12px;
-		border-radius: 8px;
 	}
 	.err {
 		background: #fde8e8;
@@ -133,10 +94,9 @@
 		letter-spacing: 0.04em;
 		color: #5a6b7d;
 	}
-	select {
-		padding: 6px 8px;
-		border-radius: 6px;
-		border: 1px solid #c5d0da;
-		font: inherit;
+	a {
+		color: #003050;
+		font-weight: 600;
+		font-size: 0.85rem;
 	}
 </style>
