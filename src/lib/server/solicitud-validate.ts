@@ -81,9 +81,12 @@ export function validateSolicitudPayload(
 	}
 
 	if (tipo === 'etiqueta-vmp' || tipo === 'vmp') {
+		const certificado = str(body.vmpCertificado) !== 'no';
 		const err = firstError(
 			validateRequired(str(body.vmpNumSerie), 'El número de serie'),
 			validateRequired(str(body.vmpMarca), 'La marca'),
+			certificado ? validateRequired(str(body.vmpModelo), 'El modelo') : null,
+			certificado ? validateRequired(str(body.vmpNumCertificado), 'El número de certificado') : null,
 			validateEmail(str(body.email)),
 			validateNifNie(str(body.nif)),
 			validatePhone(str(body.telefono)),

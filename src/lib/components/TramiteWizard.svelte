@@ -25,6 +25,7 @@
 	} from '$lib/utils/validators';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
+	import VmpModelPicker from '$lib/components/VmpModelPicker.svelte';
 	import { createSolicitud } from '$lib/pago/client';
 	import { handleWizardSave } from '$lib/tramite/save';
 	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
@@ -77,6 +78,8 @@
 	let vmpNumSerie = $state('');
 	let vmpMarca = $state('');
 	let vmpModelo = $state('');
+	let vmpMarcaId = $state('');
+	let vmpModeloId = $state('');
 	let motivoDuplicado = $state('');
 	let clasePermiso = $state('');
 	let fechaCaducidad = $state('');
@@ -198,6 +201,8 @@
 			if (typeof data.vmpNumSerie === 'string') vmpNumSerie = data.vmpNumSerie;
 			if (typeof data.vmpMarca === 'string') vmpMarca = data.vmpMarca;
 			if (typeof data.vmpModelo === 'string') vmpModelo = data.vmpModelo;
+			if (typeof data.vmpMarcaId === 'string') vmpMarcaId = data.vmpMarcaId;
+			if (typeof data.vmpModeloId === 'string') vmpModeloId = data.vmpModeloId;
 			if (typeof data.motivoDuplicado === 'string') motivoDuplicado = data.motivoDuplicado;
 			if (typeof data.clasePermiso === 'string') clasePermiso = data.clasePermiso;
 			if (typeof data.fechaCaducidad === 'string') fechaCaducidad = data.fechaCaducidad;
@@ -244,6 +249,8 @@
 			vmpNumSerie,
 			vmpMarca,
 			vmpModelo,
+			vmpMarcaId,
+			vmpModeloId,
 			motivoDuplicado,
 			clasePermiso,
 			fechaCaducidad,
@@ -318,6 +325,8 @@
 		void vmpNumSerie;
 		void vmpMarca;
 		void vmpModelo;
+		void vmpMarcaId;
+		void vmpModeloId;
 		void motivoDuplicado;
 		void clasePermiso;
 		void fechaCaducidad;
@@ -361,9 +370,12 @@
 
 		if (variant === 'etiqueta-vmp' && s === 1) {
 			e.vmpNumSerie = validateRequired(vmpNumSerie, 'El número de serie');
-			e.vmpMarca = validateRequired(vmpMarca, 'La marca');
 			if (vmpCertificado === 'si') {
+				e.vmpMarca = validateRequired(vmpMarcaId || vmpMarca, 'La marca');
+				e.vmpModelo = validateRequired(vmpModeloId || vmpModelo, 'El modelo');
 				e.vmpNumCertificado = validateRequired(vmpNumCertificado, 'El número de certificado');
+			} else {
+				e.vmpMarca = validateRequired(vmpMarca, 'La marca');
 			}
 		}
 
@@ -517,6 +529,8 @@
 			vmpNumSerie,
 			vmpMarca,
 			vmpModelo,
+			vmpMarcaId,
+			vmpModeloId,
 			motivoDuplicado,
 			clasePermiso,
 			fechaCaducidad,
@@ -666,8 +680,9 @@
 					{/if}
 				{:else if variant === 'etiqueta-vmp' && step === 1}
 					<p class="info">
-						Datos de tu Vehículo de Movilidad Personal (patinete). Si no está certificado, podrás
-						inscribirlo de forma temporal según la normativa DGT.
+						Datos de tu Vehículo de Movilidad Personal (patinete). Si está certificado, elige marca y
+						modelo del listado oficial DGT. Si no lo está, puedes solicitar inscripción temporal
+						hasta el 22/01/2027.
 					</p>
 					<FormField label="¿El patinete tiene certificado de circulación DGT?" required>
 						<RadioCards
@@ -680,9 +695,27 @@
 						/>
 					</FormField>
 					{#if vmpCertificado === 'si'}
-						<FormField label="Número de certificado" error={errors.vmpNumCertificado} required>
-							<input bind:value={vmpNumCertificado} placeholder="Según chapa / ficha técnica" />
-						</FormField>
+						<VmpModelPicker
+							bind:marcaId={vmpMarcaId}
+							bind:marcaNombre={vmpMarca}
+							bind:modeloId={vmpModeloId}
+							bind:modeloNombre={vmpModelo}
+							bind:numCertificado={vmpNumCertificado}
+							errors={{
+								marca: errors.vmpMarca,
+								modelo: errors.vmpModelo,
+								certificado: errors.vmpNumCertificado
+							}}
+						/>
+					{:else}
+						<div class="row-2">
+							<FormField label="Marca" error={errors.vmpMarca} required>
+								<input bind:value={vmpMarca} oninput={noteProgress} />
+							</FormField>
+							<FormField label="Modelo">
+								<input bind:value={vmpModelo} />
+							</FormField>
+						</div>
 					{/if}
 					<FormField label="Número de serie" error={errors.vmpNumSerie} required>
 						<input
@@ -691,14 +724,6 @@
 							oninput={noteProgress}
 						/>
 					</FormField>
-					<div class="row-2">
-						<FormField label="Marca" error={errors.vmpMarca} required>
-							<input bind:value={vmpMarca} />
-						</FormField>
-						<FormField label="Modelo">
-							<input bind:value={vmpModelo} />
-						</FormField>
-					</div>
 				{:else if variant === 'informe' && step === 1}
 					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
 						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />

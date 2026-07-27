@@ -1,0 +1,2694 @@
+{
+  "source": "https://www.dgt.es/nuestros-servicios/tu-vehiculo/vehiculos-de-movilidad-personal-vmp/",
+  "updatedNote": "Listado oficial DGT de VMP certificados (transporte personal y mercancías si aplica). Actualizar periódicamente desde la web DGT.",
+  "brands": [
+    {
+      "id": "5thwheel",
+      "name": "5THWHEEL",
+      "models": [
+        {
+          "id": "2c2ed22667ba",
+          "label": "ES09",
+          "certificado": "B1090",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "acer",
+      "name": "ACER",
+      "models": [
+        {
+          "id": "4da1497727c6",
+          "label": "AES023 - Versión ACER SERIES 3 ADVANCE",
+          "certificado": "A1173",
+          "categoria": "personal"
+        },
+        {
+          "id": "bd03a0e30691",
+          "label": "AES025 - Versión ACER SERIES 5 ADVANCE",
+          "certificado": "A1158",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "adasmart",
+      "name": "Adasmart",
+      "models": [
+        {
+          "id": "abe5d3fd08dd",
+          "label": "ADASMART Tank",
+          "certificado": "B1087",
+          "categoria": "personal"
+        },
+        {
+          "id": "a5f6be62c7cc",
+          "label": "ADASMART V - Versión: ADASMART V",
+          "certificado": "B1152",
+          "categoria": "personal"
+        },
+        {
+          "id": "99648b1fecb3",
+          "label": "ADASMART V - Versión: ADASMART VE",
+          "certificado": "B1153",
+          "categoria": "personal"
+        },
+        {
+          "id": "c2f24aa5271f",
+          "label": "ADASMART X",
+          "certificado": "B1067",
+          "categoria": "personal"
+        },
+        {
+          "id": "45a52611ecd5",
+          "label": "ADASMART XE",
+          "certificado": "B1077",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "ausom",
+      "name": "AUSOM",
+      "models": [
+        {
+          "id": "65d546886349",
+          "label": "K20",
+          "certificado": "B1155",
+          "categoria": "personal"
+        },
+        {
+          "id": "4b37a1f6ff1d",
+          "label": "K30",
+          "certificado": "B1156",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "bird",
+      "name": "BIRD",
+      "models": [
+        {
+          "id": "1cf9e5ceffc2",
+          "label": "BS+V2 - Versión ES410V",
+          "certificado": "A1139",
+          "categoria": "personal"
+        },
+        {
+          "id": "8122ca7efe95",
+          "label": "ES-400D",
+          "certificado": "A1009",
+          "categoria": "personal"
+        },
+        {
+          "id": "7512234c2943",
+          "label": "SMART PLUS - Versión VA00005",
+          "certificado": "A1103",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "bmov",
+      "name": "BMOV",
+      "models": [
+        {
+          "id": "26eefbd50392",
+          "label": "4.0",
+          "certificado": "A1106",
+          "categoria": "personal"
+        },
+        {
+          "id": "08468365268d",
+          "label": "5.0",
+          "certificado": "A1104",
+          "categoria": "personal"
+        },
+        {
+          "id": "67c27fa59412",
+          "label": "6.0 - Versión: 1.0",
+          "certificado": "A1112",
+          "categoria": "personal"
+        },
+        {
+          "id": "393e0201b7db",
+          "label": "XM25 - Versión: V01",
+          "certificado": "B1138",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "bolt",
+      "name": "BOLT",
+      "models": [
+        {
+          "id": "d20c5aed112a",
+          "label": "BOLT 4+ - Versión COBRA 1 (C1)",
+          "certificado": "A1044",
+          "categoria": "personal"
+        },
+        {
+          "id": "ffed2c61dc70",
+          "label": "D1 - Versión 1.1",
+          "certificado": "A1161",
+          "categoria": "personal"
+        },
+        {
+          "id": "578630eba188",
+          "label": "ES600",
+          "certificado": "A1012",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "cecotec",
+      "name": "Cecotec",
+      "models": [
+        {
+          "id": "aeaaa8d4cd89",
+          "label": "7104",
+          "certificado": "A1014",
+          "categoria": "personal"
+        },
+        {
+          "id": "59df349d7602",
+          "label": "7105",
+          "certificado": "A1017",
+          "categoria": "personal"
+        },
+        {
+          "id": "c8d38812f525",
+          "label": "7106",
+          "certificado": "A1016",
+          "categoria": "personal"
+        },
+        {
+          "id": "28a063110007",
+          "label": "7107",
+          "certificado": "A1019",
+          "categoria": "personal"
+        },
+        {
+          "id": "cce3c4816b57",
+          "label": "7108",
+          "certificado": "A1049",
+          "categoria": "personal"
+        },
+        {
+          "id": "214af3a9ff3d",
+          "label": "7109",
+          "certificado": "A1018",
+          "categoria": "personal"
+        },
+        {
+          "id": "4ededb3698f5",
+          "label": "7112",
+          "certificado": "A1062",
+          "categoria": "personal"
+        },
+        {
+          "id": "b28f844cfb0d",
+          "label": "7113",
+          "certificado": "A1063",
+          "categoria": "personal"
+        },
+        {
+          "id": "5eb271aa7d79",
+          "label": "7114",
+          "certificado": "A1064",
+          "categoria": "personal"
+        },
+        {
+          "id": "1677d4c84717",
+          "label": "7302",
+          "certificado": "A1001",
+          "categoria": "personal"
+        },
+        {
+          "id": "df4eb5c536af",
+          "label": "7303",
+          "certificado": "A1000",
+          "categoria": "personal"
+        },
+        {
+          "id": "5563f9ced443",
+          "label": "7304",
+          "certificado": "A1002",
+          "categoria": "personal"
+        },
+        {
+          "id": "32a8378ab74d",
+          "label": "7305",
+          "certificado": "A1003",
+          "categoria": "personal"
+        },
+        {
+          "id": "d9a9cb805383",
+          "label": "7311 - Versión 7324",
+          "certificado": "A1015",
+          "categoria": "personal"
+        },
+        {
+          "id": "04446591081d",
+          "label": "7318",
+          "certificado": "A1048",
+          "categoria": "personal"
+        },
+        {
+          "id": "6daf56a704c5",
+          "label": "7325",
+          "certificado": "A1054",
+          "categoria": "personal"
+        },
+        {
+          "id": "e9954dbac0c5",
+          "label": "7356 / Bongo D20 XL Connected",
+          "certificado": "A1099",
+          "categoria": "personal"
+        },
+        {
+          "id": "6a99417908f6",
+          "label": "Bongo D30 XL Connected",
+          "certificado": "A1100",
+          "categoria": "personal"
+        },
+        {
+          "id": "0d2d32bba83e",
+          "label": "Bongo D40 XL Connected",
+          "certificado": "A1101",
+          "categoria": "personal"
+        },
+        {
+          "id": "7fd7ff5837da",
+          "label": "Bongo G40XXL Ultrawide Connected",
+          "certificado": "A1137",
+          "categoria": "personal"
+        },
+        {
+          "id": "70eaec4e0c92",
+          "label": "Bongo V55 2X2 Connected",
+          "certificado": "A1128",
+          "categoria": "personal"
+        },
+        {
+          "id": "c6cfc9eed347",
+          "label": "Bongo V70 Connected",
+          "certificado": "A1127",
+          "categoria": "personal"
+        },
+        {
+          "id": "6328f869d902",
+          "label": "Bongo Y45 Connected",
+          "certificado": "A1129",
+          "categoria": "personal"
+        },
+        {
+          "id": "10b4fbfbadf9",
+          "label": "Bongo Y65 Connected",
+          "certificado": "A1130",
+          "categoria": "personal"
+        },
+        {
+          "id": "d2f61a9748c1",
+          "label": "D20E Connected",
+          "certificado": "A1169",
+          "categoria": "personal"
+        },
+        {
+          "id": "156940d13da3",
+          "label": "D40 XL Suspension Connected",
+          "certificado": "A1102",
+          "categoria": "personal"
+        },
+        {
+          "id": "201404e81019",
+          "label": "DOBLE Z 75",
+          "certificado": "A1052",
+          "categoria": "personal"
+        },
+        {
+          "id": "bc03a4053063",
+          "label": "DOBLE Z 85",
+          "certificado": "A1053",
+          "categoria": "personal"
+        },
+        {
+          "id": "b74a541690cb",
+          "label": "GS50 XXL Ultrawide Suspension Connected",
+          "certificado": "A1138",
+          "categoria": "personal"
+        },
+        {
+          "id": "4e67fbdf6bce",
+          "label": "GS65 2x2 XXL Connected",
+          "certificado": "A1181",
+          "categoria": "personal"
+        },
+        {
+          "id": "12c45e8cd215",
+          "label": "Y45",
+          "certificado": "A1055",
+          "categoria": "personal"
+        },
+        {
+          "id": "07836f51fa82",
+          "label": "Y65",
+          "certificado": "A1056",
+          "categoria": "personal"
+        },
+        {
+          "id": "60a455da98d1",
+          "label": "Y85 2X2 XXL Connected",
+          "certificado": "A1131",
+          "categoria": "personal"
+        },
+        {
+          "id": "da0c140e9271",
+          "label": "Z - Versiones City y Mountain",
+          "certificado": "A1023",
+          "categoria": "personal"
+        },
+        {
+          "id": "962b116c797e",
+          "label": "Z POWER",
+          "certificado": "A1050",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "city-wheel",
+      "name": "CITY WHEEL",
+      "models": [
+        {
+          "id": "39e1dc306bd9",
+          "label": "T8 - Versión 2026",
+          "certificado": "A1232",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "coyote",
+      "name": "Coyote",
+      "models": [
+        {
+          "id": "b609d3732bf7",
+          "label": "ES400A",
+          "certificado": "B1068",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "d-fly",
+      "name": "D-FLY",
+      "models": [
+        {
+          "id": "4e9892a3df1b",
+          "label": "DF - Versión 1",
+          "certificado": "B1116",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "dualtron",
+      "name": "DUALTRON",
+      "models": [
+        {
+          "id": "c69c3165fc6e",
+          "label": "AMINIA SPECIAL - Versión: 52V",
+          "certificado": "B1094",
+          "categoria": "personal"
+        },
+        {
+          "id": "9f92eca452ca",
+          "label": "AMINIA SPECIAL LONG BODY - Versión: 52V",
+          "certificado": "B1095",
+          "categoria": "personal"
+        },
+        {
+          "id": "873377f17a99",
+          "label": "FOREVER - Versión 60V",
+          "certificado": "B1057",
+          "categoria": "personal"
+        },
+        {
+          "id": "19c90c47e91b",
+          "label": "FOREVER LIMITED - Versión: 24ah",
+          "certificado": "B1107",
+          "categoria": "personal"
+        },
+        {
+          "id": "f3e0a0b37f59",
+          "label": "POPULAR - Versiones: 52v14ah, 52v20ah, 52v25ah",
+          "certificado": "B1037",
+          "categoria": "personal"
+        },
+        {
+          "id": "d0ccab30727c",
+          "label": "POPULAR DUAL - Versiones: 52v14ah, 52v20ah, 52v25ah",
+          "certificado": "B1038",
+          "categoria": "personal"
+        },
+        {
+          "id": "d65f4eaa190f",
+          "label": "SONIC ALIEN - Versión: 40 Ah",
+          "certificado": "B1136",
+          "categoria": "personal"
+        },
+        {
+          "id": "1701547c7f25",
+          "label": "THUNDER III - Versión: 72V",
+          "certificado": "B1101",
+          "categoria": "personal"
+        },
+        {
+          "id": "b81499cc85b5",
+          "label": "TOGO LIMITED - Versiones: 60v12ah",
+          "certificado": "B1061",
+          "categoria": "personal"
+        },
+        {
+          "id": "992f03cafd4e",
+          "label": "TOGO LIMITED - Versiones: 60v15ah",
+          "certificado": "B1062",
+          "categoria": "personal"
+        },
+        {
+          "id": "b8ae12f9382c",
+          "label": "TOGO PLUS - Versiones: 36v12ah, 48v12ah, 48v15ah",
+          "certificado": "B1039",
+          "categoria": "personal"
+        },
+        {
+          "id": "19ec8aa884bd",
+          "label": "VICTOR - Versión 60V",
+          "certificado": "B1058",
+          "categoria": "personal"
+        },
+        {
+          "id": "3a8222260a66",
+          "label": "VICTOR - Versión LIMITED",
+          "certificado": "B1059",
+          "categoria": "personal"
+        },
+        {
+          "id": "7894cb4232b8",
+          "label": "VICTOR - Versión LUXURY PLUS",
+          "certificado": "B1060",
+          "categoria": "personal"
+        },
+        {
+          "id": "be4041a985b9",
+          "label": "VICTOR - Versión: LUXURY",
+          "certificado": "B1066",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "e-twow",
+      "name": "E-TWOW",
+      "models": [
+        {
+          "id": "c2318191eb69",
+          "label": "GTS - Versión GTS",
+          "certificado": "A1210",
+          "categoria": "personal"
+        },
+        {
+          "id": "a1a9287bfdb1",
+          "label": "TK5",
+          "certificado": "B1106",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "ecoxtrem",
+      "name": "Ecoxtrem",
+      "models": [
+        {
+          "id": "a95ba98b0ac3",
+          "label": "Bison",
+          "certificado": "A1085",
+          "categoria": "personal"
+        },
+        {
+          "id": "38bb41300c65",
+          "label": "BOOP - Versión 1.0",
+          "certificado": "A1144",
+          "categoria": "personal"
+        },
+        {
+          "id": "5a75712fba12",
+          "label": "DEIMOS",
+          "certificado": "A1229",
+          "categoria": "personal"
+        },
+        {
+          "id": "3fbf86183476",
+          "label": "DEIMOS DUAL",
+          "certificado": "A1228",
+          "categoria": "personal"
+        },
+        {
+          "id": "4e342177b967",
+          "label": "LINEAR",
+          "certificado": "A1157",
+          "categoria": "personal"
+        },
+        {
+          "id": "09f044e58f8f",
+          "label": "M41 ARMORED",
+          "certificado": "A1224",
+          "categoria": "personal"
+        },
+        {
+          "id": "9c1f48063912",
+          "label": "M41 TANK",
+          "certificado": "A1143",
+          "categoria": "personal"
+        },
+        {
+          "id": "6af9d4ed5b65",
+          "label": "M41 Tank Dual - Versión 52V 16Ah",
+          "certificado": "A1182",
+          "categoria": "personal"
+        },
+        {
+          "id": "2b8758caeaaf",
+          "label": "M41 Tank Dual - Versión 52V 20Ah",
+          "certificado": "A1183",
+          "categoria": "personal"
+        },
+        {
+          "id": "78b2e9ea1a4a",
+          "label": "XANZER",
+          "certificado": "A1221",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "emtransit-b-v",
+      "name": "EmTransit B.V",
+      "models": [
+        {
+          "id": "b90b8615be83",
+          "label": "SO-03",
+          "certificado": "A1010",
+          "categoria": "personal"
+        },
+        {
+          "id": "1c08528c8a4d",
+          "label": "SO-03-2",
+          "certificado": "A1037",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "engwe",
+      "name": "ENGWE",
+      "models": [
+        {
+          "id": "4dc2655147e3",
+          "label": "Y1000",
+          "certificado": "B1151",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "etric",
+      "name": "ETRiC",
+      "models": [
+        {
+          "id": "8601f725b1b3",
+          "label": "VORTEX",
+          "certificado": "A1109",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "evercross",
+      "name": "EVERCROSS",
+      "models": [
+        {
+          "id": "7c23ed78b8d4",
+          "label": "EV85F",
+          "certificado": "B1115",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "evercross-rcb",
+      "name": "EVERCROSS, RCB",
+      "models": [
+        {
+          "id": "72c5dfb8fc06",
+          "label": "EV10K PRO",
+          "certificado": "B1055",
+          "categoria": "personal"
+        },
+        {
+          "id": "ed5edefa009c",
+          "label": "EV85F",
+          "certificado": "B1056",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "hikerboy",
+      "name": "HIKERBOY",
+      "models": [
+        {
+          "id": "a103046a6c4d",
+          "label": "CURTIS",
+          "certificado": "B1112",
+          "categoria": "personal"
+        },
+        {
+          "id": "484b61255ef2",
+          "label": "CURTIS DUAL",
+          "certificado": "C1015",
+          "categoria": "personal"
+        },
+        {
+          "id": "c78b190f19b8",
+          "label": "CURTIS DUAL PRO",
+          "certificado": "C1016",
+          "categoria": "personal"
+        },
+        {
+          "id": "2036a3d5ee51",
+          "label": "CURTIS PLUS",
+          "certificado": "C1017",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "hiley",
+      "name": "HILEY",
+      "models": [
+        {
+          "id": "6b5b87b03cfb",
+          "label": "TIGER EVO",
+          "certificado": "B1142",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "hopp",
+      "name": "HOPP",
+      "models": [
+        {
+          "id": "c7215f4194e7",
+          "label": "ES400A",
+          "certificado": "A1186",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "hoppy",
+      "name": "HOPPY",
+      "models": [
+        {
+          "id": "43c63dd12f97",
+          "label": "S90L - Versión P8S2",
+          "certificado": "A1171",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "ice",
+      "name": "ICe",
+      "models": [
+        {
+          "id": "6ac35d907988",
+          "label": "M5 - Versión 1.0",
+          "certificado": "A1013",
+          "categoria": "personal"
+        },
+        {
+          "id": "4bd4e8daae24",
+          "label": "Q3 EVOLUTION - Versión 1.0",
+          "certificado": "A1065",
+          "categoria": "personal"
+        },
+        {
+          "id": "71bb5a685cde",
+          "label": "Q3 EVOLUTION ONE - Versión 1.0",
+          "certificado": "A1066",
+          "categoria": "personal"
+        },
+        {
+          "id": "85a53c7bb208",
+          "label": "Q5 EVOLUTION - Versión 1.0",
+          "certificado": "A1067",
+          "categoria": "personal"
+        },
+        {
+          "id": "4422d1c71197",
+          "label": "Q5 EVOLUTION - versión MAX",
+          "certificado": "A1203",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "infiniton",
+      "name": "INFINITON",
+      "models": [
+        {
+          "id": "7e6ec1953714",
+          "label": "BIGCITY PRO",
+          "certificado": "A1140",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "inmotion",
+      "name": "INMOTION",
+      "models": [
+        {
+          "id": "09b0d2b0a5cc",
+          "label": "CLIMBER",
+          "certificado": "A1108",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "iscooter",
+      "name": "iScooter",
+      "models": [
+        {
+          "id": "077660cc0113",
+          "label": "i8M",
+          "certificado": "C1020",
+          "categoria": "personal"
+        },
+        {
+          "id": "e405adbd9817",
+          "label": "i9M",
+          "certificado": "C1018",
+          "categoria": "personal"
+        },
+        {
+          "id": "acd5cb50525c",
+          "label": "i9MAX",
+          "certificado": "B1086",
+          "categoria": "personal"
+        },
+        {
+          "id": "f1444ed05c84",
+          "label": "iX7 Pro",
+          "certificado": "C1019",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "isinwheel",
+      "name": "iSinwheel",
+      "models": [
+        {
+          "id": "b21e959fc36d",
+          "label": "GT2",
+          "certificado": "B1096",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "joyor",
+      "name": "JOYOR",
+      "models": [
+        {
+          "id": "20f455461e3d",
+          "label": "C10",
+          "certificado": "A1153",
+          "categoria": "personal"
+        },
+        {
+          "id": "f96fed860ab1",
+          "label": "LiteGo",
+          "certificado": "A1089",
+          "categoria": "personal"
+        },
+        {
+          "id": "bd5579181f20",
+          "label": "S-PRO",
+          "certificado": "A1113",
+          "categoria": "personal"
+        },
+        {
+          "id": "3228010bd40f",
+          "label": "T-Pro",
+          "certificado": "A1219",
+          "categoria": "personal"
+        },
+        {
+          "id": "2209a2ae5e8a",
+          "label": "T6D",
+          "certificado": "A1227",
+          "categoria": "personal"
+        },
+        {
+          "id": "97525ca43cb1",
+          "label": "Y10",
+          "certificado": "A1114",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "kaabo",
+      "name": "KAABO",
+      "models": [
+        {
+          "id": "18ecc6369fbd",
+          "label": "Mantis King - Versión GT",
+          "certificado": "A1098",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "kamikaze",
+      "name": "KAMIKAZE",
+      "models": [
+        {
+          "id": "05d773897c11",
+          "label": "Kl - versión 1",
+          "certificado": "A1202",
+          "categoria": "personal"
+        },
+        {
+          "id": "73f7c46c0056",
+          "label": "Kl LITE - versión 1",
+          "certificado": "A1206",
+          "categoria": "personal"
+        },
+        {
+          "id": "7b659bf486a6",
+          "label": "Kl MAX - versión 1",
+          "certificado": "A1207",
+          "categoria": "personal"
+        },
+        {
+          "id": "e57fdf6c558b",
+          "label": "Kl PLUS - versión 1",
+          "certificado": "A1208",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "kuickwheel",
+      "name": "KUICKWHEEL",
+      "models": [
+        {
+          "id": "069354c0bb9f",
+          "label": "M16 Pro - Versión 10,4AH",
+          "certificado": "B1024",
+          "categoria": "personal"
+        },
+        {
+          "id": "5c087ab7fee6",
+          "label": "S1-C Pro - Versiones 13AH, 16AH",
+          "certificado": "B1023",
+          "categoria": "personal"
+        },
+        {
+          "id": "10a875724714",
+          "label": "S9 - Versión 15,6AH",
+          "certificado": "B1035",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "kukirin",
+      "name": "KUKIRIN",
+      "models": [
+        {
+          "id": "9222942c452a",
+          "label": "G2",
+          "certificado": "C1011",
+          "categoria": "personal"
+        },
+        {
+          "id": "799350cf0d78",
+          "label": "G2 Pro",
+          "certificado": "A1156",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "lime",
+      "name": "LIME",
+      "models": [
+        {
+          "id": "9a0d507aa472",
+          "label": "Gen 4.0",
+          "certificado": "A1008",
+          "categoria": "personal"
+        },
+        {
+          "id": "3155cb62a2a9",
+          "label": "S4.1",
+          "certificado": "A1160",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "masscity",
+      "name": "MASSCITY",
+      "models": [
+        {
+          "id": "9ddc64d91b47",
+          "label": "BLADE GT II+",
+          "certificado": "A1087",
+          "categoria": "personal"
+        },
+        {
+          "id": "bcec49714b60",
+          "label": "BLADE M10",
+          "certificado": "A1088",
+          "categoria": "personal"
+        },
+        {
+          "id": "23bc8948d3c2",
+          "label": "BLADE M10 PRO",
+          "certificado": "A1086",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "minimotors",
+      "name": "MINIMOTORS",
+      "models": [
+        {
+          "id": "9d2d8bf554b2",
+          "label": "DT TOGO 12 - Versión 12AH",
+          "certificado": "A1132",
+          "categoria": "personal"
+        },
+        {
+          "id": "7bda74707b61",
+          "label": "DT TOGO PLUS 12 - Versión 12AH",
+          "certificado": "A1133",
+          "categoria": "personal"
+        },
+        {
+          "id": "aa4505baa4aa",
+          "label": "DT TOGO PLUS 15 - Versión 15AH",
+          "certificado": "A1134",
+          "categoria": "personal"
+        },
+        {
+          "id": "4a7d71fa528b",
+          "label": "Dualtron Forever - Versión 18.2AH",
+          "certificado": "A1192",
+          "categoria": "personal"
+        },
+        {
+          "id": "b019f77629ad",
+          "label": "Dualtron Forever - Versión 27AH",
+          "certificado": "A1191",
+          "categoria": "personal"
+        },
+        {
+          "id": "b39574a8e062",
+          "label": "Dualtron Victor - Versión 27AH",
+          "certificado": "A1193",
+          "categoria": "personal"
+        },
+        {
+          "id": "df50fb659234",
+          "label": "Dualtron Victor - Versión 30AH",
+          "certificado": "A1194",
+          "categoria": "personal"
+        },
+        {
+          "id": "2f12a3ec85f9",
+          "label": "Dualtron Victor Limited - Versión 31.5AH",
+          "certificado": "A1195",
+          "categoria": "personal"
+        },
+        {
+          "id": "b3fc5412f2b6",
+          "label": "Dualtron Victor Limited - Versión 35AH",
+          "certificado": "A1196",
+          "categoria": "personal"
+        },
+        {
+          "id": "93cd832b1b75",
+          "label": "Dualtron Victor Luxury Plus - Versión 31.5AH",
+          "certificado": "A1197",
+          "categoria": "personal"
+        },
+        {
+          "id": "214183eb1249",
+          "label": "Dualtron Victor Luxury Plus - Versión 35AH",
+          "certificado": "A1198",
+          "categoria": "personal"
+        },
+        {
+          "id": "19375376322c",
+          "label": "MINI SPECIAL - Versión 12AH",
+          "certificado": "A1148",
+          "categoria": "personal"
+        },
+        {
+          "id": "fcbe089059d7",
+          "label": "MINI SPECIAL - Versión 13AH",
+          "certificado": "A1145",
+          "categoria": "personal"
+        },
+        {
+          "id": "444d09489657",
+          "label": "MINI SPECIAL - Versión 15.6AH",
+          "certificado": "A1149",
+          "categoria": "personal"
+        },
+        {
+          "id": "efe18c8b6f85",
+          "label": "MINI SPECIAL - Versión 17.5AH",
+          "certificado": "A1146",
+          "categoria": "personal"
+        },
+        {
+          "id": "aae6f395130c",
+          "label": "MINI SPECIAL - Versión 21AH",
+          "certificado": "A1147",
+          "categoria": "personal"
+        },
+        {
+          "id": "c344c350dff1",
+          "label": "MINI SPECIAL - Versión 21AH",
+          "certificado": "A1150",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "mooevo",
+      "name": "MOOEVO",
+      "models": [
+        {
+          "id": "9f9485c98ea2",
+          "label": "URBAN",
+          "certificado": "A1159",
+          "categoria": "mercancias"
+        }
+      ]
+    },
+    {
+      "id": "mtr-bikes",
+      "name": "MTR BIKES",
+      "models": [
+        {
+          "id": "851ece26f60e",
+          "label": "XIAO - Versión 1",
+          "certificado": "A1172",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "navee",
+      "name": "NAVEE",
+      "models": [
+        {
+          "id": "23233b701dbf",
+          "label": "G5 EU",
+          "certificado": "B1124",
+          "categoria": "personal"
+        },
+        {
+          "id": "80989ee80bdf",
+          "label": "G5 Max EU",
+          "certificado": "B1126",
+          "categoria": "personal"
+        },
+        {
+          "id": "15452d368742",
+          "label": "G5 Pro EU",
+          "certificado": "B1125",
+          "categoria": "personal"
+        },
+        {
+          "id": "5582317b9418",
+          "label": "GT3 Max-E",
+          "certificado": "C1003",
+          "categoria": "personal"
+        },
+        {
+          "id": "337223831219",
+          "label": "GT3 Pro-E",
+          "certificado": "C1002",
+          "categoria": "personal"
+        },
+        {
+          "id": "b11d8fea51be",
+          "label": "GT3-E",
+          "certificado": "C1001",
+          "categoria": "personal"
+        },
+        {
+          "id": "8eca4000ef30",
+          "label": "GT5 Max EU",
+          "certificado": "B1141",
+          "categoria": "personal"
+        },
+        {
+          "id": "f3bc40ee54bd",
+          "label": "GT5 Pro EU",
+          "certificado": "B1140",
+          "categoria": "personal"
+        },
+        {
+          "id": "177fff2c8deb",
+          "label": "N65i II EU",
+          "certificado": "B1127",
+          "categoria": "personal"
+        },
+        {
+          "id": "247061dd1d3b",
+          "label": "NKT2214-E25 - Versiones: 01, 02",
+          "certificado": "B1018",
+          "categoria": "personal"
+        },
+        {
+          "id": "921408c61f39",
+          "label": "NT5 Max EU",
+          "certificado": "C1021",
+          "categoria": "personal"
+        },
+        {
+          "id": "cb115e9be21c",
+          "label": "S40-E",
+          "certificado": "B1045",
+          "categoria": "personal"
+        },
+        {
+          "id": "e49da07fbc72",
+          "label": "S60-E",
+          "certificado": "B1046",
+          "categoria": "personal"
+        },
+        {
+          "id": "f9e53cd5446d",
+          "label": "ST3 Pro-E",
+          "certificado": "C1005",
+          "categoria": "personal"
+        },
+        {
+          "id": "6999335e1c11",
+          "label": "ST3-E",
+          "certificado": "C1004",
+          "categoria": "personal"
+        },
+        {
+          "id": "dd5e4648cba2",
+          "label": "ST5 Max EU",
+          "certificado": "B1122",
+          "categoria": "personal"
+        },
+        {
+          "id": "5111514fba6b",
+          "label": "ST5 Pro EU",
+          "certificado": "B1123",
+          "categoria": "personal"
+        },
+        {
+          "id": "3996ace544bb",
+          "label": "UT5 Max EU",
+          "certificado": "B1139",
+          "categoria": "personal"
+        },
+        {
+          "id": "7ff126ac73bd",
+          "label": "V1",
+          "certificado": "B1161",
+          "categoria": "personal"
+        },
+        {
+          "id": "8c6686a9e42e",
+          "label": "V25-P",
+          "certificado": "C1006",
+          "categoria": "personal"
+        },
+        {
+          "id": "4373a3f75824",
+          "label": "V25i-E - Versiones: 01, 02",
+          "certificado": "B1071",
+          "categoria": "personal"
+        },
+        {
+          "id": "646bea12482e",
+          "label": "V40i-E - Versiones: 01, 02",
+          "certificado": "B1070",
+          "categoria": "personal"
+        },
+        {
+          "id": "282758b07285",
+          "label": "V45i EU",
+          "certificado": "B1147",
+          "categoria": "personal"
+        },
+        {
+          "id": "0056d1d1c75e",
+          "label": "V50i Pro II-E",
+          "certificado": "C1007",
+          "categoria": "personal"
+        },
+        {
+          "id": "de6b6ca266e9",
+          "label": "V60i Pro-E",
+          "certificado": "B1049",
+          "categoria": "personal"
+        },
+        {
+          "id": "4e54f361048c",
+          "label": "XT5 Max EU",
+          "certificado": "C1008",
+          "categoria": "personal"
+        },
+        {
+          "id": "9e53ba0c23ab",
+          "label": "XT5 Pro EU",
+          "certificado": "C1009",
+          "categoria": "personal"
+        },
+        {
+          "id": "1ee71aee06c1",
+          "label": "XT5 Ultra EU",
+          "certificado": "C1010",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "ninebot",
+      "name": "Ninebot",
+      "models": [
+        {
+          "id": "f74cfee07335",
+          "label": "051201E",
+          "certificado": "B1002",
+          "categoria": "personal"
+        },
+        {
+          "id": "a13f7eeb0d3a",
+          "label": "051201EE",
+          "certificado": "B1103",
+          "categoria": "personal"
+        },
+        {
+          "id": "c71a5914bb54",
+          "label": "051202E",
+          "certificado": "B1003",
+          "categoria": "personal"
+        },
+        {
+          "id": "48408c4156e5",
+          "label": "051203E",
+          "certificado": "B1004",
+          "categoria": "personal"
+        },
+        {
+          "id": "a7a6fbcd9684",
+          "label": "051203EE",
+          "certificado": "B1104",
+          "categoria": "personal"
+        },
+        {
+          "id": "c9fa39ed9e11",
+          "label": "051401E",
+          "certificado": "B1005",
+          "categoria": "personal"
+        },
+        {
+          "id": "38e997e59395",
+          "label": "051401EE",
+          "certificado": "B1099",
+          "categoria": "personal"
+        },
+        {
+          "id": "671b4f33aa6d",
+          "label": "051402E",
+          "certificado": "B1006",
+          "categoria": "personal"
+        },
+        {
+          "id": "b005159beb35",
+          "label": "051402EE",
+          "certificado": "B1052",
+          "categoria": "personal"
+        },
+        {
+          "id": "f6c2e58d76ef",
+          "label": "051405E",
+          "certificado": "B1016",
+          "categoria": "personal"
+        },
+        {
+          "id": "2ded9109fb3c",
+          "label": "051501E",
+          "certificado": "B1007",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "niu",
+      "name": "NIU",
+      "models": [
+        {
+          "id": "263424d7a36a",
+          "label": "KQi 100 - Versión KQi 100F",
+          "certificado": "B1083",
+          "categoria": "personal"
+        },
+        {
+          "id": "a434953e3449",
+          "label": "KQi 100 - Versión KQi 100P",
+          "certificado": "B1082",
+          "categoria": "personal"
+        },
+        {
+          "id": "b48e2f47fd18",
+          "label": "KQi 200 - Versión KQi 200F",
+          "certificado": "B1111",
+          "categoria": "personal"
+        },
+        {
+          "id": "825479521b60",
+          "label": "KQi 200 - Versión KQi 200P",
+          "certificado": "B1110",
+          "categoria": "personal"
+        },
+        {
+          "id": "7b48717394c1",
+          "label": "KQi 300P",
+          "certificado": "B1053",
+          "categoria": "personal"
+        },
+        {
+          "id": "2c73d9765e86",
+          "label": "KQi 300P",
+          "certificado": "B1129",
+          "categoria": "personal"
+        },
+        {
+          "id": "647b416b665c",
+          "label": "KQi 300X",
+          "certificado": "B1054",
+          "categoria": "personal"
+        },
+        {
+          "id": "bac12f63b5ed",
+          "label": "KQi 300X",
+          "certificado": "B1128",
+          "categoria": "personal"
+        },
+        {
+          "id": "fab8f687d506",
+          "label": "KQi Air",
+          "certificado": "B1042",
+          "categoria": "personal"
+        },
+        {
+          "id": "bb3e72696495",
+          "label": "KQi Air X",
+          "certificado": "B1043",
+          "categoria": "personal"
+        },
+        {
+          "id": "638dcd594267",
+          "label": "KQi1 Pro",
+          "certificado": "B1034",
+          "categoria": "personal"
+        },
+        {
+          "id": "c0bdc5e9dc75",
+          "label": "KQi2 Pro",
+          "certificado": "B1041",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "nuwa-avatar-excellence",
+      "name": "NUWA AVATAR EXCELLENCE",
+      "models": [
+        {
+          "id": "d9a8b3686d77",
+          "label": "AVATAR EXCELLENCE",
+          "certificado": "A1168",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "nuxco",
+      "name": "NUXCO",
+      "models": [
+        {
+          "id": "6d5337a797dd",
+          "label": "EMANBA",
+          "certificado": "A1083",
+          "categoria": "personal"
+        },
+        {
+          "id": "3706670c0839",
+          "label": "EMANBA DUAL",
+          "certificado": "A1122",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "odyssr",
+      "name": "ODYSSR",
+      "models": [
+        {
+          "id": "940186501139",
+          "label": "DRIFT - Versión 60V",
+          "certificado": "B1145",
+          "categoria": "personal"
+        },
+        {
+          "id": "106fcba8a056",
+          "label": "RODEO - Versión 52V",
+          "certificado": "B1144",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "olsson",
+      "name": "OLSSON",
+      "models": [
+        {
+          "id": "a54437f6b0ed",
+          "label": "ADVANCED - Versiones: BN2, AM3, V3, G5, AN5, A4, NG4, A6, N6, GN7, GA7, M8, R8",
+          "certificado": "A1069",
+          "categoria": "personal"
+        },
+        {
+          "id": "efb1883a2c1e",
+          "label": "FRESH - Versiones: RED, NEON, PULSE, AZUR, NATURE",
+          "certificado": "A1047",
+          "categoria": "personal"
+        },
+        {
+          "id": "ab308ef48512",
+          "label": "FRESH SLIM",
+          "certificado": "A1117",
+          "categoria": "personal"
+        },
+        {
+          "id": "ee373844694b",
+          "label": "MAMBA LITE - Versiones: VN1, VN2, VN3, AL1, BN1, AL2, GL1, GVF1, AL3",
+          "certificado": "A1071",
+          "categoria": "personal"
+        },
+        {
+          "id": "68045ec2c39e",
+          "label": "MAMBA X-TREM DUAL - Versiones: NV01, GV02, AV03, AN04, GA05, NN06, BR07, VA08, NB09",
+          "certificado": "A1180",
+          "categoria": "personal"
+        },
+        {
+          "id": "ab396df20da5",
+          "label": "QUANTUM - Versiones: AN01, GL02, NN03, GA04, NA05, NR06, BR07, GN08, VA09",
+          "certificado": "A1184",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "oxelo",
+      "name": "OXELO",
+      "models": [
+        {
+          "id": "13e8e5387529",
+          "label": "LD900e - Versión 1.0",
+          "certificado": "A1187",
+          "categoria": "personal"
+        },
+        {
+          "id": "2a2aed1114bf",
+          "label": "MD500E - Versión 1.0",
+          "certificado": "A1155",
+          "categoria": "personal"
+        },
+        {
+          "id": "03dc82667fac",
+          "label": "SD500E - Versión 1.0",
+          "certificado": "A1154",
+          "categoria": "personal"
+        },
+        {
+          "id": "37c049fb80ff",
+          "label": "XLD900e - Versión 1.0",
+          "certificado": "A1185",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "platum",
+      "name": "PLATUM",
+      "models": [
+        {
+          "id": "d2958e085119",
+          "label": "AUTOMOBILI LAMBORGHINI - Versión: ALext Bronze, ALext Green",
+          "certificado": "B1075",
+          "categoria": "personal"
+        },
+        {
+          "id": "bf945ac81524",
+          "label": "Ducati - Versiones: PRO-ll EVO Advanced Safety, PRO-ll EVO Advanced Safety m-bell",
+          "certificado": "B1014",
+          "categoria": "personal"
+        },
+        {
+          "id": "139b970af184",
+          "label": "DUCATI - Versión: PRO-l Evo Advanced Safety",
+          "certificado": "B1040",
+          "categoria": "personal"
+        },
+        {
+          "id": "ad79c9b8e854",
+          "label": "JEEP - Versión: JAD",
+          "certificado": "B1105",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "prixton",
+      "name": "PRIXTON",
+      "models": [
+        {
+          "id": "fdfc21e5fbe0",
+          "label": "SCO850M - Versión Patinete Eco Move Scooter 8,5\"",
+          "certificado": "A1188",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "pure-electric",
+      "name": "Pure Electric",
+      "models": [
+        {
+          "id": "380367598842",
+          "label": "Advance + - Versiones: Gris Mercurio Metálico / Plata Platino Metálico",
+          "certificado": "A1078",
+          "categoria": "personal"
+        },
+        {
+          "id": "7ca37c1112b3",
+          "label": "Advance - Versiones: Negro / Gris claro",
+          "certificado": "A1076",
+          "categoria": "personal"
+        },
+        {
+          "id": "21628ca3d01a",
+          "label": "Advance Flex - Versiones: Gris Mercurio Metálico / Plata Platino Metálico",
+          "certificado": "A1077",
+          "categoria": "personal"
+        },
+        {
+          "id": "008d9a8fa74b",
+          "label": "Air 3 - Versión: Negro",
+          "certificado": "A1073",
+          "categoria": "personal"
+        },
+        {
+          "id": "68e20917d4e5",
+          "label": "Air 3 Pro + - Versiones: Gris Mercurio Metálico / Plata Platino Metálico",
+          "certificado": "A1075",
+          "categoria": "personal"
+        },
+        {
+          "id": "207824ff3e0b",
+          "label": "Air 3 Pro - Versiones: Negro / Gris Claro",
+          "certificado": "A1074",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "rcb",
+      "name": "RCB",
+      "models": [
+        {
+          "id": "985fc2ee6945",
+          "label": "R16",
+          "certificado": "C1013",
+          "categoria": "personal"
+        },
+        {
+          "id": "35385a093520",
+          "label": "R17",
+          "certificado": "B1119",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "red-bull-racing",
+      "name": "RED BULL RACING",
+      "models": [
+        {
+          "id": "3ea5a11a0ab4",
+          "label": "RB-2RTEEN10-78-ES - Versión Race Teen.2",
+          "certificado": "A1041",
+          "categoria": "personal"
+        },
+        {
+          "id": "dfe62c0cbb9c",
+          "label": "RB-2RTENOR10-10-ES",
+          "certificado": "A1217",
+          "categoria": "personal"
+        },
+        {
+          "id": "28d47c37ed97",
+          "label": "RB-2RTENOR10-78-ES",
+          "certificado": "A1216",
+          "categoria": "personal"
+        },
+        {
+          "id": "e3186c8afec3",
+          "label": "RB-RSTREETOR85-6-ES",
+          "certificado": "A1218",
+          "categoria": "personal"
+        },
+        {
+          "id": "2a4fb4a08e47",
+          "label": "RB-RTEEN10-75-ES - Versión Race Teen 10”",
+          "certificado": "A1036",
+          "categoria": "personal"
+        },
+        {
+          "id": "ef5a717e8fe9",
+          "label": "RB-RTEEN85-75-ES - Versión Race Teen 8.5",
+          "certificado": "A1024",
+          "categoria": "personal"
+        },
+        {
+          "id": "a68320dcfc5e",
+          "label": "RB-RTENTAKEUP10-10-ES - Versión Race Take Up 10”",
+          "certificado": "A1035",
+          "categoria": "personal"
+        },
+        {
+          "id": "34e313bd55fc",
+          "label": "RB-RTENTURBO10-12-ES - Versiones: Race Ten Turbo 12 y Race Ten Turbo 12 Special",
+          "certificado": "A1043",
+          "categoria": "personal"
+        },
+        {
+          "id": "af299ef60356",
+          "label": "RB-RTENTURBO10-75-ES - Versiones: Race Ten Turbo 75 y Race Ten Turbo 75 Special",
+          "certificado": "A1042",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "reebok",
+      "name": "REEBOK",
+      "models": [
+        {
+          "id": "5af77e77c0cd",
+          "label": "DELTA URBAN",
+          "certificado": "A1111",
+          "categoria": "personal"
+        },
+        {
+          "id": "5d750c209a97",
+          "label": "URBAN",
+          "certificado": "A1110",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "ridemovi",
+      "name": "Ridemovi",
+      "models": [
+        {
+          "id": "a22a35409f05",
+          "label": "ES410",
+          "certificado": "B1015",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "rovoron",
+      "name": "ROVORON",
+      "models": [
+        {
+          "id": "e4ad8a69790d",
+          "label": "R7 - Versión: 60V",
+          "certificado": "B1137",
+          "categoria": "personal"
+        },
+        {
+          "id": "0017e459a407",
+          "label": "R7 PRO - Versión: 60V",
+          "certificado": "B1148",
+          "categoria": "personal"
+        },
+        {
+          "id": "795ff0f4a6b2",
+          "label": "S7 - Versión: 84V",
+          "certificado": "B1146",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "sabway",
+      "name": "SABWAY",
+      "models": [
+        {
+          "id": "4886b5c29887",
+          "label": "DYNAMIC PRO",
+          "certificado": "A1124",
+          "categoria": "personal"
+        },
+        {
+          "id": "d60182b9cb6e",
+          "label": "MI SABWAY PRO",
+          "certificado": "A1123",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "segway",
+      "name": "SEGWAY",
+      "models": [
+        {
+          "id": "6c41af473fc8",
+          "label": "051601E",
+          "certificado": "B1093",
+          "categoria": "personal"
+        },
+        {
+          "id": "a3d765b91ecc",
+          "label": "051701E",
+          "certificado": "B1097",
+          "categoria": "personal"
+        },
+        {
+          "id": "e70dba4a64d6",
+          "label": "051801E",
+          "certificado": "B1078",
+          "categoria": "personal"
+        },
+        {
+          "id": "21716e2890ef",
+          "label": "051801E",
+          "certificado": "B1169",
+          "categoria": "personal"
+        },
+        {
+          "id": "3f89b093959e",
+          "label": "051901E",
+          "certificado": "B1108",
+          "categoria": "personal"
+        },
+        {
+          "id": "cd2dcbb542d2",
+          "label": "051902E",
+          "certificado": "B1109",
+          "categoria": "personal"
+        },
+        {
+          "id": "1d2c31fe716a",
+          "label": "051903E",
+          "certificado": "B1164",
+          "categoria": "personal"
+        },
+        {
+          "id": "9d7ac988859d",
+          "label": "051904E",
+          "certificado": "B1165",
+          "categoria": "personal"
+        },
+        {
+          "id": "147ab41fcdee",
+          "label": "052001E",
+          "certificado": "B1162",
+          "categoria": "personal"
+        },
+        {
+          "id": "eb5bd828d2b9",
+          "label": "060202E",
+          "certificado": "B1085",
+          "categoria": "personal"
+        },
+        {
+          "id": "1c973397db1f",
+          "label": "S100",
+          "certificado": "B1143",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "skateflash",
+      "name": "SkateFlash",
+      "models": [
+        {
+          "id": "c7483ffdc4de",
+          "label": "Model US",
+          "certificado": "A1081",
+          "categoria": "personal"
+        },
+        {
+          "id": "3c7e72b0a94c",
+          "label": "Spirex",
+          "certificado": "B1088",
+          "categoria": "personal"
+        },
+        {
+          "id": "97eee8985235",
+          "label": "Urban",
+          "certificado": "A1092",
+          "categoria": "personal"
+        },
+        {
+          "id": "34d174177def",
+          "label": "Urban Dual Pro",
+          "certificado": "A1094",
+          "categoria": "personal"
+        },
+        {
+          "id": "612bc296bffe",
+          "label": "Urban Pro",
+          "certificado": "A1093",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "smartgyro",
+      "name": "SMARTGYRO",
+      "models": [
+        {
+          "id": "1fbaa100379d",
+          "label": "CROSSOVER",
+          "certificado": "A1057",
+          "categoria": "personal"
+        },
+        {
+          "id": "39a20edf3de9",
+          "label": "CROSSOVER DUAL MAX 2",
+          "certificado": "A1176",
+          "categoria": "personal"
+        },
+        {
+          "id": "6ca730e69ae0",
+          "label": "CROSSOVER DUAL MAX 2 LR",
+          "certificado": "A1175",
+          "categoria": "personal"
+        },
+        {
+          "id": "cbc0d6f04d76",
+          "label": "CROSSOVER DUAL XT",
+          "certificado": "A1205",
+          "categoria": "personal"
+        },
+        {
+          "id": "9e7fd2df502f",
+          "label": "CROSSOVER-LR",
+          "certificado": "A1058",
+          "categoria": "personal"
+        },
+        {
+          "id": "87656c0751ef",
+          "label": "K1",
+          "certificado": "A1209",
+          "categoria": "personal"
+        },
+        {
+          "id": "cfcc8e7fb69e",
+          "label": "K2-PRO",
+          "certificado": "A1061",
+          "categoria": "personal"
+        },
+        {
+          "id": "bccc0f26e42e",
+          "label": "K2-PRO XL",
+          "certificado": "A1090",
+          "categoria": "personal"
+        },
+        {
+          "id": "5c2e8522f17f",
+          "label": "K5 PRO",
+          "certificado": "A1213",
+          "categoria": "personal"
+        },
+        {
+          "id": "c4f916945ab5",
+          "label": "K5 PRO LR",
+          "certificado": "A1214",
+          "categoria": "personal"
+        },
+        {
+          "id": "51511722b5a2",
+          "label": "RAPTOR EVO",
+          "certificado": "A1165",
+          "categoria": "personal"
+        },
+        {
+          "id": "5d5353f3d42b",
+          "label": "RAPTOR EVO D15",
+          "certificado": "A1167",
+          "categoria": "personal"
+        },
+        {
+          "id": "7e5368ca544a",
+          "label": "RAPTOR EVO D20",
+          "certificado": "A1166",
+          "categoria": "personal"
+        },
+        {
+          "id": "608f35d14eff",
+          "label": "RAPTOR EVO LR",
+          "certificado": "A1164",
+          "categoria": "personal"
+        },
+        {
+          "id": "8feca2ba7434",
+          "label": "ROCKWAY GT",
+          "certificado": "A1190",
+          "categoria": "personal"
+        },
+        {
+          "id": "7dd0429ba786",
+          "label": "ROCKWAY GT DUAL",
+          "certificado": "A1215",
+          "categoria": "personal"
+        },
+        {
+          "id": "488feb83ed8d",
+          "label": "ROCKWAY GTS",
+          "certificado": "A1189",
+          "categoria": "personal"
+        },
+        {
+          "id": "daafb9de8169",
+          "label": "ROCKWAY PRO EVO",
+          "certificado": "A1162",
+          "categoria": "personal"
+        },
+        {
+          "id": "c73891e7edf2",
+          "label": "RYDER",
+          "certificado": "A1105",
+          "categoria": "personal"
+        },
+        {
+          "id": "6237a240e61d",
+          "label": "RYDER 17.5",
+          "certificado": "A1118",
+          "categoria": "personal"
+        },
+        {
+          "id": "74b07e283a59",
+          "label": "SG27245-13",
+          "certificado": "A1032",
+          "categoria": "personal"
+        },
+        {
+          "id": "b4e05a90dec7",
+          "label": "SG27245-18",
+          "certificado": "A1033",
+          "categoria": "personal"
+        },
+        {
+          "id": "74d57822a506",
+          "label": "SG27245-23",
+          "certificado": "A1034",
+          "categoria": "personal"
+        },
+        {
+          "id": "b0cdc65590a6",
+          "label": "SG27297-X",
+          "certificado": "A1022",
+          "categoria": "personal"
+        },
+        {
+          "id": "106012ded993",
+          "label": "SW-RW",
+          "certificado": "A1059",
+          "categoria": "personal"
+        },
+        {
+          "id": "473b7f7414af",
+          "label": "SW-RW EVO",
+          "certificado": "A1163",
+          "categoria": "personal"
+        },
+        {
+          "id": "73072f82155e",
+          "label": "SW-RW PRO",
+          "certificado": "A1060",
+          "categoria": "personal"
+        },
+        {
+          "id": "7c898d05e10b",
+          "label": "SX300",
+          "certificado": "A1151",
+          "categoria": "personal"
+        },
+        {
+          "id": "18b3bd4ecb2e",
+          "label": "Z-ONE",
+          "certificado": "A1045",
+          "categoria": "personal"
+        },
+        {
+          "id": "a8096a6fd252",
+          "label": "Z-PRO",
+          "certificado": "A1046",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "superpedestrian",
+      "name": "SUPERPEDESTRIAN",
+      "models": [
+        {
+          "id": "3510e3f999c4",
+          "label": "S2.1",
+          "certificado": "B1012",
+          "categoria": "personal"
+        },
+        {
+          "id": "6566b591fa47",
+          "label": "S2.1 - Versión: S2.1 sb",
+          "certificado": "B1084",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "teverun",
+      "name": "TEVERUN",
+      "models": [
+        {
+          "id": "3478e4c38bdb",
+          "label": "BLADE MINI - Versión Ultra",
+          "certificado": "B1118",
+          "categoria": "personal"
+        },
+        {
+          "id": "e78c585d9785",
+          "label": "FIGHTER MINI - Versiones: Mini Eco 52v15,6ah / Mini 52v21ah / Mini Pro 60v25ah",
+          "certificado": "B1029",
+          "categoria": "personal"
+        },
+        {
+          "id": "9346566b95a0",
+          "label": "FIGHTER MINI - Versión Q",
+          "certificado": "B1100",
+          "categoria": "personal"
+        },
+        {
+          "id": "75d9785b3ced",
+          "label": "SPACE",
+          "certificado": "B1130",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "thetatau",
+      "name": "THETATAU",
+      "models": [
+        {
+          "id": "3aebf082c0d2",
+          "label": "Kaabo Mantis X - Versión: 4818",
+          "certificado": "B1163",
+          "categoria": "personal"
+        },
+        {
+          "id": "03d239428d07",
+          "label": "Kaabo Urban - Versión: 4810",
+          "certificado": "B1149",
+          "categoria": "personal"
+        },
+        {
+          "id": "a622c128541a",
+          "label": "Kaabo Wolf Warrior X - Versión: 6027",
+          "certificado": "B1150",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "tier",
+      "name": "TIER",
+      "models": [
+        {
+          "id": "bbb84f07f6c1",
+          "label": "TIER 6",
+          "certificado": "A1007",
+          "categoria": "personal"
+        },
+        {
+          "id": "71c72e5cc2f8",
+          "label": "TIER 6 Pro",
+          "certificado": "A1025",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "tromber",
+      "name": "TROMBER",
+      "models": [
+        {
+          "id": "bcdbffeeee72",
+          "label": "TROMBER PICKING - Versión 01",
+          "certificado": "A1170",
+          "categoria": "mercancias"
+        }
+      ]
+    },
+    {
+      "id": "urban-glide",
+      "name": "URBAN GLIDE",
+      "models": [
+        {
+          "id": "92b894be47b5",
+          "label": "100 EVO",
+          "certificado": "A1223",
+          "categoria": "personal"
+        },
+        {
+          "id": "c4023d03d338",
+          "label": "100 MAX - Versión MAX-77834",
+          "certificado": "A1135",
+          "categoria": "personal"
+        },
+        {
+          "id": "2905cdff4a26",
+          "label": "100 PRO II - Versión PRO II",
+          "certificado": "A1136",
+          "categoria": "personal"
+        },
+        {
+          "id": "b8868aeadbfa",
+          "label": "85 EVO",
+          "certificado": "A1222",
+          "categoria": "personal"
+        },
+        {
+          "id": "15b871c5175d",
+          "label": "ECROSS PRO - Versiones: ECROSS PRO y ECROSS PRO BLUE",
+          "certificado": "A1116",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "vankus",
+      "name": "VANKUS",
+      "models": [
+        {
+          "id": "a90c4144e478",
+          "label": "DUALTRON ACHILLEUS",
+          "certificado": "A1174",
+          "categoria": "personal"
+        },
+        {
+          "id": "d0e122abda0c",
+          "label": "TEVERUN BLADE MINI",
+          "certificado": "A1097",
+          "categoria": "personal"
+        },
+        {
+          "id": "8254105fbd58",
+          "label": "TEVERUN BLADE MINI PRO",
+          "certificado": "A1091",
+          "categoria": "personal"
+        },
+        {
+          "id": "e73174fb6787",
+          "label": "TEVERUN BLADE MINI PRO 27Ah",
+          "certificado": "A1152",
+          "categoria": "personal"
+        },
+        {
+          "id": "f156779a0229",
+          "label": "TEVERUN FIGHTER MINI",
+          "certificado": "A1095",
+          "categoria": "personal"
+        },
+        {
+          "id": "e4490706b448",
+          "label": "TEVERUN FIGHTER MINI +",
+          "certificado": "A1096",
+          "categoria": "personal"
+        },
+        {
+          "id": "1228d86c0e89",
+          "label": "TEVERUN FIGHTER MINI 27Ah",
+          "certificado": "A1141",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "vmax",
+      "name": "VMAX",
+      "models": [
+        {
+          "id": "a6d7633859e9",
+          "label": "VX2 PRO ST - Versión ST-B",
+          "certificado": "A1178",
+          "categoria": "personal"
+        },
+        {
+          "id": "f6d735282c4c",
+          "label": "VX4 ST - Versión ST",
+          "certificado": "A1177",
+          "categoria": "personal"
+        },
+        {
+          "id": "4a00d94562f6",
+          "label": "VX5 PRO ST - Versión ST",
+          "certificado": "A1179",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "voi",
+      "name": "VOI",
+      "models": [
+        {
+          "id": "bbf21b1aa90b",
+          "label": "SNSC 2.3.3 VOI - Versión V5",
+          "certificado": "A1011",
+          "categoria": "personal"
+        },
+        {
+          "id": "7b154867958a",
+          "label": "V7",
+          "certificado": "A1107",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "voltrock",
+      "name": "VOLTROCK",
+      "models": [
+        {
+          "id": "c523963aee3b",
+          "label": "F-Wasp 350",
+          "certificado": "A1211",
+          "categoria": "personal"
+        },
+        {
+          "id": "3c3cf73d7156",
+          "label": "R-Viper 800",
+          "certificado": "A1212",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "wispeed",
+      "name": "WISPEED",
+      "models": [
+        {
+          "id": "e980cf308164",
+          "label": "C8-20 - Versión 00",
+          "certificado": "A1115",
+          "categoria": "personal"
+        },
+        {
+          "id": "deb47b730e9b",
+          "label": "SUVPILOT 150 - Versión 00",
+          "certificado": "A1142",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "xiaomi",
+      "name": "XIAOMI",
+      "models": [
+        {
+          "id": "ee0e7a281e95",
+          "label": "DDHBC01XB",
+          "certificado": "B1132",
+          "categoria": "personal"
+        },
+        {
+          "id": "eb07dbc441bc",
+          "label": "DDHBC15XB",
+          "certificado": "B1160",
+          "categoria": "personal"
+        },
+        {
+          "id": "251b17ccdb97",
+          "label": "DDHBC35LQ",
+          "certificado": "B1157",
+          "categoria": "personal"
+        },
+        {
+          "id": "ee2a17da97f0",
+          "label": "Xiaomi electric scooter 4 Go EU",
+          "certificado": "B1008",
+          "categoria": "personal"
+        },
+        {
+          "id": "322e826983b3",
+          "label": "Xiaomi electric scooter 4 Go EU - Versiones: NEB A, NEB B, NEB C, NEB D",
+          "certificado": "B1013",
+          "categoria": "personal"
+        },
+        {
+          "id": "2687361e51ec",
+          "label": "Xiaomi Electric Scooter 4 Lite (2nd Gen) ES",
+          "certificado": "B1036",
+          "categoria": "personal"
+        },
+        {
+          "id": "a7ebcebfa875",
+          "label": "Xiaomi Electric Scooter 4 Pro (2nd Gen) ES",
+          "certificado": "B1030",
+          "categoria": "personal"
+        },
+        {
+          "id": "3e6f15f38adb",
+          "label": "Xiaomi electric scooter 4Pro Max EU",
+          "certificado": "B1025",
+          "categoria": "personal"
+        },
+        {
+          "id": "d7cb95a9fef7",
+          "label": "Xiaomi electric scooter 4Pro Plus ES",
+          "certificado": "B1022",
+          "categoria": "personal"
+        },
+        {
+          "id": "f6d5b2fc6486",
+          "label": "Xiaomi Electric Scooter 5 ES",
+          "certificado": "B1079",
+          "categoria": "personal"
+        },
+        {
+          "id": "13fa41e2fe51",
+          "label": "Xiaomi Electric Scooter 5 Max ES",
+          "certificado": "B1080",
+          "categoria": "personal"
+        },
+        {
+          "id": "790efa170cd2",
+          "label": "Xiaomi Electric Scooter 5 Plus ES",
+          "certificado": "B1117",
+          "categoria": "personal"
+        },
+        {
+          "id": "2affae1b7c81",
+          "label": "Xiaomi Electric Scooter 5 Pro DE",
+          "certificado": "B1081",
+          "categoria": "personal"
+        },
+        {
+          "id": "867b59f9c724",
+          "label": "Xiaomi Electric Scooter 6 GL",
+          "certificado": "B1133",
+          "categoria": "personal"
+        },
+        {
+          "id": "5db16e9dfd05",
+          "label": "Xiaomi Electric Scooter 6 Lite GL",
+          "certificado": "B1134",
+          "categoria": "personal"
+        },
+        {
+          "id": "75c7c1eb03cc",
+          "label": "Xiaomi Electric Scooter 6 Max GL",
+          "certificado": "C1014",
+          "categoria": "personal"
+        },
+        {
+          "id": "7ce84ea7dc26",
+          "label": "Xiaomi Electric Scooter 6 Pro",
+          "certificado": "B1131",
+          "categoria": "personal"
+        },
+        {
+          "id": "d8ccdc6b6944",
+          "label": "Xiaomi Electric Scooter Elite ES",
+          "certificado": "B1092",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "xtreme-motorsport",
+      "name": "XTREME MOTORSPORT",
+      "models": [
+        {
+          "id": "ba2277e9a8eb",
+          "label": "F1 - Versión: XTR-F1-1",
+          "certificado": "A1204",
+          "categoria": "personal"
+        },
+        {
+          "id": "fa111e1968de",
+          "label": "T4 - Versión: XTR-T4-1",
+          "certificado": "A1125",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "yadea",
+      "name": "YADEA",
+      "models": [
+        {
+          "id": "ef1ec12e3d76",
+          "label": "YDX1",
+          "certificado": "B1026",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "youin",
+      "name": "YOUIN",
+      "models": [
+        {
+          "id": "aae16ded9df3",
+          "label": "XL MAX LITE Versión: V 2.0",
+          "certificado": "A1079",
+          "categoria": "personal"
+        },
+        {
+          "id": "738f075fcdc0",
+          "label": "XL MAX Versión: V 2.0",
+          "certificado": "A1080",
+          "categoria": "personal"
+        },
+        {
+          "id": "e48b1d390733",
+          "label": "XL3",
+          "certificado": "A1082",
+          "categoria": "personal"
+        }
+      ]
+    },
+    {
+      "id": "zwheel",
+      "name": "ZWHEEL",
+      "models": [
+        {
+          "id": "6b79d39d17b3",
+          "label": "S1-00",
+          "certificado": "A1119",
+          "categoria": "personal"
+        },
+        {
+          "id": "f8a77bb02e8d",
+          "label": "S2-00",
+          "certificado": "A1120",
+          "categoria": "personal"
+        },
+        {
+          "id": "bb434b9c8e53",
+          "label": "S4-00",
+          "certificado": "A1121",
+          "categoria": "personal"
+        },
+        {
+          "id": "d0db77440932",
+          "label": "ZCOUGAR DUO-00",
+          "certificado": "A1040",
+          "categoria": "personal"
+        },
+        {
+          "id": "1f2b449a4fab",
+          "label": "ZCOUGAR-00",
+          "certificado": "A1038",
+          "categoria": "personal"
+        },
+        {
+          "id": "82351555b270",
+          "label": "ZCOUGAR-01",
+          "certificado": "A1039",
+          "categoria": "personal"
+        },
+        {
+          "id": "f94af7489136",
+          "label": "ZFOX MAX-00",
+          "certificado": "A1068",
+          "categoria": "personal"
+        },
+        {
+          "id": "33692063a722",
+          "label": "ZFOX MAX-01",
+          "certificado": "A1072",
+          "categoria": "personal"
+        },
+        {
+          "id": "a255e2f24e0c",
+          "label": "ZFOX-00",
+          "certificado": "A1026",
+          "categoria": "personal"
+        },
+        {
+          "id": "410268ec0e6d",
+          "label": "ZFOX-01",
+          "certificado": "A1027",
+          "categoria": "personal"
+        },
+        {
+          "id": "1db735ef5468",
+          "label": "ZLION NITRO-00",
+          "certificado": "A1225",
+          "categoria": "personal"
+        },
+        {
+          "id": "c5a7249054c6",
+          "label": "ZLION NITRO-01",
+          "certificado": "A1226",
+          "categoria": "personal"
+        },
+        {
+          "id": "a55ba5c26fc7",
+          "label": "ZLION PRO-00",
+          "certificado": "A1084",
+          "categoria": "personal"
+        },
+        {
+          "id": "40a587a1d0d3",
+          "label": "ZLION X-00",
+          "certificado": "A1028",
+          "categoria": "personal"
+        },
+        {
+          "id": "a49d941f7c44",
+          "label": "ZLIONX MAX-00",
+          "certificado": "A1051",
+          "categoria": "personal"
+        },
+        {
+          "id": "4fc26d9bcb3d",
+          "label": "ZRINO DUO-00",
+          "certificado": "A1021",
+          "categoria": "personal"
+        },
+        {
+          "id": "e926e7471426",
+          "label": "ZRINO DUO-01",
+          "certificado": "A1029",
+          "categoria": "personal"
+        },
+        {
+          "id": "ab999fd451fa",
+          "label": "ZRINO-00",
+          "certificado": "A1020",
+          "categoria": "personal"
+        },
+        {
+          "id": "fed82d3ca048",
+          "label": "ZRINO-01",
+          "certificado": "A1031",
+          "categoria": "personal"
+        },
+        {
+          "id": "65bef0449480",
+          "label": "ZRINO-02",
+          "certificado": "A1030",
+          "categoria": "personal"
+        },
+        {
+          "id": "fbba41821fa7",
+          "label": "ZRINO-03",
+          "certificado": "A1070",
+          "categoria": "personal"
+        },
+        {
+          "id": "9165c68f4580",
+          "label": "ZWOLF DUO-00",
+          "certificado": "A1201",
+          "categoria": "personal"
+        },
+        {
+          "id": "d6c861bc51c9",
+          "label": "ZWOLF-00",
+          "certificado": "A1200",
+          "categoria": "personal"
+        },
+        {
+          "id": "1ec9b674e8b3",
+          "label": "ZWOLF-01",
+          "certificado": "A1199",
+          "categoria": "personal"
+        }
+      ]
+    }
+  ]
+}
