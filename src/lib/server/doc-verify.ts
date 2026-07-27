@@ -71,8 +71,9 @@ export type DocVerifyResult = {
 };
 
 function isVerifyEnabled(): boolean {
+	// Opt-in explícito: de momento el CEO no quiere filtrar subidas.
 	const flag = env.DOC_VERIFY_ENABLED?.trim().toLowerCase();
-	if (flag === '0' || flag === 'false' || flag === 'off') return false;
+	if (flag !== '1' && flag !== 'true' && flag !== 'on') return false;
 	return Boolean(apiKey());
 }
 
