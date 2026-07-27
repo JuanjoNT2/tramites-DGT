@@ -115,13 +115,6 @@
 				data-analytics={CtaIds.NAV_LINK}
 				onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/contacto' })}>Contacto</a
 			>
-			<a
-				href="/pago/prueba"
-				class="nav-prueba"
-				data-analytics={CtaIds.NAV_LINK}
-				onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/pago/prueba' })}
-				>Probar pago</a
-			>
 		</nav>
 
 		{#if user}
@@ -299,14 +292,6 @@
 						closeMobile();
 					}}>Contacto</a
 				>
-				<a
-					href="/pago/prueba"
-					class="nav-prueba"
-					onclick={() => {
-						trackClick(CtaIds.NAV_LINK, { destination: '/pago/prueba', nav: 'mobile' });
-						closeMobile();
-					}}>Probar pago</a
-				>
 				{#if user}
 					{#if isStaffRole(profile?.role)}
 						<a href="/gestor" class="btn mobile-cta" onclick={closeMobile}>Panel gestor</a>
@@ -393,10 +378,6 @@
 		cursor: pointer;
 		padding: 10px 0;
 		white-space: nowrap;
-	}
-
-	.nav-prueba {
-		color: var(--brand-teal, #00c6d1) !important;
 	}
 
 	.links > a:hover,
