@@ -73,14 +73,45 @@ export type DocVerifyResult = {
 function isVerifyEnabled(): boolean {
 	const flag = env.DOC_VERIFY_ENABLED?.trim().toLowerCase();
 	if (flag === '0' || flag === 'false' || flag === 'off') return false;
-	return Boolean(env.OPENAI_API_KEY?.trim() || env.DOC_VERIFY_API_KEY?.trim());
+	return Boolean(apiKey());
 }
 
 function apiKey(): string | null {
-	return env.OPENAI_API_KEY?.trim() || env.DOC_VERIFY_API_KEY?.trim() || null;
+	return (
+		env.ANTHROPIC_API_KEY?.trim() ||
+		env.DOC_VERIFY_API_KEY?.trim() ||
+		null
+	);
 }
 
-/** Clasifica la imagen y comprueba que coincida con el slot esperado. */
+function mediaType(mime: string): 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' {
+	if (mime === 'image/png') return 'image/png';
+	if (mime === 'image/gif') return 'image/gif';
+	if (mime === 'image/webp') return 'image/webp';
+	return 'image/jpeg';
+}
+
+function extractJson(text: string): {
+	detected?: string;
+	confidence?: number;
+	match?: boolean;
+	reason?: string;
+} | null {
+	const trimmed = text.trim();
+	try {
+		return JSON.parse(trimmed);
+	} catch {
+		const m = trimmed.match(/\{[\s\S]*\}/);
+		if (!m) return null;
+		try {
+			return JSON.parse(m[0]);
+		} catch {
+			return null;
+		}
+	}
+}
+
+/** Clasifica la imagen con Claude (Anthropic) y comprueba el tipo esperado. */
 export async function verifyDocumentUpload(opts: {
 	docType: string;
 	mime: string;
@@ -101,7 +132,6 @@ export async function verifyDocumentUpload(opts: {
 	}
 
 	if (opts.mime === 'application/pdf' || opts.filename.toLowerCase().endsWith('.pdf')) {
-		// PDF: no clasificamos páginas aquí; se acepta y el gestor revisa.
 		return {
 			ok: true,
 			expected,
@@ -128,12 +158,12 @@ export async function verifyDocumentUpload(opts: {
 	}
 
 	const b64 = Buffer.from(opts.bytes).toString('base64');
-	const dataUrl = `data:${opts.mime};base64,${b64}`;
 	const expectedLabel = KIND_LABELS[expected];
+	const model = env.DOC_VERIFY_MODEL?.trim() || 'claude-haiku-4-5-20251001';
 
 	const prompt = `Eres un verificador de documentos españoles para trámites DGT.
 El usuario debía subir: "${expectedLabel}" (código interno: ${expected}).
-Analiza la imagen y responde SOLO JSON válido:
+Analiza la imagen y responde SOLO JSON válido (sin markdown):
 {"detected":"<una de: id_front|id_back|permiso_circulacion|ficha_tecnica|permiso_conducir|carta_cancelacion|foto_vehiculo|ficha_vmp|denuncia|other|random>","confidence":0.0,"match":true|false,"reason":"breve"}
 - id_front / id_back: DNI, NIE o CIF español (anverso/reverso).
 - permiso_circulacion: permiso de circulación de vehículo.
@@ -143,26 +173,34 @@ Analiza la imagen y responde SOLO JSON válido:
 - foto_vehiculo: foto de coche/moto/patinete.
 - ficha_vmp: placa o ficha de patinete.
 - denuncia: denuncia policial o justificante.
-- random: selfie, paisaje, captura de pantalla irrelevante, etc.
+- random: selfie, paisaje, captura irrelevante, etc.
 match=true solo si la imagen corresponde claramente a lo esperado.`;
 
 	try {
-		const res = await fetch('https://api.openai.com/v1/chat/completions', {
+		const res = await fetch('https://api.anthropic.com/v1/messages', {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${key}`,
+				'x-api-key': key,
+				'anthropic-version': '2023-06-01',
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
-				model: env.DOC_VERIFY_MODEL?.trim() || 'gpt-4o-mini',
+				model,
+				max_tokens: 300,
 				temperature: 0,
-				response_format: { type: 'json_object' },
 				messages: [
 					{
 						role: 'user',
 						content: [
-							{ type: 'text', text: prompt },
-							{ type: 'image_url', image_url: { url: dataUrl, detail: 'low' } }
+							{
+								type: 'image',
+								source: {
+									type: 'base64',
+									media_type: mediaType(opts.mime),
+									data: b64
+								}
+							},
+							{ type: 'text', text: prompt }
 						]
 					}
 				]
@@ -171,29 +209,23 @@ match=true solo si la imagen corresponde claramente a lo esperado.`;
 
 		if (!res.ok) {
 			const errText = await res.text().catch(() => '');
-			console.error('[doc-verify] openai', res.status, errText.slice(0, 300));
-			// No bloqueamos el trámite si el proveedor falla
+			console.error('[doc-verify] anthropic', res.status, errText.slice(0, 400));
 			return { ok: true, expected, detected: null, confidence: 0, message: null, skipped: true };
 		}
 
 		const data = (await res.json()) as {
-			choices?: { message?: { content?: string } }[];
+			content?: { type?: string; text?: string }[];
 		};
-		const raw = data.choices?.[0]?.message?.content || '{}';
-		let parsed: { detected?: string; confidence?: number; match?: boolean; reason?: string };
-		try {
-			parsed = JSON.parse(raw);
-		} catch {
+		const raw =
+			data.content?.filter((c) => c.type === 'text').map((c) => c.text || '').join('\n') || '{}';
+		const parsed = extractJson(raw);
+		if (!parsed) {
 			return { ok: true, expected, detected: null, confidence: 0, message: null, skipped: true };
 		}
 
 		const detected = String(parsed.detected || 'other');
 		const confidence = Number(parsed.confidence) || 0;
-		const match =
-			parsed.match === true ||
-			detected === expected ||
-			(expected === 'id_front' && detected === 'id_front') ||
-			(expected === 'id_back' && detected === 'id_back');
+		const match = parsed.match === true || detected === expected;
 
 		if (!match || detected === 'random' || confidence < 0.45) {
 			return {
