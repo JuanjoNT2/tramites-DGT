@@ -7,7 +7,8 @@ import {
 	isStripeConfigured
 } from '$lib/server/stripe';
 
-const AMOUNT_EUR = 0.01;
+/** Mínimo de Stripe Checkout en EUR. */
+const AMOUNT_EUR = 0.5;
 const TIPO = 'prueba_pago';
 
 function isPruebaEnabled(): boolean {
@@ -44,7 +45,7 @@ export const POST: RequestHandler = async ({ url, locals }) => {
 		pago: {
 			amount: AMOUNT_EUR,
 			currency: 'EUR',
-			amountCentsExpected: 1,
+			amountCentsExpected: 50,
 			mode: 'stripe'
 		}
 	};
@@ -68,7 +69,7 @@ export const POST: RequestHandler = async ({ url, locals }) => {
 		const session = await createStripeCheckoutSession({
 			solicitudId: id,
 			amountEur: AMOUNT_EUR,
-			description: 'Prueba de pago Stripe (0,01 €)',
+			description: 'Prueba de pago Stripe (0,50 €)',
 			customerEmail: email,
 			accessToken,
 			origin: url.origin

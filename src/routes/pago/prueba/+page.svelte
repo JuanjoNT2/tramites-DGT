@@ -26,7 +26,7 @@
 
 <SeoHead
 	title="Probar pago Stripe"
-	description="Cobro de prueba de 0,01 € para verificar la pasarela."
+	description="Cobro de prueba de 0,50 € para verificar la pasarela."
 	path="/pago/prueba"
 	robots="noindex,nofollow"
 />
@@ -34,16 +34,16 @@
 <section class="section">
 	<div class="wrap card pad">
 		<p class="eyebrow">Solo para pruebas</p>
-		<h1>Probar pago (0,01 €)</h1>
+		<h1>Probar pago (0,50 €)</h1>
 		<p class="lead">
-			Abre el Checkout de Stripe y cobra <strong>un céntimo</strong> con tarjeta real (modo Live).
-			Sirve para comprobar redirección, cobro, webhook y que la solicitud quede como
-			<strong> pagada</strong>.
+			Abre el Checkout de Stripe y cobra <strong>0,50 €</strong> (mínimo de Stripe en EUR) con
+			tarjeta real (modo Live). Sirve para comprobar redirección, cobro, webhook y que la
+			solicitud quede como <strong>pagada</strong>.
 		</p>
 		<ul class="steps">
 			<li>Pulsa el botón y completa el pago en Stripe.</li>
 			<li>Tras pagar deberías volver a la página de éxito.</li>
-			<li>En Stripe → Payments verás el cobro de 0,01 €.</li>
+			<li>En Stripe → Payments verás el cobro de 0,50 €.</li>
 		</ul>
 
 		{#if error}
@@ -51,7 +51,7 @@
 		{/if}
 
 		<button type="button" class="btn cta" disabled={loading} onclick={startPrueba}>
-			{loading ? 'Abriendo Stripe…' : 'Pagar 0,01 € ahora'}
+			{loading ? 'Abriendo Stripe…' : 'Pagar 0,50 € ahora'}
 		</button>
 
 		<p class="note">
