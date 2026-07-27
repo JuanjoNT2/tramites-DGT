@@ -34,7 +34,10 @@
 	import { funnel, initAnalytics } from '$lib/analytics';
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
+	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
 	import { getStaticSeo } from '$lib/seo/site';
+	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
+	import { uploadTramiteDocuments } from '$lib/tramite/upload-docs';
 	import {
 		clearDraft,
 		hasDraftStorageAck,
@@ -112,11 +115,13 @@
 	let municipio = $state('');
 	let direccion = $state('');
 	let cp = $state('');
-	let skipDocs = $state(false);
+	let docFiles = $state<Record<string, File | null>>({});
 	let acceptPrivacy = $state(false);
 	let showDraftNotice = $state(false);
 	let draftReady = $state(false);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const docGroups = $derived(getDocumentGroups('transferencia', { otraParteEmail }));
 
 	let factorCorreccion = $state<number | null>(null);
 	let fuenteDepreciacion = $state<string | null>(null);
@@ -241,7 +246,6 @@
 			if (typeof data.municipio === 'string') municipio = data.municipio;
 			if (typeof data.direccion === 'string') direccion = data.direccion;
 			if (typeof data.cp === 'string') cp = data.cp;
-			if (typeof data.skipDocs === 'boolean') skipDocs = data.skipDocs;
 			if (!hasDraftStorageAck()) showDraftNotice = true;
 		}
 
@@ -285,8 +289,7 @@
 			provincia,
 			municipio,
 			direccion,
-			cp,
-			skipDocs
+			cp
 		};
 	}
 
@@ -358,7 +361,6 @@
 		void municipio;
 		void direccion;
 		void cp;
-		void skipDocs;
 		scheduleSave();
 	});
 
@@ -406,11 +408,18 @@
 			}
 		}
 		if (s === 3) {
-			// Antiguo paso 7
+			// Antiguo paso 7 + documentos obligatorios
 			e.provincia = validateRequired(provincia, 'La provincia');
 			e.municipio = validateRequired(municipio, 'El municipio');
 			e.direccion = validateRequired(direccion, 'La dirección');
 			e.cp = validateCodigoPostal(cp);
+			const missing = missingRequiredDocs(docGroups, docFiles);
+			if (missing.length) {
+				e.docs = 'Sube todos los documentos obligatorios (foto o archivo).';
+				for (const id of missing) {
+					e[id] = 'Documento obligatorio';
+				}
+			}
 		}
 		if (s === 4) {
 			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
@@ -528,7 +537,7 @@
 			municipio,
 			direccion,
 			cp,
-			skipDocs,
+			docsAttached: Object.keys(docFiles).filter((k) => docFiles[k]),
 			acceptPrivacy,
 			breakdown,
 			priceLines,
@@ -550,6 +559,25 @@
 		};
 	}
 
+	function setDocFile(id: string, file: File | null) {
+		docFiles = { ...docFiles, [id]: file };
+		noteProgress();
+	}
+
+	async function uploadDocsIfAny(id: string, accessToken?: string | null) {
+		const result = await uploadTramiteDocuments({
+			solicitudId: id,
+			files: docFiles,
+			accessToken
+		});
+		if (!result.ok) {
+			payError = result.error;
+			saveError = result.error;
+			return false;
+		}
+		return true;
+	}
+
 	async function saveToAccount() {
 		saving = true;
 		saveMsg = null;
@@ -569,7 +597,11 @@
 				return;
 			}
 			solicitudId = outcome.result.solicitudId;
-			saveMsg = outcome.result.message;
+			const okUpload = await uploadDocsIfAny(solicitudId);
+			if (!okUpload) return;
+			saveMsg =
+				outcome.result.message +
+				(Object.values(docFiles).some(Boolean) ? ' Documentos subidos.' : '');
 			draftReady = true;
 			setDraftStorageAck();
 			save();
@@ -601,6 +633,9 @@
 				payError = result.error;
 				return;
 			}
+
+			const okUpload = await uploadDocsIfAny(result.solicitudId, result.accessToken);
+			if (!okUpload) return;
 
 			funnel.submitted({
 				tramite: 'transferencia',
@@ -769,21 +804,13 @@
 					<FormField label="Código postal" error={errors.cp} required>
 						<input bind:value={cp} maxlength="5" inputmode="numeric" />
 					</FormField>
-					<p class="info">
-						Puedes subir documentos ahora o después del pago. Formatos: PDF o JPG.
-					</p>
-					<label class="check">
-						<input type="checkbox" bind:checked={skipDocs} />
-						Continuar sin subir documentos ahora
-					</label>
-					{#if !skipDocs}
-						<FormField label="DNI frontal (opcional)">
-							<input type="file" accept="image/*,.pdf" />
-						</FormField>
-						<FormField label="Ficha técnica (opcional)">
-							<input type="file" accept="image/*,.pdf" />
-						</FormField>
-					{/if}
+					{#if errors.docs}<p class="err">{errors.docs}</p>{/if}
+					<TramiteDocumentosStep
+						groups={docGroups}
+						files={docFiles}
+						{errors}
+						onfile={setDocFile}
+					/>
 				{:else}
 					<div class="summary">
 						<h2>Resumen de tu solicitud</h2>

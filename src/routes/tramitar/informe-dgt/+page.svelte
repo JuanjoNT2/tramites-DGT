@@ -13,5 +13,5 @@
 	title="Informe de vehículo DGT"
 	tipo="informe-dgt"
 	variant="informe"
-	steps={['Vehículo', 'Solicitante', 'Dirección', 'Resumen']}
+	steps={['Vehículo', 'Solicitante', 'Dirección y documentos', 'Resumen']}
 />

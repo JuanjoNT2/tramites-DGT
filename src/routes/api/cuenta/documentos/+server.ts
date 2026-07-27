@@ -9,6 +9,9 @@ import {
 } from '$lib/cuenta/data';
 import { canManageAllDocs, isStaffRole } from '$lib/auth/roles';
 import { fetchSolicitudById } from '$lib/gestor/access';
+import { canAccessPagoSolicitud } from '$lib/pago/access';
+import { getServiceSupabase } from '$lib/supabase/admin';
+import type { Solicitud } from '$lib/supabase/types';
 
 const BUCKET = 'tramite-docs';
 
@@ -53,28 +56,46 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const user = requireUser(locals);
 	const form = await request.formData();
 	const solicitudId = String(form.get('solicitud_id') || '');
 	const file = form.get('file');
+	const docType = String(form.get('doc_type') || '')
+		.trim()
+		.replace(/[^\w\-]+/g, '_')
+		.slice(0, 64);
+	const accessToken = String(form.get('accessToken') || '').trim() || null;
+
 	if (!solicitudId || !(file instanceof File)) {
 		return json({ error: 'solicitud_id y file obligatorios' }, { status: 400 });
 	}
 
+	const sb = getServiceSupabase();
+	if (!sb) return json({ error: 'Supabase no configurado' }, { status: 503 });
+
+	const { data: solRaw, error: solErr } = await sb
+		.from('solicitudes')
+		.select('*')
+		.eq('id', solicitudId)
+		.maybeSingle();
+	if (solErr || !solRaw) return json({ error: 'Solicitud no encontrada' }, { status: 404 });
+	const sol = solRaw as Solicitud;
+
+	const user = locals.user;
 	const staff = canManageAllDocs(locals.profile);
-	let ownerId = user.id;
-	if (staff) {
-		const sol = await fetchSolicitudById(solicitudId);
-		ownerId = sol.user_id || user.id;
-	} else {
-		const sol = await getUserSolicitud(user.id, solicitudId);
-		if (!canUserUploadDocs(String(sol.status))) {
-			return json({ error: 'No puedes subir documentos en este estado' }, { status: 403 });
-		}
+	const viaToken = canAccessPagoSolicitud({ sol, userId: user?.id, token: accessToken });
+
+	if (!staff && !viaToken) {
+		if (!user) return json({ error: 'Debes iniciar sesión' }, { status: 401 });
+		if (sol.user_id !== user.id) return json({ error: 'No autorizado' }, { status: 403 });
 	}
 
-	const sb = requireService();
+	if (!staff && !canUserUploadDocs(String(sol.status))) {
+		return json({ error: 'No puedes subir documentos en este estado' }, { status: 403 });
+	}
+
+	const ownerId = sol.user_id || user?.id || null;
 	const safeName = file.name.replace(/[^\w.\-áéíóúüñÁÉÍÓÚÜÑ ]+/g, '_').slice(0, 120);
+	const storedName = docType ? `${docType}__${safeName}` : safeName;
 	const path = `${solicitudId}/${crypto.randomUUID()}-${safeName}`;
 	const buffer = new Uint8Array(await file.arrayBuffer());
 
@@ -93,7 +114,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		.insert({
 			solicitud_id: solicitudId,
 			user_id: ownerId,
-			nombre: safeName,
+			nombre: storedName,
 			path,
 			mime: file.type || null,
 			uploaded_by

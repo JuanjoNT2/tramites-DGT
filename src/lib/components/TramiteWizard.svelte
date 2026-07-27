@@ -24,8 +24,11 @@
 		todayIso
 	} from '$lib/utils/validators';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
+	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
 	import { createSolicitud } from '$lib/pago/client';
 	import { handleWizardSave } from '$lib/tramite/save';
+	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
+	import { uploadTramiteDocuments } from '$lib/tramite/upload-docs';
 	import { funnel, initAnalytics } from '$lib/analytics';
 	import { goto } from '$app/navigation';
 	import {
@@ -99,11 +102,15 @@
 	let localidad = $state('');
 	let tipoEnvio = $state('postal');
 	let cartaFinalizacion = $state('si');
-	let docsConfirmados = $state(false);
 	let acceptPrivacy = $state(false);
 	let showDraftNotice = $state(false);
 	let draftReady = $state(false);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
+	let docFiles = $state<Record<string, File | null>>({});
+
+	const docGroups = $derived(
+		getDocumentGroups(variant, { motivoDuplicado })
+	);
 
 	const shippingPrice = $derived(
 		shippingOptions.find((o) => o.value === tipoEnvio)?.price ?? 8.95
@@ -216,7 +223,6 @@
 			if (typeof data.localidad === 'string') localidad = data.localidad;
 			if (typeof data.tipoEnvio === 'string') tipoEnvio = data.tipoEnvio;
 			if (typeof data.cartaFinalizacion === 'string') cartaFinalizacion = data.cartaFinalizacion;
-			if (typeof data.docsConfirmados === 'boolean') docsConfirmados = data.docsConfirmados;
 			if (!hasDraftStorageAck()) showDraftNotice = true;
 		}
 
@@ -262,8 +268,7 @@
 			cp,
 			localidad,
 			tipoEnvio,
-			cartaFinalizacion,
-			docsConfirmados
+			cartaFinalizacion
 		};
 	}
 
@@ -338,7 +343,6 @@
 		void localidad;
 		void tipoEnvio;
 		void cartaFinalizacion;
-		void docsConfirmados;
 		scheduleSave();
 	});
 
@@ -421,8 +425,14 @@
 			e.cp = validateCodigoPostal(cp);
 		}
 
-		if (variant === 'cancelacion' && s === 3) {
-			if (!docsConfirmados) e.docs = 'Confirma la documentación requerida';
+		if (s === 3) {
+			const missing = missingRequiredDocs(docGroups, docFiles);
+			if (missing.length) {
+				e.docs = 'Sube todos los documentos obligatorios (foto o archivo).';
+				for (const id of missing) {
+					e[id] = 'Documento obligatorio';
+				}
+			}
 		}
 
 		if (s === finalStep) {
@@ -532,12 +542,31 @@
 			localidad,
 			tipoEnvio,
 			cartaFinalizacion,
-			docsConfirmados,
 			acceptPrivacy,
+			docsAttached: Object.keys(docFiles).filter((k) => docFiles[k]),
 			priceLines: priceLines.lines,
 			total: priceLines.total,
 			amount: priceLines.total
 		};
+	}
+
+	function setDocFile(id: string, file: File | null) {
+		docFiles = { ...docFiles, [id]: file };
+		noteProgress();
+	}
+
+	async function uploadDocsIfAny(id: string, accessToken?: string | null) {
+		const result = await uploadTramiteDocuments({
+			solicitudId: id,
+			files: docFiles,
+			accessToken
+		});
+		if (!result.ok) {
+			payError = result.error;
+			saveError = result.error;
+			return false;
+		}
+		return true;
 	}
 
 	async function saveToAccount() {
@@ -559,7 +588,11 @@
 				return;
 			}
 			solicitudId = outcome.result.solicitudId;
-			saveMsg = outcome.result.message;
+			const okUpload = await uploadDocsIfAny(solicitudId);
+			if (!okUpload) return;
+			saveMsg =
+				outcome.result.message +
+				(Object.values(docFiles).some(Boolean) ? ' Documentos subidos.' : '');
 			draftReady = true;
 			setDraftStorageAck();
 			save();
@@ -587,6 +620,9 @@
 				payError = result.error;
 				return;
 			}
+
+			const okUpload = await uploadDocsIfAny(result.solicitudId, result.accessToken);
+			if (!okUpload) return;
 
 			funnel.submitted({
 				tramite: tipo,
@@ -821,6 +857,13 @@
 							/>
 						</FormField>
 					{/if}
+					{#if errors.docs}<p class="field-error">{errors.docs}</p>{/if}
+					<TramiteDocumentosStep
+						groups={docGroups}
+						files={docFiles}
+						{errors}
+						onfile={setDocFile}
+					/>
 				{:else if variant === 'cancelacion' && step === 3}
 					<FormField label="¿Dispone de carta de finalización de pago?" required>
 						<RadioCards
@@ -832,20 +875,13 @@
 							]}
 						/>
 					</FormField>
-					<div class="docs-list">
-						<h2>Documentación requerida</h2>
-						<ul>
-							<li>NIF del propietario (frontal y trasero)</li>
-							<li>Permiso de circulación</li>
-							<li>Ficha técnica (frontal y trasera)</li>
-							<li>Carta de cancelación de reserva de dominio</li>
-						</ul>
-						<label class="check">
-							<input type="checkbox" bind:checked={docsConfirmados} />
-							Confirmo que dispongo o enviaré la documentación
-						</label>
-						{#if errors.docs}<p class="field-error">{errors.docs}</p>{/if}
-					</div>
+					{#if errors.docs}<p class="field-error">{errors.docs}</p>{/if}
+					<TramiteDocumentosStep
+						groups={docGroups}
+						files={docFiles}
+						{errors}
+						onfile={setDocFile}
+					/>
 				{:else if step === finalStep}
 					<div class="summary-final">
 						<h2>Resumen de tu solicitud</h2>
@@ -1046,16 +1082,6 @@
 	.pay-cta:disabled {
 		opacity: 0.55;
 		cursor: not-allowed;
-	}
-	.docs-list ul {
-		margin: 0 0 16px 18px;
-		font-size: 14px;
-		color: var(--text2);
-		line-height: 1.6;
-	}
-	.docs-list h2 {
-		font-size: 17px;
-		margin-bottom: 10px;
 	}
 	.check {
 		display: flex;
