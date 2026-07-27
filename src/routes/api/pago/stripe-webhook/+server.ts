@@ -83,7 +83,8 @@ async function markSolicitudPaid(opts: {
 
 	const email = solicitud.email;
 	const nombre = typeof prev.nombre === 'string' ? prev.nombre : null;
-	if (email) {
+	const esPrueba = solicitud.tipo === 'prueba_pago' || prev.esPruebaPago === true;
+	if (email && !esPrueba) {
 		sendPagoConfirmadoEmail({
 			to: email,
 			solicitudId: opts.solicitudId,
