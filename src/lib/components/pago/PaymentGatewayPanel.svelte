@@ -6,6 +6,7 @@
 		lines = [],
 		loading = false,
 		gatewayReady = false,
+		provider = null,
 		message = null,
 		error = null,
 		onPay
@@ -13,12 +14,16 @@
 		total: number;
 		lines?: { label: string; amount: number }[];
 		loading?: boolean;
-		/** true cuando hay credenciales Redsys / pasarela real */
 		gatewayReady?: boolean;
+		provider?: 'stripe' | 'redsys' | null;
 		message?: string | null;
 		error?: string | null;
 		onPay: () => void | Promise<void>;
 	} = $props();
+
+	const providerLabel = $derived(
+		provider === 'stripe' ? 'Stripe' : provider === 'redsys' ? 'Redsys' : null
+	);
 </script>
 
 <div class="gateway" data-payment-gateway>
@@ -35,14 +40,15 @@
 		</ul>
 	{/if}
 
-	<!--
-		Hueco para la pasarela (Redsys u otra).
-		Cuando tengas credenciales: el botón llama a /api/pago/crear y redirige,
-		o aquí puedes montar el widget/iframe del TPV.
-	-->
 	<div class="slot" id="payment-gateway-slot" aria-live="polite">
 		{#if gatewayReady}
-			<p class="ready">Conexión con la pasarela bancaria lista.</p>
+			<p class="ready">
+				{#if providerLabel}
+					Pago seguro con {providerLabel}. Serás redirigido a la pasarela para introducir tu tarjeta.
+				{:else}
+					Conexión con la pasarela lista.
+				{/if}
+			</p>
 			<button type="button" class="btn pay" onclick={onPay} disabled={loading}>
 				{loading ? 'Conectando con la pasarela…' : 'Pagar ahora'}
 			</button>
@@ -50,11 +56,9 @@
 			<div class="placeholder">
 				<p class="badge">Pasarela pendiente de activar</p>
 				<p>
-					Aquí se integrará la pasarela de pago (Redsys / TPV). Mientras tanto puedes registrar el
-					trámite como pendiente de pago.
+					Configura las claves de Stripe en el servidor para activar el cobro. Mientras tanto puedes
+					registrar el trámite como pendiente de pago.
 				</p>
-				<!-- Punto de montaje futuro: iframe / script del banco -->
-				<div class="embed-target" data-redsys-mount></div>
 				<button type="button" class="btn pay" onclick={onPay} disabled={loading}>
 					{loading ? 'Registrando…' : 'Continuar (pago pendiente de activar)'}
 				</button>
@@ -70,8 +74,8 @@
 	{/if}
 
 	<p class="note">
-		Pago seguro. No almacenamos los datos de tu tarjeta en nuestros servidores; los gestiona la
-		pasarela bancaria.
+		Pago seguro. No almacenamos los datos de tu tarjeta; los gestiona la pasarela
+		{providerLabel ? `(${providerLabel})` : ''}.
 	</p>
 </div>
 
@@ -145,10 +149,6 @@
 		font-size: 0.9rem;
 		color: #5a6b7d;
 		line-height: 1.45;
-	}
-	.embed-target {
-		min-height: 8px;
-		margin-bottom: 14px;
 	}
 	.ready {
 		text-align: center;

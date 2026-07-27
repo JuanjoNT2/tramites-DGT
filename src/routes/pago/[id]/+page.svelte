@@ -31,6 +31,10 @@
 				errorMsg = result.error;
 				return;
 			}
+			if (result.mode === 'stripe_redirect') {
+				window.location.href = result.url;
+				return;
+			}
 			if (result.mode === 'redirect') {
 				postToRedsys(result.redsys);
 				return;
@@ -95,6 +99,7 @@
 				total={data.amount}
 				lines={data.lines}
 				gatewayReady={data.gatewayReady}
+				provider={data.gatewayProvider}
 				{loading}
 				message={message}
 				error={errorMsg}

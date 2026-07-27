@@ -24,12 +24,11 @@ Roles: solo **admin** (Supabase Auth role) cambia estados de trámite; **gestor*
 | `PUBLIC_SITE_ORIGIN` | `https://tramitesdgtonline.com` (links de callback) |
 | `ADMIN_PASSWORD` | Gate panel analítica `/admin` |
 | `ADMIN_SESSION_SECRET` | Firma cookie admin (≥32 chars) |
-| `REDSYS_MERCHANT_CODE` | Código comercio (CFO) |
-| `REDSYS_TERMINAL` | Terminal TPV (CFO) |
-| `REDSYS_SECRET_KEY` | Clave SHA-256 en Base64 (CFO) |
-| `REDSYS_ENV` | `test` o `live` |
+| `STRIPE_SECRET_KEY` | Secret key Stripe (`sk_test_…` / `sk_live_…`) |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret del webhook (`whsec_…`) |
+| `REDSYS_*` | Opcional; solo si no hay Stripe |
 
-Copia de referencia: `.env.example`.
+Copia de referencia: `.env.example`. Guía Stripe: `docs/stripe-setup.md`.
 
 ### Verificación Vercel (julio 2026)
 
@@ -37,7 +36,8 @@ Confirmado con `vercel env ls` en el proyecto `tramites-dgt-v2`:
 
 - [x] `PUBLIC_SUPABASE_*` y `SUPABASE_*` en **Production** y **Preview**
 - [x] `PUBLIC_SITE_ORIGIN`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` en Production / Preview / Development
-- [ ] `REDSYS_*` — pendientes de credenciales del CFO
+- [ ] `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` — por conectar
+- [ ] `REDSYS_*` — opcionales (Stripe tiene prioridad)
 
 El SMTP de verificación de email **no** va en Vercel: se configura en el Dashboard de Supabase (SendGrid).
 

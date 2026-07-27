@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { isRedsysConfigured } from '$lib/server/redsys';
+import { isStripeConfigured } from '$lib/server/stripe';
 import { SOLICITUD_STATUS_LABELS, SOLICITUD_TIPO_LABELS } from '$lib/supabase/types';
 import type { Solicitud, SolicitudStatus } from '$lib/supabase/types';
 import {
@@ -106,7 +107,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		summary: summaryRows(payload),
 		amount,
 		lines,
-		gatewayReady: isRedsysConfigured(),
+		gatewayReady: isStripeConfigured() || isRedsysConfigured(),
+		gatewayProvider: isStripeConfigured() ? 'stripe' : isRedsysConfigured() ? 'redsys' : null,
 		alreadyPaid,
 		description: tipoLabel,
 		accessToken

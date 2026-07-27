@@ -6,6 +6,7 @@ export type RedsysFormFields = {
 };
 
 export type StartPaymentResult =
+	| { ok: true; mode: 'stripe_redirect'; solicitudId: string; url: string; sessionId: string }
 	| { ok: true; mode: 'redirect'; solicitudId: string; redsys: RedsysFormFields }
 	| { ok: true; mode: 'pending_credentials'; solicitudId: string; message: string }
 	| { ok: false; error: string; solicitudId?: string };
@@ -66,7 +67,6 @@ export async function createSolicitud(opts: {
 						: `/pago/${solicitudId}`;
 			return { ok: true, solicitudId, accessToken, pagoUrl };
 		}
-		// Si no es del usuario / no es nueva, cae a crear una nueva
 		if (promoRes.status !== 401 && promoRes.status !== 403 && promoRes.status !== 404) {
 			return {
 				ok: false,
@@ -107,7 +107,7 @@ export async function createSolicitud(opts: {
 	return { ok: true, solicitudId, accessToken, pagoUrl };
 }
 
-/** Inicia la pasarela (Redsys) para una solicitud ya creada. */
+/** Inicia la pasarela (Stripe o Redsys) para una solicitud ya creada. */
 export async function startPayment(opts: {
 	solicitudId: string;
 	amount?: number;
@@ -129,6 +129,16 @@ export async function startPayment(opts: {
 			ok: false,
 			error: typeof payData.error === 'string' ? payData.error : 'No se pudo iniciar el pago',
 			solicitudId: opts.solicitudId
+		};
+	}
+
+	if (payData.mode === 'stripe_redirect' && typeof payData.url === 'string') {
+		return {
+			ok: true,
+			mode: 'stripe_redirect',
+			solicitudId: opts.solicitudId,
+			url: payData.url,
+			sessionId: String(payData.sessionId || '')
 		};
 	}
 
@@ -154,7 +164,7 @@ export async function startPayment(opts: {
 
 /**
  * 1) Guarda la solicitud (status pendiente_pago)
- * 2) Inicia pago Redsys o deja pendiente si no hay credenciales
+ * 2) Inicia pago Stripe/Redsys o deja pendiente si no hay credenciales
  */
 export async function createSolicitudAndStartPayment(opts: {
 	payload: Record<string, unknown>;
