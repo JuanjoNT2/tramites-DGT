@@ -67,11 +67,11 @@
 				<div class="drop-menu" role="menu">
 					{#each services as s (s.id)}
 						<a
-							href={s.landingPath}
+							href={s.tramitarPath}
 							role="menuitem"
 							data-analytics={CtaIds.NAV_TRAMITE}
 							onclick={() =>
-								trackClick(CtaIds.NAV_TRAMITE, { tramite: s.id, destination: s.landingPath })}
+								trackClick(CtaIds.NAV_TRAMITE, { tramite: s.id, destination: s.tramitarPath })}
 						>
 							{s.title}
 						</a>
@@ -224,11 +224,11 @@
 						<div class="mobile-sub">
 							{#each services as s (s.id)}
 								<a
-									href={s.landingPath}
+									href={s.tramitarPath}
 									onclick={() => {
 										trackClick(CtaIds.NAV_TRAMITE, {
 											tramite: s.id,
-											destination: s.landingPath,
+											destination: s.tramitarPath,
 											nav: 'mobile'
 										});
 										closeMobile();

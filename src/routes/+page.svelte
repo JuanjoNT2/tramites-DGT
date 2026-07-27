@@ -24,21 +24,18 @@
 	<div class="wrap">
 		<div class="service-row" id="servicios">
 			{#each services as s (s.id)}
-				<article class="service-card">
+				<a
+					class="service-card"
+					href={s.tramitarPath}
+					data-analytics={CtaIds.HOME_TRAMITAR}
+					onclick={() => trackClick(CtaIds.HOME_TRAMITAR, { tramite: s.id, destination: s.tramitarPath })}
+				>
 					<div class="icon-circle">
 						<ServiceIcon id={s.id} size={22} />
 					</div>
 					<h3>{s.title}</h3>
 					<p>{s.description}</p>
-					<a
-						class="tramitar"
-						href={s.tramitarPath}
-						data-analytics={CtaIds.HOME_TRAMITAR}
-						onclick={() => trackClick(CtaIds.HOME_TRAMITAR, { tramite: s.id, destination: s.tramitarPath })}
-					>
-						Tramitar
-					</a>
-				</article>
+				</a>
 			{/each}
 		</div>
 	</div>
@@ -97,7 +94,7 @@
 							onclick={() =>
 								trackClick(CtaIds.HOME_TRAMITAR, { tramite: s.id, destination: s.tramitarPath })}
 						>
-							Tramitar
+							Ir al trámite
 						</a>
 						<a
 							class="btn ghost"
@@ -106,7 +103,7 @@
 							onclick={() =>
 								trackClick(CtaIds.HOME_VER_TRAMITE, { tramite: s.id, destination: s.landingPath })}
 						>
-							Ver trámite
+							Más información
 						</a>
 					</div>
 				</div>
@@ -251,10 +248,18 @@
 		backdrop-filter: blur(6px);
 		min-height: 220px;
 		transition: background 0.25s var(--ease);
+		text-decoration: none;
+		color: inherit;
+		cursor: pointer;
 	}
 
 	.service-card:hover {
 		background: #003050;
+	}
+
+	.service-card:focus-visible {
+		outline: 2px solid var(--brand-teal);
+		outline-offset: 3px;
 	}
 
 	.icon-circle {
@@ -286,26 +291,6 @@
 		color: rgba(255, 255, 255, 0.78);
 		flex: 1;
 		margin-bottom: 14px;
-	}
-
-	.tramitar {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		height: 40px;
-		padding: 0 22px;
-		border: 1px solid var(--brand-teal);
-		border-radius: 6px;
-		font-size: 14px;
-		font-weight: 500;
-		color: #fff;
-		align-self: flex-start;
-		margin-top: auto;
-	}
-
-	.tramitar:hover {
-		background: var(--brand-teal);
-		color: #003050;
 	}
 
 	.advantages {

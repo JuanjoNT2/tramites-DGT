@@ -6,6 +6,14 @@ export type RedsysFormFields = {
 };
 
 export type StartPaymentResult =
+	| {
+			ok: true;
+			mode: 'stripe_embedded';
+			solicitudId: string;
+			clientSecret: string;
+			sessionId: string;
+			url?: string | null;
+	  }
 	| { ok: true; mode: 'stripe_redirect'; solicitudId: string; url: string; sessionId: string }
 	| { ok: true; mode: 'redirect'; solicitudId: string; redsys: RedsysFormFields }
 	| { ok: true; mode: 'pending_credentials'; solicitudId: string; message: string }
@@ -129,6 +137,17 @@ export async function startPayment(opts: {
 			ok: false,
 			error: typeof payData.error === 'string' ? payData.error : 'No se pudo iniciar el pago',
 			solicitudId: opts.solicitudId
+		};
+	}
+
+	if (payData.mode === 'stripe_embedded' && typeof payData.clientSecret === 'string') {
+		return {
+			ok: true,
+			mode: 'stripe_embedded',
+			solicitudId: opts.solicitudId,
+			clientSecret: payData.clientSecret,
+			sessionId: String(payData.sessionId || ''),
+			url: typeof payData.url === 'string' ? payData.url : null
 		};
 	}
 

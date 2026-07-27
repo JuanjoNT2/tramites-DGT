@@ -1,6 +1,7 @@
 <script lang="ts">
 	import StepProgress from '$lib/components/ui/StepProgress.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
+	import DateInput from '$lib/components/ui/DateInput.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
@@ -174,7 +175,7 @@
 					<input type="number" bind:value={precioVenta} min="0" step="100" />
 				</FormField>
 				<FormField label="Fecha de venta" required>
-					<input type="date" bind:value={fechaVenta} />
+					<DateInput bind:value={fechaVenta} />
 				</FormField>
 				<FormField label="¿Vendedor empresa/autónomo con factura?">
 					<RadioCards

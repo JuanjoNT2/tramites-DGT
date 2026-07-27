@@ -3,8 +3,41 @@ import { getServiceSupabase } from '$lib/supabase/admin';
 import { constructStripeEvent, isStripeConfigured } from '$lib/server/stripe';
 import { sendPagoConfirmadoEmail } from '$lib/server/mailer';
 import { createNotificacion } from '$lib/cuenta/data';
+import { toStoredEvent } from '$lib/analytics/server/store';
+import { getAnalyticsStore } from '$lib/analytics/server/get-store';
+import { Events } from '$lib/analytics/events';
 import type { Solicitud } from '$lib/supabase/types';
 import type Stripe from 'stripe';
+
+async function recordPaymentCompleted(opts: {
+	solicitud: Solicitud;
+	session: Stripe.Checkout.Session;
+}) {
+	try {
+		const store = getAnalyticsStore();
+		const amount = (opts.session.amount_total ?? 0) / 100;
+		await store.appendRaw(
+			toStoredEvent({
+				event: Events.PAYMENT_COMPLETED,
+				visitor_id: `srv_${opts.solicitud.id}`,
+				session_id: `pay_${opts.session.id}`,
+				consent: 'granted',
+				ts: new Date().toISOString(),
+				props: {
+					tramite: opts.solicitud.tipo,
+					solicitud_id: opts.solicitud.id,
+					value: amount,
+					currency: 'EUR',
+					page_path: `/pago/${opts.solicitud.id}`,
+					page_type: 'funnel_pago'
+				},
+				acquisition: { channel: 'Direct' }
+			})
+		);
+	} catch (e) {
+		console.error('[stripe/webhook] analytics', e);
+	}
+}
 
 async function markSolicitudPaid(opts: {
 	solicitudId: string;
@@ -80,6 +113,8 @@ async function markSolicitudPaid(opts: {
 	};
 
 	await sb.from('solicitudes').update({ status: 'pagada', payload }).eq('id', opts.solicitudId);
+
+	await recordPaymentCompleted({ solicitud, session: opts.session });
 
 	const email = solicitud.email;
 	const nombre = typeof prev.nombre === 'string' ? prev.nombre : null;

@@ -41,6 +41,18 @@
 		<path d="M7 3h7l3 3v15H7V3Z" />
 		<path d="M14 3v4h4" />
 		<path d="m10 14 4 4M14 14l-4 4" />
+	{:else if id === 'notificacion-venta'}
+		<path d="M5 17h14v-5H5v5Z" />
+		<path d="M12 4v8" />
+		<path d="m9 9 3 3 3-3" />
+	{:else if id === 'nota-simple'}
+		<path d="M7 3h7l3 3v15H7V3Z" />
+		<path d="M14 3v4h4" />
+		<path d="M9 11h6M9 14h6M9 17h4" />
+	{:else if id === 'baja-temporal'}
+		<path d="M5 17h14v-5H5v5Z" />
+		<path d="M8 12V8h8v4" />
+		<path d="M10 8V6h4v2" />
 	{:else}
 		<rect x="4" y="4" width="16" height="16" rx="2" />
 	{/if}

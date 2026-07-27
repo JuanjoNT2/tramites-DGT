@@ -14,7 +14,8 @@ export const Events = {
 	FORM_STEP_COMPLETED: 'form_step_completed',
 	FORM_ABANDONED: 'form_abandoned',
 	FORM_SUBMITTED: 'form_submitted',
-	PAYMENT_STARTED: 'payment_started'
+	PAYMENT_STARTED: 'payment_started',
+	PAYMENT_COMPLETED: 'payment_completed'
 } as const;
 
 export type EventName = (typeof Events)[keyof typeof Events];

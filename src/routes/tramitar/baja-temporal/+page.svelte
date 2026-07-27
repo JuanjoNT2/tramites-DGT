@@ -3,15 +3,14 @@
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import { getStaticSeo } from '$lib/seo/site';
 
-	const seo = getStaticSeo('/tramitar/duplicado-carnet')!;
-
+	const seo = getStaticSeo('/tramitar/baja-temporal')!;
 </script>
 
 <SeoHead title={seo.title} description={seo.description} path={seo.path} />
 
 <TramiteWizard
-	title="Duplicado permiso de circulación"
-	tipo="duplicado-carnet"
-	variant="duplicado"
-	steps={['Motivo', 'Solicitante', 'Dirección y documentos', 'Resumen']}
+	title="Baja temporal de vehículo"
+	tipo="baja-temporal"
+	variant="baja-temporal"
+	steps={['Vehículo', 'Solicitante', 'Dirección y documentos', 'Resumen']}
 />

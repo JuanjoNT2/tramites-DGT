@@ -12,7 +12,7 @@
 	path={seo.path}
 	image="/images/services/duplicado.webp"
 	jsonLd={serviceJsonLd({
-		name: 'Duplicado Carnet Conducir',
+		name: 'Duplicado permiso de circulación',
 		description: seo.description,
 		path: seo.path
 	})}
@@ -20,8 +20,8 @@
 
 <TramiteLanding
 	tramite="duplicado"
-	title="Duplicado de carnet de conducir"
-	description="Solicita el duplicado de tu permiso de conducir por pérdida, robo o deterioro."
+	title="Duplicado del permiso de circulación"
+	description="Solicita el duplicado del permiso de circulación de tu vehículo por pérdida, robo o deterioro."
 	tramitarPath="/tramitar/duplicado-carnet"
 	steps={[
 		'Indica el motivo del duplicado',

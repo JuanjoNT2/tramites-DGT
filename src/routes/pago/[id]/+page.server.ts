@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { env } from '$env/dynamic/public';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { isRedsysConfigured } from '$lib/server/redsys';
 import { isStripeConfigured } from '$lib/server/stripe';
@@ -10,38 +11,6 @@ import {
 	getPayloadAccessToken,
 	resolveStoredAmount
 } from '$lib/pago/access';
-
-function summaryRows(payload: Record<string, unknown>): { label: string; value: string }[] {
-	const rows: { label: string; value: string }[] = [];
-	const push = (label: string, value: unknown) => {
-		if (value == null || value === '') return;
-		rows.push({ label, value: String(value) });
-	};
-
-	push('Matrícula', payload.matricula);
-	push('Bastidor', payload.bastidor);
-	push('Tipo de vehículo', payload.tipoVehiculo);
-	push('Marca', payload.marcaNombre || payload.vmpMarca || payload.marca);
-	push('Modelo', payload.modeloNombre || payload.vmpModelo || payload.modelo);
-	push('Nº serie VMP', payload.vmpNumSerie);
-	push('Motivo', payload.motivoDuplicado);
-	push('Nombre', [payload.nombre, payload.apellido1, payload.apellido2].filter(Boolean).join(' '));
-	push('NIF/NIE', payload.nif);
-	push('Email', payload.email);
-	push('Teléfono', payload.telefono);
-	push('Rol', payload.rol);
-	push('Provincia', payload.provincia);
-	push('Municipio', payload.municipio || payload.localidad);
-	push(
-		'Dirección',
-		[payload.tipoVia, payload.direccion, payload.numero].filter(Boolean).join(' ') ||
-			payload.direccion
-	);
-	push('CP', payload.cp);
-	push('Envío', payload.tipoEnvio);
-
-	return rows;
-}
 
 function resolveLines(payload: Record<string, unknown>): { label: string; amount: number }[] {
 	const raw = payload.priceLines;
@@ -104,11 +73,11 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			email: sol.email,
 			createdAt: sol.created_at
 		},
-		summary: summaryRows(payload),
 		amount,
 		lines,
 		gatewayReady: isStripeConfigured() || isRedsysConfigured(),
 		gatewayProvider: isStripeConfigured() ? 'stripe' : isRedsysConfigured() ? 'redsys' : null,
+		stripePublishableKey: env.PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() || null,
 		alreadyPaid,
 		description: tipoLabel,
 		accessToken

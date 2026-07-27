@@ -37,11 +37,15 @@ export function getDocumentGroups(
 	const key = tipoOrVariant.replace(/^cancelacion.*/, 'cancelacion');
 
 	switch (key) {
-		case 'transferencia': {
-			const groups: DocGroup[] = [
+		case 'transferencia':
+			return [
 				{
-					title: 'Documentación del solicitante',
-					slots: [nifFrontal('solicitante', 'del solicitante'), nifTrasero('solicitante', 'del solicitante')]
+					title: 'Documentación del comprador',
+					slots: [nifFrontal('comprador', 'del comprador'), nifTrasero('comprador', 'del comprador')]
+				},
+				{
+					title: 'Documentación del vendedor',
+					slots: [nifFrontal('vendedor', 'del vendedor'), nifTrasero('vendedor', 'del vendedor')]
 				},
 				{
 					title: 'Documentación del vehículo',
@@ -53,25 +57,87 @@ export function getDocumentGroups(
 							required: true
 						},
 						{
+							id: 'ficha_tecnica_frontal',
+							label: 'Ficha técnica (frontal)',
+							required: true
+						},
+						{
+							id: 'ficha_tecnica_trasera',
+							label: 'Ficha técnica (trasera)',
+							required: true
+						}
+					]
+				},
+				{
+					title: 'Otros',
+					slots: [
+						{
+							id: 'contrato_compraventa',
+							label: 'Contrato de compraventa',
+							hint: 'Opcional si ya lo tienes firmado.',
+							required: false
+						}
+					]
+				}
+			];
+		case 'notificacion-venta':
+			return [
+				{
+					title: 'Documentación del titular',
+					slots: [nifFrontal('titular', 'del titular'), nifTrasero('titular', 'del titular')]
+				},
+				{
+					title: 'Documentación del vehículo',
+					slots: [
+						{
+							id: 'permiso_circulacion',
+							label: 'Permiso de circulación',
+							required: true
+						},
+						{
 							id: 'ficha_tecnica',
 							label: 'Ficha técnica',
 							hint: 'Ficha técnica (verde o electrónica).',
 							required: true
 						}
 					]
+				},
+				{
+					title: 'Otros',
+					slots: [
+						{
+							id: 'contrato_compraventa',
+							label: 'Contrato de compraventa',
+							hint: 'Contrato firmado entre las partes.',
+							required: true
+						}
+					]
 				}
 			];
-			if (ctx.otraParteEmail?.trim()) {
-				groups.push({
-					title: 'Documentación de la otra parte',
+		case 'nota-simple':
+			return [
+				{
+					title: 'Documentación del solicitante',
+					slots: [nifFrontal('solicitante', 'del solicitante'), nifTrasero('solicitante', 'del solicitante')]
+				}
+			];
+		case 'baja-temporal':
+			return [
+				{
+					title: 'Documentación del titular',
+					slots: [nifFrontal('titular', 'del titular'), nifTrasero('titular', 'del titular')]
+				},
+				{
+					title: 'Documentación del vehículo',
 					slots: [
-						nifFrontal('otra_parte', 'de la otra parte'),
-						nifTrasero('otra_parte', 'de la otra parte')
+						{
+							id: 'permiso_circulacion',
+							label: 'Permiso de circulación',
+							required: true
+						}
 					]
-				});
-			}
-			return groups;
-		}
+				}
+			];
 		case 'cancelacion':
 		case 'cancelacion-reserva':
 			return [
@@ -108,8 +174,8 @@ export function getDocumentGroups(
 						{
 							id: 'carta_cancelacion',
 							label: 'Carta de cancelación de reserva de dominio',
-							hint: 'Documento de finalización de pago / cancelación de la entidad.',
-							required: true
+							hint: 'Documento de finalización de pago / cancelación de la entidad (opcional).',
+							required: false
 						}
 					]
 				}
@@ -179,7 +245,7 @@ export function getDocumentGroups(
 						}
 					: {
 							id: 'foto_permiso',
-							label: 'Foto del permiso de conducir',
+							label: 'Foto del permiso de circulación',
 							hint: 'Foto del permiso actual (aunque esté deteriorado).',
 							required: true
 						};

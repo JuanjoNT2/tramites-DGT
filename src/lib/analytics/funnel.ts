@@ -16,5 +16,6 @@ export const funnel = {
 	stepCompleted: (p: FunnelProps) => track(Events.FORM_STEP_COMPLETED, p),
 	abandoned: (p: FunnelProps) => track(Events.FORM_ABANDONED, p),
 	submitted: (p: FunnelProps) => track(Events.FORM_SUBMITTED, p),
-	paymentStarted: (p: FunnelProps) => track(Events.PAYMENT_STARTED, p)
+	paymentStarted: (p: FunnelProps) => track(Events.PAYMENT_STARTED, p),
+	paymentCompleted: (p: FunnelProps) => track(Events.PAYMENT_COMPLETED, p)
 };

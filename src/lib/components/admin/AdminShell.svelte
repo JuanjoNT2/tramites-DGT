@@ -18,6 +18,7 @@
 		{ href: '/admin', label: 'Overview' },
 		{ href: '/admin/canales', label: 'Canales' },
 		{ href: '/admin/eventos', label: 'Eventos' },
+		{ href: '/admin/funnel', label: 'Funnel' },
 		{ href: '/admin/conexiones', label: 'Conexiones' },
 		{ href: '/admin/etiquetado', label: 'Etiquetado' },
 		{ href: '/admin/datalayer', label: 'Data layer' },

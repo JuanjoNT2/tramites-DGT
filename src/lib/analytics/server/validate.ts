@@ -3,7 +3,8 @@ import { Events } from '../events';
 /** Definición única de conversión (capa MOD del informe). */
 export const CONVERSION_EVENTS = new Set<string>([
 	Events.FORM_SUBMITTED,
-	Events.PAYMENT_STARTED
+	Events.PAYMENT_STARTED,
+	Events.PAYMENT_COMPLETED
 ]);
 
 export const KNOWN_EVENTS = new Set<string>(Object.values(Events));
@@ -17,7 +18,8 @@ export const REQUIRED_PROPS: Record<string, string[]> = {
 	[Events.FORM_STEP_COMPLETED]: ['tramite', 'step'],
 	[Events.FORM_ABANDONED]: ['tramite', 'step'],
 	[Events.FORM_SUBMITTED]: ['tramite'],
-	[Events.PAYMENT_STARTED]: ['tramite']
+	[Events.PAYMENT_STARTED]: ['tramite'],
+	[Events.PAYMENT_COMPLETED]: ['tramite']
 };
 
 export type IncomingEvent = {

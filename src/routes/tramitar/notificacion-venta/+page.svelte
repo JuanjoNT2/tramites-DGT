@@ -3,15 +3,14 @@
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import { getStaticSeo } from '$lib/seo/site';
 
-	const seo = getStaticSeo('/tramitar/duplicado-carnet')!;
-
+	const seo = getStaticSeo('/tramitar/notificacion-venta')!;
 </script>
 
 <SeoHead title={seo.title} description={seo.description} path={seo.path} />
 
 <TramiteWizard
-	title="Duplicado permiso de circulación"
-	tipo="duplicado-carnet"
-	variant="duplicado"
-	steps={['Motivo', 'Solicitante', 'Dirección y documentos', 'Resumen']}
+	title="Notificación de venta"
+	tipo="notificacion-venta"
+	variant="notificacion-venta"
+	steps={['Vehículo', 'Solicitante', 'Dirección y documentos', 'Resumen']}
 />

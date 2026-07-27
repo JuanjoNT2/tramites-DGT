@@ -30,7 +30,9 @@ export async function createStripeCheckoutSession(opts: {
 	customerEmail?: string | null;
 	accessToken?: string | null;
 	origin?: string;
-}): Promise<{ sessionId: string; url: string }> {
+	/** embedded = Checkout en la misma página; hosted = redirect */
+	uiMode?: 'embedded' | 'hosted';
+}): Promise<{ sessionId: string; url: string | null; clientSecret: string | null }> {
 	const stripe = getStripeClient();
 	const amountCents = Math.round(opts.amountEur * 100);
 	if (!Number.isFinite(amountCents) || amountCents < 1) {
@@ -41,10 +43,11 @@ export async function createStripeCheckoutSession(opts: {
 	const tokenQ = opts.accessToken
 		? `&t=${encodeURIComponent(opts.accessToken)}`
 		: '';
+	const uiMode = opts.uiMode ?? 'embedded';
 
-	const session = await stripe.checkout.sessions.create({
-		mode: 'payment',
-		payment_method_types: ['card'],
+	const common = {
+		mode: 'payment' as const,
+		payment_method_types: ['card' as const],
 		customer_email: opts.customerEmail || undefined,
 		line_items: [
 			{
@@ -62,13 +65,33 @@ export async function createStripeCheckoutSession(opts: {
 		metadata: {
 			solicitudId: opts.solicitudId
 		},
-		client_reference_id: opts.solicitudId,
+		client_reference_id: opts.solicitudId
+	};
+
+	if (uiMode === 'embedded') {
+		const session = await stripe.checkout.sessions.create({
+			...common,
+			ui_mode: 'embedded_page',
+			return_url: `${base}/pago/ok?solicitud=${encodeURIComponent(opts.solicitudId)}&session_id={CHECKOUT_SESSION_ID}${tokenQ}`
+		} as Parameters<typeof stripe.checkout.sessions.create>[0]);
+		const clientSecret =
+			(session as { client_secret?: string | null }).client_secret ?? null;
+		if (!clientSecret) throw new Error('Stripe no devolvió client_secret');
+		return {
+			sessionId: session.id,
+			url: null,
+			clientSecret
+		};
+	}
+
+	const session = await stripe.checkout.sessions.create({
+		...common,
 		success_url: `${base}/pago/ok?solicitud=${encodeURIComponent(opts.solicitudId)}&session_id={CHECKOUT_SESSION_ID}${tokenQ}`,
 		cancel_url: `${base}/pago/ko?solicitud=${encodeURIComponent(opts.solicitudId)}${tokenQ}`
 	});
 
 	if (!session.url) throw new Error('Stripe no devolvió URL de Checkout');
-	return { sessionId: session.id, url: session.url };
+	return { sessionId: session.id, url: session.url, clientSecret: null };
 }
 
 export function constructStripeEvent(rawBody: string, signature: string): Stripe.Event {

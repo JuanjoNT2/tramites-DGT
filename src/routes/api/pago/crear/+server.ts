@@ -100,7 +100,8 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 				description,
 				customerEmail: solicitud.email,
 				accessToken,
-				origin: url.origin
+				origin: url.origin,
+				uiMode: 'embedded'
 			});
 
 			const nextPayload = {
@@ -113,6 +114,18 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 				}
 			};
 			await sb.from('solicitudes').update({ payload: nextPayload }).eq('id', solicitudId);
+
+			if (session.clientSecret) {
+				return json({
+					ok: true,
+					mode: 'stripe_embedded',
+					solicitudId,
+					amount,
+					clientSecret: session.clientSecret,
+					sessionId: session.sessionId,
+					url: session.url
+				});
+			}
 
 			return json({
 				ok: true,

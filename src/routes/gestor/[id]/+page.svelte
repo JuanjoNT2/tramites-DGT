@@ -192,9 +192,19 @@
 	<h2>Documentos</h2>
 	<ul class="docs">
 		{#each docs as d}
-			<li>
-				<a href={`/api/cuenta/documentos?download=${d.id}`}>{d.nombre}</a>
-				<small>{d.uploaded_by} · {new Date(d.created_at).toLocaleString('es-ES')}</small>
+			<li class="doc-row">
+				{#if d.mime?.startsWith('image/')}
+					<a class="thumb" href={`/api/cuenta/documentos?download=${d.id}`} target="_blank" rel="noopener">
+						<img src={`/api/cuenta/documentos?download=${d.id}`} alt={d.nombre} />
+					</a>
+				{:else}
+					<div class="thumb pdf" aria-hidden="true">PDF</div>
+				{/if}
+				<div class="doc-meta">
+					<a href={`/api/cuenta/documentos?download=${d.id}`}>{d.nombre}</a>
+					<small>{d.uploaded_by} · {new Date(d.created_at).toLocaleString('es-ES')}</small>
+					<a class="dl" href={`/api/cuenta/documentos?download=${d.id}`}>Descargar</a>
+				</div>
 			</li>
 		{:else}
 			<li class="empty">Sin documentos.</li>
@@ -311,6 +321,58 @@
 		list-style: none;
 		margin: 0 0 12px;
 		padding: 0;
+		display: grid;
+		gap: 12px;
+	}
+	.doc-row {
+		display: flex;
+		gap: 12px;
+		align-items: center;
+		padding: 10px;
+		background: #f8fafc;
+		border-radius: 10px;
+		border: 1px solid #e8eef3;
+	}
+	.thumb {
+		width: 72px;
+		height: 72px;
+		border-radius: 8px;
+		overflow: hidden;
+		flex-shrink: 0;
+		background: #e8eef3;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-decoration: none;
+	}
+	.thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.thumb.pdf {
+		font-size: 0.7rem;
+		font-weight: 800;
+		color: #5a6b7d;
+	}
+	.doc-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+	.doc-meta a {
+		font-weight: 700;
+		color: #003050;
+		word-break: break-word;
+	}
+	.doc-meta small {
+		color: #5a6b7d;
+	}
+	.doc-meta .dl {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: #00a8b3;
 	}
 	.docs li {
 		display: flex;

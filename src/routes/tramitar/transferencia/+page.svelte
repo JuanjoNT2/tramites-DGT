@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
+	import DateInput from '$lib/components/ui/DateInput.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
@@ -104,6 +105,8 @@
 	let fechaVenta = $state('');
 	let facturaEmpresa = $state('no');
 	let incluirInforme = $state('si');
+	let motivoTransferencia = $state<'compraventa' | 'donacion'>('compraventa');
+	let liquidarItp = $state('si');
 	let rol = $state<'comprador' | 'vendedor'>('comprador');
 	let email = $state('');
 	let nif = $state('');
@@ -235,6 +238,9 @@
 			if (typeof data.fechaVenta === 'string') fechaVenta = data.fechaVenta;
 			if (typeof data.facturaEmpresa === 'string') facturaEmpresa = data.facturaEmpresa;
 			if (typeof data.incluirInforme === 'string') incluirInforme = data.incluirInforme;
+			if (data.motivoTransferencia === 'compraventa' || data.motivoTransferencia === 'donacion')
+				motivoTransferencia = data.motivoTransferencia;
+			if (typeof data.liquidarItp === 'string') liquidarItp = data.liquidarItp;
 			if (data.rol === 'comprador' || data.rol === 'vendedor') rol = data.rol;
 			if (typeof data.email === 'string') email = data.email;
 			if (typeof data.nif === 'string') nif = data.nif;
@@ -279,6 +285,8 @@
 			fechaVenta,
 			facturaEmpresa,
 			incluirInforme,
+			motivoTransferencia,
+			liquidarItp,
 			rol,
 			email,
 			nif,
@@ -526,6 +534,8 @@
 			fechaVenta,
 			facturaEmpresa,
 			incluirInforme,
+			motivoTransferencia,
+			liquidarItp,
 			email,
 			nif,
 			nombre,
@@ -727,7 +737,7 @@
 						/>
 					{/if}
 					<FormField label="Fecha primera matrícula" error={errors.fechaMatricula} required>
-						<input type="date" bind:value={fechaMatricula} max={todayIso()} />
+						<DateInput bind:value={fechaMatricula} max={todayIso()} />
 					</FormField>
 					<FormField label="CCAA del comprador" error={errors.ccaa} required>
 						<SearchSelect options={ccaaOptions} bind:value={ccaaId} />
@@ -736,8 +746,30 @@
 						<input type="number" bind:value={precioVenta} min="0" />
 					</FormField>
 					<FormField label="Fecha de venta" error={errors.fechaVenta} required>
-						<input type="date" bind:value={fechaVenta} max={todayIso()} />
+						<DateInput bind:value={fechaVenta} max={todayIso()} />
 					</FormField>
+					<FormField label="¿Trámite de compraventa o donación?" required>
+						<RadioCards
+							name="motivoTransferencia"
+							bind:value={motivoTransferencia}
+							options={[
+								{ value: 'compraventa', label: 'Compraventa' },
+								{ value: 'donacion', label: 'Donación' }
+							]}
+						/>
+					</FormField>
+					{#if motivoTransferencia === 'compraventa'}
+						<FormField label="¿Liquidar ITP con nosotros?">
+							<RadioCards
+								name="liquidarItp"
+								bind:value={liquidarItp}
+								options={[
+									{ value: 'si', label: 'Sí' },
+									{ value: 'no', label: 'No' }
+								]}
+							/>
+						</FormField>
+					{/if}
 					<FormField label="¿Vendedor empresa/autónomo con factura?">
 						<RadioCards
 							name="factura"

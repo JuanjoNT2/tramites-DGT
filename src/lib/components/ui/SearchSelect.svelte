@@ -180,9 +180,11 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
 		box-shadow: var(--shadow-lg);
-		max-height: 320px;
+		max-height: 280px;
 		overflow-y: auto;
+		overscroll-behavior: contain;
 		list-style: none;
+		scrollbar-gutter: stable;
 	}
 
 	.list button {

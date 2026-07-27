@@ -4,6 +4,7 @@ export type PageType =
 	| 'home'
 	| 'landing_servicio'
 	| 'funnel_tramite'
+	| 'funnel_pago'
 	| 'calculadora'
 	| 'noticias_listado'
 	| 'noticias_pagina'
@@ -100,7 +101,7 @@ export const PAGE_TAGS: PageTag[] = [
 		'/duplicado-de-carnet-de-conducir',
 		'landing_servicio',
 		'servicios',
-		'Duplicado carnet de conducir',
+		'Duplicado permiso de circulación',
 		{ tramite: 'duplicado', ctas: [CtaIds.LANDING_SOLICITAR] }
 	),
 	tag(
@@ -110,6 +111,18 @@ export const PAGE_TAGS: PageTag[] = [
 		'Cancelación reserva de dominio',
 		{ tramite: 'cancelacion', ctas: [CtaIds.LANDING_SOLICITAR] }
 	),
+	tag('/notificacion-de-venta', 'landing_servicio', 'servicios', 'Notificación de venta', {
+		tramite: 'notificacion-venta',
+		ctas: [CtaIds.LANDING_SOLICITAR]
+	}),
+	tag('/nota-simple-vehiculo', 'landing_servicio', 'servicios', 'Nota simple de vehículo', {
+		tramite: 'nota-simple',
+		ctas: [CtaIds.LANDING_SOLICITAR]
+	}),
+	tag('/baja-temporal-vehiculo', 'landing_servicio', 'servicios', 'Baja temporal de vehículo', {
+		tramite: 'baja-temporal',
+		ctas: [CtaIds.LANDING_SOLICITAR]
+	}),
 
 	// Aliases (mismas métricas; canónica distinta en SEO)
 	tag('/etiqueta-medioambiental', 'landing_servicio', 'servicios', 'Etiqueta (alias)', {
@@ -153,6 +166,26 @@ export const PAGE_TAGS: PageTag[] = [
 	tag('/tramitar/cancelacion-reserva', 'funnel_tramite', 'conversion', 'Funnel cancelación', {
 		tramite: 'cancelacion',
 		events: funnelEvents
+	}),
+	tag('/tramitar/notificacion-venta', 'funnel_tramite', 'conversion', 'Funnel notificación venta', {
+		tramite: 'notificacion-venta',
+		events: funnelEvents
+	}),
+	tag('/tramitar/nota-simple', 'funnel_tramite', 'conversion', 'Funnel nota simple', {
+		tramite: 'nota-simple',
+		events: funnelEvents
+	}),
+	tag('/tramitar/baja-temporal', 'funnel_tramite', 'conversion', 'Funnel baja temporal', {
+		tramite: 'baja-temporal',
+		events: funnelEvents
+	}),
+	tag('/pago', 'funnel_pago', 'conversion', 'Pasarela de pago', {
+		events: [
+			Events.PAGE_VIEW,
+			Events.PAYMENT_STARTED,
+			Events.PAYMENT_COMPLETED,
+			Events.FORM_ABANDONED
+		]
 	}),
 
 	// Calculadoras
@@ -200,6 +233,18 @@ export function resolvePageTag(pathname: string): PageTag {
 
 	const exact = byPath.get(path);
 	if (exact) return exact;
+
+	// Pasarela de pago: /pago/[id]
+	if (path === '/pago' || path.startsWith('/pago/')) {
+		return tag(path, 'funnel_pago', 'conversion', 'Pasarela de pago', {
+			events: [
+				Events.PAGE_VIEW,
+				Events.PAYMENT_STARTED,
+				Events.PAYMENT_COMPLETED,
+				Events.FORM_ABANDONED
+			]
+		});
+	}
 
 	const noticiasPage = path.match(/^\/noticias\/page\/(\d+)$/);
 	if (noticiasPage) {

@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
+	import DateInput from '$lib/components/ui/DateInput.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import {
 		duplicadoMotivos,
@@ -21,6 +22,7 @@
 		validateRequired,
 		validateCodigoPostal,
 		validateDate,
+		validateBastidor,
 		todayIso
 	} from '$lib/utils/validators';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
@@ -41,7 +43,15 @@
 		setDraftStorageAck
 	} from '$lib/tramite/draft';
 
-	type Variant = 'etiqueta' | 'etiqueta-vmp' | 'informe' | 'duplicado' | 'cancelacion';
+	type Variant =
+		| 'etiqueta'
+		| 'etiqueta-vmp'
+		| 'informe'
+		| 'duplicado'
+		| 'cancelacion'
+		| 'notificacion-venta'
+		| 'nota-simple'
+		| 'baja-temporal';
 
 	let {
 		title,
@@ -71,6 +81,7 @@
 	let solicitudId = $state<string | null>(null);
 
 	let matricula = $state('');
+	let bastidor = $state('');
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
 	let distintivoTipo = $state('');
 	let vmpCertificado = $state<'si' | 'no'>('si');
@@ -156,6 +167,18 @@
 				total: tramitePricing.duplicado.total
 			};
 		}
+		if (variant === 'notificacion-venta') {
+			const p = tramitePricing.notificacionVenta;
+			return { lines: [{ label: p.label, amount: p.total }], total: p.total };
+		}
+		if (variant === 'nota-simple') {
+			const p = tramitePricing.notaSimple;
+			return { lines: [{ label: p.label, amount: p.total }], total: p.total };
+		}
+		if (variant === 'baja-temporal') {
+			const p = tramitePricing.bajaTemporal;
+			return { lines: [{ label: p.label, amount: p.total }], total: p.total };
+		}
 		return {
 			lines: [{ label: tramitePricing.cancelacion.label, amount: tramitePricing.cancelacion.total }],
 			total: tramitePricing.cancelacion.total
@@ -192,6 +215,7 @@
 				solicitudId = data.solicitudId;
 			}
 			if (typeof data.matricula === 'string') matricula = data.matricula;
+			if (typeof data.bastidor === 'string') bastidor = data.bastidor;
 			if (typeof data.tipoVehiculo === 'string')
 				tipoVehiculo = data.tipoVehiculo as 'coche' | 'moto';
 			if (typeof data.distintivoTipo === 'string') distintivoTipo = data.distintivoTipo;
@@ -242,6 +266,7 @@
 			step,
 			solicitudId,
 			matricula,
+			bastidor,
 			tipoVehiculo,
 			distintivoTipo,
 			vmpCertificado,
@@ -318,6 +343,7 @@
 		if (!draftReady) return;
 		void step;
 		void matricula;
+		void bastidor;
 		void tipoVehiculo;
 		void distintivoTipo;
 		void vmpCertificado;
@@ -383,7 +409,17 @@
 			e.matricula = validateMatricula(matricula);
 		}
 
-		if (variant === 'cancelacion' && s === 1) {
+		if (variant === 'nota-simple' && s === 1) {
+			e.matricula = validateMatricula(matricula);
+			if (bastidor.trim()) e.bastidor = validateBastidor(bastidor);
+		}
+
+		if (
+			(variant === 'cancelacion' ||
+				variant === 'notificacion-venta' ||
+				variant === 'baja-temporal') &&
+			s === 1
+		) {
 			e.matricula = validateMatricula(matricula);
 		}
 
@@ -428,7 +464,10 @@
 			(variant === 'etiqueta' ||
 				variant === 'etiqueta-vmp' ||
 				variant === 'informe' ||
-				variant === 'duplicado')
+				variant === 'duplicado' ||
+				variant === 'notificacion-venta' ||
+				variant === 'nota-simple' ||
+				variant === 'baja-temporal')
 		) {
 			if (!provincia) e.provincia = 'Selecciona la provincia';
 			e.municipio = validateRequired(municipio, 'El municipio');
@@ -522,6 +561,7 @@
 			variant,
 			wizardStep: step,
 			matricula,
+			bastidor,
 			tipoVehiculo,
 			distintivoTipo,
 			vmpCertificado,
@@ -729,7 +769,22 @@
 						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />
 					</FormField>
 					<p class="info">Informe completo emitido por la DGT con autentificación adicional.</p>
-				{:else if variant === 'cancelacion' && step === 1}
+				{:else if variant === 'nota-simple' && step === 1}
+					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
+						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />
+					</FormField>
+					<FormField label="Bastidor (opcional)" error={errors.bastidor}>
+						<input
+							bind:value={bastidor}
+							placeholder="17 caracteres VIN"
+							oninput={noteProgress}
+						/>
+					</FormField>
+				{:else if
+					(variant === 'cancelacion' ||
+						variant === 'notificacion-venta' ||
+						variant === 'baja-temporal') &&
+					step === 1}
 					<FormField label="Tipo de vehículo" required>
 						<RadioCards
 							name="tipoVehiculo"
@@ -761,7 +816,7 @@
 						</select>
 					</FormField>
 					<FormField label="Fecha de caducidad" error={errors.fechaCaducidad} required>
-						<input type="date" bind:value={fechaCaducidad} />
+						<DateInput bind:value={fechaCaducidad} />
 					</FormField>
 				{:else if step === 2 && variant !== 'cancelacion'}
 					<FormField label="Correo electrónico" error={errors.email} required>
@@ -794,7 +849,7 @@
 							</select>
 						</FormField>
 						<FormField label="Fecha de nacimiento" error={errors.fechaNacimiento} required>
-							<input type="date" bind:value={fechaNacimiento} max={todayIso()} />
+							<DateInput bind:value={fechaNacimiento} max={todayIso()} />
 						</FormField>
 					</div>
 				{:else if variant === 'cancelacion' && step === 2}
@@ -933,6 +988,19 @@
 								<li><span>Clase permiso</span><strong>{clasePermiso || '—'}</strong></li>
 							{:else}
 								<li><span>Matrícula</span><strong>{matricula || '—'}</strong></li>
+								{#if bastidor && variant === 'nota-simple'}
+									<li><span>Bastidor</span><strong>{bastidor}</strong></li>
+								{/if}
+								{#if (variant === 'cancelacion' ||
+										variant === 'notificacion-venta' ||
+										variant === 'baja-temporal') &&
+									tipoVehiculo}
+									<li>
+										<span>Tipo</span><strong
+											>{tipoVehiculo === 'moto' ? 'Moto' : 'Coche'}</strong
+										>
+									</li>
+								{/if}
 								{#if distintivoTipo}
 									<li><span>Distintivo</span><strong>{distintivoTipo}</strong></li>
 								{/if}

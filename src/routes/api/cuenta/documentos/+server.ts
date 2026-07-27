@@ -11,6 +11,7 @@ import { canManageAllDocs, isStaffRole } from '$lib/auth/roles';
 import { fetchSolicitudById } from '$lib/gestor/access';
 import { canAccessPagoSolicitud } from '$lib/pago/access';
 import { getServiceSupabase } from '$lib/supabase/admin';
+import { verifyDocumentUpload } from '$lib/server/doc-verify';
 import type { Solicitud } from '$lib/supabase/types';
 
 const BUCKET = 'tramite-docs';
@@ -93,11 +94,27 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ error: 'No puedes subir documentos en este estado' }, { status: 403 });
 	}
 
+	const buffer = new Uint8Array(await file.arrayBuffer());
+	const verify = await verifyDocumentUpload({
+		docType: docType || 'other',
+		mime: file.type || 'application/octet-stream',
+		bytes: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+		filename: file.name
+	});
+	if (!verify.ok) {
+		return json(
+			{
+				error: verify.message || 'El documento no coincide con el tipo esperado',
+				verify
+			},
+			{ status: 422 }
+		);
+	}
+
 	const ownerId = sol.user_id || user?.id || null;
 	const safeName = file.name.replace(/[^\w.\-áéíóúüñÁÉÍÓÚÜÑ ]+/g, '_').slice(0, 120);
 	const storedName = docType ? `${docType}__${safeName}` : safeName;
 	const path = `${solicitudId}/${crypto.randomUUID()}-${safeName}`;
-	const buffer = new Uint8Array(await file.arrayBuffer());
 
 	const { error: upErr } = await sb.storage.from(BUCKET).upload(path, buffer, {
 		contentType: file.type || 'application/octet-stream',
@@ -117,11 +134,39 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			nombre: storedName,
 			path,
 			mime: file.type || null,
-			uploaded_by
+			uploaded_by,
+			meta: {
+				doc_type: docType || null,
+				verify: {
+					expected: verify.expected,
+					detected: verify.detected,
+					confidence: verify.confidence,
+					skipped: verify.skipped ?? false
+				}
+			}
 		})
 		.select('*')
 		.maybeSingle();
 
-	if (insErr) return json({ error: insErr.message }, { status: 500 });
-	return json({ ok: true, item: data });
+	if (insErr) {
+		// Si la columna meta no existe aún, reintentar sin meta
+		if (insErr.message?.includes('meta')) {
+			const retry = await sb
+				.from('solicitud_documentos')
+				.insert({
+					solicitud_id: solicitudId,
+					user_id: ownerId,
+					nombre: storedName,
+					path,
+					mime: file.type || null,
+					uploaded_by
+				})
+				.select('*')
+				.maybeSingle();
+			if (retry.error) return json({ error: retry.error.message }, { status: 500 });
+			return json({ ok: true, item: retry.data, verify });
+		}
+		return json({ error: insErr.message }, { status: 500 });
+	}
+	return json({ ok: true, item: data, verify });
 };

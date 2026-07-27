@@ -67,9 +67,9 @@ export const STATIC_SEO_PAGES: StaticSeoPage[] = [
 	},
 	{
 		path: '/duplicado-de-carnet-de-conducir',
-		title: pageTitle('Duplicado de Carnet'),
+		title: pageTitle('Duplicado permiso de circulación'),
 		description:
-			'Solicita el duplicado de tu carnet de conducir online de forma rápida y segura, sin desplazamientos.',
+			'Solicita el duplicado del permiso de circulación de tu vehículo online, de forma rápida y segura.',
 		priority: 0.9
 	},
 	{
@@ -77,6 +77,27 @@ export const STATIC_SEO_PAGES: StaticSeoPage[] = [
 		title: pageTitle('Cancelación Reserva de Dominio'),
 		description:
 			'Cancela la reserva de dominio de tu vehículo ante la entidad de crédito con gestión online guiada.',
+		priority: 0.9
+	},
+	{
+		path: '/notificacion-de-venta',
+		title: pageTitle('Notificación de venta'),
+		description:
+			'Notifica la venta de tu vehículo ante la DGT 100% online. Evita responsabilidades tras la compraventa.',
+		priority: 0.9
+	},
+	{
+		path: '/nota-simple-vehiculo',
+		title: pageTitle('Nota simple de vehículo'),
+		description:
+			'Solicita la nota simple de un vehículo online y conoce su situación registral de forma rápida.',
+		priority: 0.9
+	},
+	{
+		path: '/baja-temporal-vehiculo',
+		title: pageTitle('Baja temporal de vehículo'),
+		description:
+			'Tramita la baja temporal de tu vehículo ante la DGT sin citas ni desplazamientos.',
 		priority: 0.9
 	},
 	{
@@ -197,8 +218,9 @@ export const STATIC_SEO_PAGES: StaticSeoPage[] = [
 	},
 	{
 		path: '/tramitar/duplicado-carnet',
-		title: pageTitle('Solicitar duplicado de carnet'),
-		description: 'Tramita el duplicado de tu permiso de conducir online, sin citas ni desplazamientos.',
+		title: pageTitle('Solicitar duplicado permiso circulación'),
+		description:
+			'Tramita el duplicado del permiso de circulación de tu vehículo online, sin citas ni desplazamientos.',
 		priority: 0.7
 	},
 	{
@@ -206,6 +228,26 @@ export const STATIC_SEO_PAGES: StaticSeoPage[] = [
 		title: pageTitle('Cancelar reserva de dominio'),
 		description:
 			'Gestiona la cancelación de reserva de dominio de tu vehículo de forma online y guiada.',
+		priority: 0.7
+	},
+	{
+		path: '/tramitar/notificacion-venta',
+		title: pageTitle('Tramitar notificación de venta'),
+		description:
+			'Formulario guiado para notificar la venta de tu vehículo ante la DGT de forma online.',
+		priority: 0.7
+	},
+	{
+		path: '/tramitar/nota-simple',
+		title: pageTitle('Solicitar nota simple de vehículo'),
+		description: 'Pide la nota simple de un vehículo online con un formulario guiado paso a paso.',
+		priority: 0.7
+	},
+	{
+		path: '/tramitar/baja-temporal',
+		title: pageTitle('Tramitar baja temporal de vehículo'),
+		description:
+			'Inicia la baja temporal de tu vehículo ante la DGT con un formulario online guiado.',
 		priority: 0.7
 	}
 ];

@@ -52,6 +52,9 @@ export const tramitePricing = {
 	etiqueta: { service: 9.95, label: 'Distintivo ambiental' },
 	etiquetaVmp: { service: 9.95, label: 'Etiqueta VMP' },
 	informe: { service: 9.95, dgt: 9.09, label: 'Informe de tráfico' },
-	duplicado: { total: 59.95, label: 'Duplicado carnet' },
-	cancelacion: { total: 69.95, label: 'Cancelación reserva de dominio' }
+	duplicado: { total: 59.95, label: 'Duplicado permiso de circulación' },
+	cancelacion: { total: 69.95, label: 'Cancelación reserva de dominio' },
+	notificacionVenta: { total: 56, label: 'Notificación de venta' },
+	notaSimple: { total: 20, label: 'Nota simple de vehículo' },
+	bajaTemporal: { total: 58, label: 'Baja temporal de vehículo' }
 } as const;

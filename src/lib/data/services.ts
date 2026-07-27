@@ -49,8 +49,8 @@ export const services: Service[] = [
 	{
 		id: 'duplicado',
 		slug: 'duplicado-de-carnet-de-conducir',
-		title: 'Duplicado Carnet Conducir',
-		description: 'Solicita un duplicado de tu carnet de conducir',
+		title: 'Duplicado permiso de circulación',
+		description: 'Solicita un duplicado del permiso de circulación de tu vehículo',
 		landingPath: '/duplicado-de-carnet-de-conducir',
 		tramitarPath: '/tramitar/duplicado-carnet',
 		image: '/images/services/duplicado.webp'
@@ -62,6 +62,33 @@ export const services: Service[] = [
 		description: 'Cancela la reserva de dominio a la entidad de crédito',
 		landingPath: '/cancelacion-de-reserva-de-dominio',
 		tramitarPath: '/tramitar/cancelacion-reserva',
+		image: '/images/services/cancelacion.webp'
+	},
+	{
+		id: 'notificacion-venta',
+		slug: 'notificacion-de-venta',
+		title: 'Notificación de venta',
+		description: 'Notifica la venta de tu vehículo ante la DGT de forma online',
+		landingPath: '/notificacion-de-venta',
+		tramitarPath: '/tramitar/notificacion-venta',
+		image: '/images/services/transferencia.webp'
+	},
+	{
+		id: 'nota-simple',
+		slug: 'nota-simple-vehiculo',
+		title: 'Nota simple de vehículo',
+		description: 'Obtén la nota simple registral del vehículo de forma rápida y online',
+		landingPath: '/nota-simple-vehiculo',
+		tramitarPath: '/tramitar/nota-simple',
+		image: '/images/services/informe.webp'
+	},
+	{
+		id: 'baja-temporal',
+		slug: 'baja-temporal-vehiculo',
+		title: 'Baja temporal de vehículo',
+		description: 'Tramita la baja temporal de tu vehículo ante la DGT sin desplazamientos',
+		landingPath: '/baja-temporal-vehiculo',
+		tramitarPath: '/tramitar/baja-temporal',
 		image: '/images/services/cancelacion.webp'
 	}
 ];

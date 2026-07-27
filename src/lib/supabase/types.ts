@@ -98,6 +98,9 @@ export const SOLICITUD_TIPOS = [
 	'informe-dgt',
 	'duplicado-carnet',
 	'cancelacion-reserva',
+	'notificacion-venta',
+	'nota-simple',
+	'baja-temporal',
 	'contacto'
 ] as const;
 
@@ -110,10 +113,13 @@ export const SOLICITUD_TIPO_LABELS: Record<string, string> = {
 	vmp: 'Etiqueta VMP',
 	'informe-dgt': 'Informe de tráfico',
 	informe: 'Informe de tráfico',
-	'duplicado-carnet': 'Duplicado de carnet',
-	duplicado: 'Duplicado de carnet',
+	'duplicado-carnet': 'Duplicado permiso de circulación',
+	duplicado: 'Duplicado permiso de circulación',
 	'cancelacion-reserva': 'Cancelación reserva dominio',
 	cancelacion: 'Cancelación reserva dominio',
+	'notificacion-venta': 'Notificación de venta',
+	'nota-simple': 'Nota simple de vehículo',
+	'baja-temporal': 'Baja temporal de vehículo',
 	contacto: 'Contacto'
 };
 

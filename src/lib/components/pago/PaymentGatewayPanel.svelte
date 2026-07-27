@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatEur } from '$lib/utils/pricing';
+	import type { Snippet } from 'svelte';
 
 	let {
 		total,
@@ -9,7 +10,11 @@
 		provider = null,
 		message = null,
 		error = null,
-		onPay
+		tipoLabel = '',
+		solicitudId = '',
+		hidePayButton = false,
+		onPay,
+		embed
 	}: {
 		total: number;
 		lines?: { label: string; amount: number }[];
@@ -18,7 +23,11 @@
 		provider?: 'stripe' | 'redsys' | null;
 		message?: string | null;
 		error?: string | null;
+		tipoLabel?: string;
+		solicitudId?: string;
+		hidePayButton?: boolean;
 		onPay: () => void | Promise<void>;
+		embed?: Snippet;
 	} = $props();
 
 	const providerLabel = $derived(
@@ -28,8 +37,14 @@
 
 <div class="gateway" data-payment-gateway>
 	<div class="head">
+		{#if tipoLabel}
+			<p class="tipo">{tipoLabel}</p>
+		{/if}
 		<h2>Pasarela de pago</h2>
 		<p class="amount">{formatEur(total)}</p>
+		{#if solicitudId}
+			<p class="ref">Ref. <code>{solicitudId}</code></p>
+		{/if}
 	</div>
 
 	{#if lines.length}
@@ -41,28 +56,42 @@
 	{/if}
 
 	<div class="slot" id="payment-gateway-slot" aria-live="polite">
-		{#if gatewayReady}
-			<p class="ready">
-				{#if providerLabel}
-					Pago seguro con {providerLabel}. Serás redirigido a la pasarela para introducir tu tarjeta.
-				{:else}
-					Conexión con la pasarela lista.
+		{#if embed}
+			{@render embed()}
+		{/if}
+
+		{#if !hidePayButton}
+			{#if gatewayReady}
+				{#if !embed || provider !== 'stripe'}
+					<p class="ready">
+						{#if providerLabel}
+							Pago seguro con {providerLabel}.
+						{:else}
+							Conexión con la pasarela lista.
+						{/if}
+					</p>
 				{/if}
-			</p>
-			<button type="button" class="btn pay" onclick={onPay} disabled={loading}>
-				{loading ? 'Conectando con la pasarela…' : 'Pagar ahora'}
-			</button>
-		{:else}
-			<div class="placeholder">
-				<p class="badge">Pasarela pendiente de activar</p>
-				<p>
-					Configura las claves de Stripe en el servidor para activar el cobro. Mientras tanto puedes
-					registrar el trámite como pendiente de pago.
-				</p>
-				<button type="button" class="btn pay" onclick={onPay} disabled={loading}>
-					{loading ? 'Registrando…' : 'Continuar (pago pendiente de activar)'}
-				</button>
-			</div>
+				{#if provider === 'stripe' && !hidePayButton}
+					<button type="button" class="btn pay" onclick={onPay} disabled={loading}>
+						{loading ? 'Cargando pasarela…' : 'Pagar ahora'}
+					</button>
+				{:else if provider !== 'stripe'}
+					<button type="button" class="btn pay" onclick={onPay} disabled={loading}>
+						{loading ? 'Conectando con la pasarela…' : 'Pagar ahora'}
+					</button>
+				{/if}
+			{:else}
+				<div class="placeholder">
+					<p class="badge">Pasarela pendiente de activar</p>
+					<p>
+						Configura las claves de Stripe en el servidor para activar el cobro. Mientras tanto puedes
+						registrar el trámite como pendiente de pago.
+					</p>
+					<button type="button" class="btn pay" onclick={onPay} disabled={loading}>
+						{loading ? 'Registrando…' : 'Continuar (pago pendiente de activar)'}
+					</button>
+				</div>
+			{/if}
 		{/if}
 	</div>
 
@@ -90,6 +119,14 @@
 		text-align: center;
 		margin-bottom: 16px;
 	}
+	.tipo {
+		margin: 0 0 6px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: #5a6b7d;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
 	h2 {
 		margin: 0 0 8px;
 		font-size: 1.15rem;
@@ -101,6 +138,14 @@
 		font-weight: 800;
 		color: #00a8b3;
 		letter-spacing: -0.03em;
+	}
+	.ref {
+		margin: 8px 0 0;
+		font-size: 0.75rem;
+		color: #5a6b7d;
+	}
+	.ref code {
+		font-size: 0.72rem;
 	}
 	.lines {
 		list-style: none;

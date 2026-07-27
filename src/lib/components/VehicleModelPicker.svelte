@@ -48,7 +48,6 @@
 	let loadingModels = $state(false);
 	let loadError = $state<string | null>(null);
 
-	const fuelOptions = $derived(fuels.map((f) => ({ value: f.id, label: f.name })));
 	const modelOptions = $derived(
 		models.map((m) => ({
 			value: m.id,
@@ -139,9 +138,9 @@
 	<SearchSelect
 		options={brandOptions}
 		bind:value={marcaId}
-		placeholder="Buscar marca…"
-		maxResults={40}
-		minChars={1}
+		placeholder="Buscar o elegir marca…"
+		maxResults={50}
+		minChars={0}
 		onChange={onMarcaChange}
 	/>
 </FormField>
@@ -152,15 +151,18 @@
 	hint={loadingFuels ? 'Cargando combustibles…' : undefined}
 	required
 >
-	<SearchSelect
-		options={fuelOptions}
+	<select
 		bind:value={combustibleId}
-		placeholder={marcaId ? 'Buscar combustible…' : 'Primero elige marca'}
 		disabled={!marcaId || loadingFuels}
-		maxResults={20}
-		minChars={0}
-		onChange={onCombustibleChange}
-	/>
+		onchange={() => onCombustibleChange(combustibleId)}
+	>
+		<option value="">
+			{marcaId ? 'Seleccione tipo de combustible' : 'Primero elige marca'}
+		</option>
+		{#each fuels as f (f.id)}
+			<option value={f.id}>{f.name}</option>
+		{/each}
+	</select>
 </FormField>
 
 <FormField
@@ -179,7 +181,7 @@
 		placeholder={combustibleId ? 'Buscar modelo o versión…' : 'Primero elige combustible'}
 		disabled={!combustibleId || loadingModels}
 		maxResults={40}
-		minChars={2}
+		minChars={0}
 		emptyText="Sin coincidencias. Prueba otra búsqueda."
 		onChange={onModeloChange}
 	/>

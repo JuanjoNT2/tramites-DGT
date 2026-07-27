@@ -58,7 +58,18 @@
 				postToRedsys(result.redsys);
 				return;
 			}
-			payMessage = result.message;
+			if (result.mode === 'stripe_embedded' || result.mode === 'stripe_redirect') {
+				const url =
+					result.mode === 'stripe_redirect'
+						? result.url
+						: `/pago/${result.solicitudId}`;
+				window.location.href = url;
+				return;
+			}
+			payMessage =
+				result.mode === 'pending_credentials'
+					? result.message
+					: 'Solicitud registrada pendiente de pago.';
 			done = true;
 		} finally {
 			submitting = false;
