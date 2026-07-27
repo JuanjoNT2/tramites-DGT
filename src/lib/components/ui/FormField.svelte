@@ -52,10 +52,10 @@
 	:global(.field select),
 	:global(.field textarea) {
 		width: 100%;
-		height: 48px;
+		height: 50px;
 		padding: 0 14px;
-		border: 1.5px solid var(--border);
-		border-radius: var(--radius);
+		border: 1.5px solid #c5d0da;
+		border-radius: 8px;
 		font-size: 16px;
 		color: var(--ink);
 		background: #fff;

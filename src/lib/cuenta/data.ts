@@ -121,6 +121,85 @@ export async function updateUserSolicitudPayload(
 	return data as Solicitud;
 }
 
+/** Crea o actualiza un borrador de trámite (status nueva) sin validación completa. */
+export async function upsertDraftSolicitud(
+	userId: string,
+	opts: {
+		tipo: string;
+		payload: Record<string, unknown>;
+		email?: string | null;
+		solicitudId?: string | null;
+	}
+): Promise<Solicitud> {
+	const sb = requireService();
+	const email =
+		(opts.email || '').trim().toLowerCase() ||
+		(typeof opts.payload.email === 'string' ? opts.payload.email.trim().toLowerCase() : '') ||
+		null;
+
+	if (opts.solicitudId) {
+		const current = await getUserSolicitud(userId, opts.solicitudId);
+		if (current.status !== 'nueva') {
+			throw error(403, 'Solo puedes editar trámites en estado nueva');
+		}
+		const { data, error: err } = await sb
+			.from('solicitudes')
+			.update({
+				payload: opts.payload,
+				tipo: opts.tipo,
+				email: email || current.email
+			})
+			.eq('id', opts.solicitudId)
+			.eq('user_id', userId)
+			.select('*')
+			.maybeSingle();
+		if (err) throw error(500, err.message);
+		if (!data) throw error(404, 'Solicitud no encontrada');
+		return data as Solicitud;
+	}
+
+	const id = crypto.randomUUID();
+	const { data, error: err } = await sb
+		.from('solicitudes')
+		.insert({
+			id,
+			tipo: opts.tipo,
+			payload: opts.payload,
+			user_id: userId,
+			email,
+			status: 'nueva',
+			created_at: new Date().toISOString()
+		})
+		.select('*')
+		.maybeSingle();
+	if (err) throw error(500, err.message);
+	if (!data) throw error(500, 'No se pudo guardar el trámite');
+	return data as Solicitud;
+}
+
+/** Promueve un borrador `nueva` a `pendiente_pago` con el payload final. */
+export async function promoteSolicitudToPayment(
+	userId: string,
+	id: string,
+	payload: Record<string, unknown>
+): Promise<Solicitud> {
+	const sb = requireService();
+	const current = await getUserSolicitud(userId, id);
+	if (current.status !== 'nueva') {
+		throw error(403, 'Este trámite ya no se puede enviar a pago desde el borrador');
+	}
+	const { data, error: err } = await sb
+		.from('solicitudes')
+		.update({ payload, status: 'pendiente_pago' })
+		.eq('id', id)
+		.eq('user_id', userId)
+		.select('*')
+		.maybeSingle();
+	if (err) throw error(500, err.message);
+	if (!data) throw error(404, 'Solicitud no encontrada');
+	return data as Solicitud;
+}
+
 export async function updateProfileFields(
 	userId: string,
 	fields: Partial<

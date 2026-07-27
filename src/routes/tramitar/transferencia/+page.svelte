@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import StepProgress from '$lib/components/ui/StepProgress.svelte';
+	import { page } from '$app/state';
+	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
@@ -16,6 +17,7 @@
 		looksLikeDate
 	} from '$lib/utils/transfer-price-client';
 	import { createSolicitud } from '$lib/pago/client';
+	import { handleWizardSave } from '$lib/tramite/save';
 	import { goto } from '$app/navigation';
 	import {
 		validateEmail,
@@ -44,22 +46,27 @@
 
 	const seo = getStaticSeo('/tramitar/transferencia')!;
 	const STORAGE_KEY = 'dgt-transfer-wizard';
-	const stepLabels = [
-		'Tipo de vehículo',
-		'Identificación',
-		'Datos técnicos',
-		'Operación',
-		'Tu rol y datos',
-		'La otra parte',
-		'Dirección',
-		'Documentos',
-		'Resumen'
-	];
+	const stepLabels = ['Vehículo', 'Intervinientes', 'Envío y documentos', 'Resumen'];
+	const TOTAL_STEPS = 4;
+
+	/** Si el borrador era de 9 pasos (step>4), remapea: 5–6→2, 7–8→3, 9→4. */
+	function clampLegacyStep(raw: number): number {
+		if (raw < 1) return 1;
+		if (raw <= TOTAL_STEPS) return raw;
+		if (raw <= 6) return 2;
+		if (raw <= 8) return 3;
+		return 4;
+	}
 
 	let step = $state(1);
 	let errors = $state<Record<string, string | null>>({});
+	let errorSteps = $state<number[]>([]);
 	let submitting = $state(false);
+	let saving = $state(false);
 	let payError = $state<string | null>(null);
+	let saveMsg = $state<string | null>(null);
+	let saveError = $state<string | null>(null);
+	let solicitudId = $state<string | null>(null);
 
 	// Form state
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
@@ -177,12 +184,12 @@
 
 	onMount(() => {
 		initAnalytics();
-		funnel.started({ tramite: 'transferencia', total_steps: 9 });
+		funnel.started({ tramite: 'transferencia', total_steps: TOTAL_STEPS });
 		funnel.stepViewed({
 			tramite: 'transferencia',
 			step: 1,
 			step_name: stepLabels[0],
-			total_steps: 9
+			total_steps: TOTAL_STEPS
 		});
 
 		const onLeave = () => {
@@ -190,7 +197,7 @@
 				tramite: 'transferencia',
 				step,
 				step_name: stepLabels[step - 1],
-				total_steps: 9
+				total_steps: TOTAL_STEPS
 			});
 		};
 		window.addEventListener('pagehide', onLeave);
@@ -198,7 +205,10 @@
 		if (hasDraftStorageAck()) draftReady = true;
 		const data = loadDraft<Record<string, unknown>>(STORAGE_KEY);
 		if (data) {
-			if (typeof data.step === 'number') step = data.step;
+			if (typeof data.step === 'number') step = clampLegacyStep(data.step);
+			if (typeof data.solicitudId === 'string' && data.solicitudId) {
+				solicitudId = data.solicitudId;
+			}
 			if (data.tipoVehiculo === 'coche' || data.tipoVehiculo === 'moto')
 				tipoVehiculo = data.tipoVehiculo;
 			if (typeof data.matricula === 'string') matricula = data.matricula;
@@ -244,6 +254,7 @@
 	function draftSnapshot(): Record<string, unknown> {
 		return {
 			step,
+			solicitudId,
 			tipoVehiculo,
 			matricula,
 			bastidor,
@@ -317,6 +328,7 @@
 	$effect(() => {
 		if (!draftReady) return;
 		void step;
+		void solicitudId;
 		void tipoVehiculo;
 		void matricula;
 		void bastidor;
@@ -352,11 +364,10 @@
 
 	function validateStepAt(s: number): Record<string, string | null> {
 		const e: Record<string, string | null> = {};
-		if (s === 2) {
+		if (s === 1) {
+			// Antiguos pasos 2–4: matrícula, bastidor, técnicos, operación
 			e.matricula = validateMatricula(matricula);
 			e.bastidor = validateBastidor(bastidor);
-		}
-		if (s === 3) {
 			if (tipoVehiculo === 'coche') {
 				e.marca = validateRequired(marcaId, 'La marca');
 				e.combustible = validateRequired(combustibleId, 'El combustible');
@@ -370,8 +381,6 @@
 				label: 'La fecha de primera matrícula',
 				notFuture: true
 			});
-		}
-		if (s === 4) {
 			e.ccaa = validateRequired(ccaaId, 'La comunidad autónoma');
 			if (!(precioVenta > 0)) e.precioVenta = 'Indica un precio de venta mayor que 0';
 			e.fechaVenta = validateDate(fechaVenta, {
@@ -385,24 +394,25 @@
 			);
 			if (order) e.fechaVenta = order;
 		}
-		if (s === 5) {
+		if (s === 2) {
+			// Antiguo paso 5 (sin privacidad) + email otra parte opcional
 			e.email = validateEmail(email);
 			e.nif = validateNifNie(nif);
 			e.nombre = validateRequired(nombre, 'El nombre');
 			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
 			e.telefono = validatePhone(telefono);
-			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
+			if (otraParteEmail.trim()) {
+				e.otraParteEmail = validateEmail(otraParteEmail);
+			}
 		}
-		if (s === 6 && otraParteEmail.trim()) {
-			e.otraParteEmail = validateEmail(otraParteEmail);
-		}
-		if (s === 7) {
+		if (s === 3) {
+			// Antiguo paso 7
 			e.provincia = validateRequired(provincia, 'La provincia');
 			e.municipio = validateRequired(municipio, 'El municipio');
 			e.direccion = validateRequired(direccion, 'La dirección');
 			e.cp = validateCodigoPostal(cp);
 		}
-		if (s === 9) {
+		if (s === 4) {
 			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
 			if (!breakdown || !(breakdown.total > 0)) {
 				e.total = 'Completa CCAA, fechas y modelo para calcular el importe.';
@@ -411,37 +421,59 @@
 		return e;
 	}
 
-	function validateStep(): boolean {
-		errors = validateStepAt(step);
-		return !Object.values(errors).some(Boolean);
+	function stepHasErrors(s: number): boolean {
+		return Object.values(validateStepAt(s)).some(Boolean);
+	}
+
+	function firstInvalidStep(): number {
+		for (let s = 1; s <= TOTAL_STEPS; s++) {
+			if (stepHasErrors(s)) return s;
+		}
+		return TOTAL_STEPS;
 	}
 
 	function validateAllSteps(): boolean {
 		const merged: Record<string, string | null> = {};
-		for (let s = 2; s <= 9; s++) {
-			Object.assign(merged, validateStepAt(s));
+		const bad: number[] = [];
+		for (let s = 1; s <= TOTAL_STEPS; s++) {
+			const e = validateStepAt(s);
+			Object.assign(merged, e);
+			if (Object.values(e).some(Boolean)) bad.push(s);
 		}
 		errors = merged;
-		return !Object.values(merged).some(Boolean);
+		errorSteps = bad;
+		return bad.length === 0;
+	}
+
+	function goTo(n: number) {
+		if (n < 1 || n > TOTAL_STEPS || n === step) return;
+		funnel.stepViewed({
+			tramite: 'transferencia',
+			step: n,
+			step_name: stepLabels[n - 1],
+			total_steps: TOTAL_STEPS
+		});
+		step = n;
+		noteProgress(true);
+		save();
 	}
 
 	function next() {
-		if (!validateStep()) return;
 		funnel.stepCompleted({
 			tramite: 'transferencia',
 			step,
 			step_name: stepLabels[step - 1],
-			total_steps: 9
+			total_steps: TOTAL_STEPS
 		});
 		noteProgress(true);
 		save();
-		if (step < 9) {
+		if (step < TOTAL_STEPS) {
 			step++;
 			funnel.stepViewed({
 				tramite: 'transferencia',
 				step,
 				step_name: stepLabels[step - 1],
-				total_steps: 9
+				total_steps: TOTAL_STEPS
 			});
 		}
 	}
@@ -451,9 +483,105 @@
 		save();
 	}
 
+	function buildPayload(): Record<string, unknown> {
+		const marcaLabel = tipoVehiculo === 'coche' ? marcaNombre : marcaMotoNombre;
+		const modeloLabel = tipoVehiculo === 'coche' ? modeloNombre : modeloMotoNombre;
+		const priceLines = breakdown
+			? [
+					{ label: 'ITP', amount: breakdown.itpAmount },
+					{ label: 'Tramitación', amount: breakdown.tramitacion },
+					...(breakdown.informeDgt > 0
+						? [{ label: 'Informe DGT', amount: breakdown.informeDgt }]
+						: [])
+				]
+			: [];
+		return {
+			tipo: 'transferencia',
+			wizardStep: step,
+			tipoVehiculo,
+			matricula,
+			bastidor,
+			marca: marcaLabel,
+			modelo: modeloLabel,
+			marcaNombre: marcaLabel,
+			modeloNombre: modeloLabel,
+			marcaId: tipoVehiculo === 'coche' ? marcaId : marcaMotoId,
+			modeloId: tipoVehiculo === 'coche' ? modeloId : modeloMotoId || undefined,
+			combustible: tipoVehiculo === 'coche' ? combustibleNombre : undefined,
+			combustibleId: tipoVehiculo === 'coche' ? combustibleId : undefined,
+			modeloMeta: tipoVehiculo === 'coche' ? modeloMeta : undefined,
+			cilindrada: tipoVehiculo === 'moto' ? cilindradaMoto : undefined,
+			fechaMatricula,
+			ccaaId,
+			precioVenta,
+			fechaVenta,
+			facturaEmpresa,
+			incluirInforme,
+			email,
+			nif,
+			nombre,
+			apellido1,
+			telefono,
+			rol,
+			otraParteEmail,
+			provincia,
+			municipio,
+			direccion,
+			cp,
+			skipDocs,
+			acceptPrivacy,
+			breakdown,
+			priceLines,
+			total: breakdown?.total ?? 0,
+			amount: breakdown?.total ?? 0,
+			precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
+			factorCorreccion,
+			fuenteDepreciacion,
+			metaFiscal: breakdown
+				? {
+						valoracionReal: breakdown.valoracionReal,
+						baseImponible: breakdown.baseImponible,
+						itpAmount: breakdown.itpAmount,
+						sinValorBoe: breakdown.sinValorBoe,
+						fuente: breakdown.fuente,
+						ordenReferencia: 'HAC/1501/2025'
+					}
+				: undefined
+		};
+	}
+
+	async function saveToAccount() {
+		saving = true;
+		saveMsg = null;
+		saveError = null;
+		try {
+			const outcome = await handleWizardSave({
+				tipo: 'transferencia',
+				storageKey: STORAGE_KEY,
+				draftSnapshot: draftSnapshot(),
+				payload: buildPayload(),
+				solicitudId,
+				returnPath: page.url.pathname
+			});
+			if (outcome.kind === 'login') return;
+			if (outcome.kind === 'error') {
+				saveError = outcome.error;
+				return;
+			}
+			solicitudId = outcome.result.solicitudId;
+			saveMsg = outcome.result.message;
+			draftReady = true;
+			setDraftStorageAck();
+			save();
+		} finally {
+			saving = false;
+		}
+	}
+
 	async function continueToPayment() {
 		if (!validateAllSteps()) {
 			payError = 'Revisa los datos del formulario: hay campos incompletos o no válidos.';
+			step = firstInvalidStep();
 			return;
 		}
 		if (!breakdown || !(breakdown.total > 0)) {
@@ -463,67 +591,10 @@
 		submitting = true;
 		payError = null;
 		try {
-			const marcaLabel = tipoVehiculo === 'coche' ? marcaNombre : marcaMotoNombre;
-			const modeloLabel = tipoVehiculo === 'coche' ? modeloNombre : modeloMotoNombre;
-			const priceLines = [
-				{ label: 'ITP', amount: breakdown.itpAmount },
-				{ label: 'Tramitación', amount: breakdown.tramitacion },
-				...(breakdown.informeDgt > 0
-					? [{ label: 'Informe DGT', amount: breakdown.informeDgt }]
-					: [])
-			];
 			const result = await createSolicitud({
 				amount: breakdown.total,
-				payload: {
-					tipo: 'transferencia',
-					tipoVehiculo,
-					matricula,
-					bastidor,
-					marca: marcaLabel,
-					modelo: modeloLabel,
-					marcaNombre: marcaLabel,
-					modeloNombre: modeloLabel,
-					marcaId: tipoVehiculo === 'coche' ? marcaId : marcaMotoId,
-					modeloId: tipoVehiculo === 'coche' ? modeloId : modeloMotoId || undefined,
-					combustible: tipoVehiculo === 'coche' ? combustibleNombre : undefined,
-					combustibleId: tipoVehiculo === 'coche' ? combustibleId : undefined,
-					modeloMeta: tipoVehiculo === 'coche' ? modeloMeta : undefined,
-					cilindrada: tipoVehiculo === 'moto' ? cilindradaMoto : undefined,
-					fechaMatricula,
-					ccaaId,
-					precioVenta,
-					fechaVenta,
-					facturaEmpresa,
-					incluirInforme,
-					email,
-					nif,
-					nombre,
-					apellido1,
-					telefono,
-					rol,
-					otraParteEmail,
-					provincia,
-					municipio,
-					direccion,
-					cp,
-					skipDocs,
-					acceptPrivacy,
-					breakdown,
-					priceLines,
-					total: breakdown.total,
-					amount: breakdown.total,
-					precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
-					factorCorreccion,
-					fuenteDepreciacion,
-					metaFiscal: {
-						valoracionReal: breakdown.valoracionReal,
-						baseImponible: breakdown.baseImponible,
-						itpAmount: breakdown.itpAmount,
-						sinValorBoe: breakdown.sinValorBoe,
-						fuente: breakdown.fuente,
-						ordenReferencia: 'HAC/1501/2025'
-					}
-				}
+				solicitudId,
+				payload: buildPayload()
 			});
 
 			if (!result.ok) {
@@ -533,11 +604,15 @@
 
 			funnel.submitted({
 				tramite: 'transferencia',
-				step: 9,
-				total_steps: 9,
+				step: TOTAL_STEPS,
+				total_steps: TOTAL_STEPS,
 				order_id: result.solicitudId
 			});
-			funnel.paymentStarted({ tramite: 'transferencia', step: 9, total_steps: 9 });
+			funnel.paymentStarted({
+				tramite: 'transferencia',
+				step: TOTAL_STEPS,
+				total_steps: TOTAL_STEPS
+			});
 			clearDraft(STORAGE_KEY);
 			await goto(result.pagoUrl);
 		} finally {
@@ -551,8 +626,10 @@
 <section class="section">
 	<div class="wrap layout">
 		<div class="main card pad">
-			<StepProgress current={step} total={9} labels={stepLabels} />
+			<WizardStepper current={step} labels={stepLabels} {errorSteps} onchange={goTo} />
 			<h1>Transferencia de vehículos</h1>
+			{#if saveMsg}<p class="save-ok" role="status">{saveMsg}</p>{/if}
+			{#if saveError}<p class="err" role="alert">{saveError}</p>{/if}
 
 				{#if step === 1}
 					<FormField label="Tipo de vehículo" required>
@@ -565,7 +642,6 @@
 							]}
 						/>
 					</FormField>
-				{:else if step === 2}
 					<FormField label="Matrícula" error={errors.matricula} hint="Ej: 3990 WDS" required>
 						<input
 							bind:value={matricula}
@@ -586,7 +662,6 @@
 							oninput={() => noteProgress()}
 						/>
 					</FormField>
-				{:else if step === 3}
 					{#if tipoVehiculo === 'coche'}
 						<VehicleModelPicker
 							bind:marcaId
@@ -619,7 +694,6 @@
 					<FormField label="Fecha primera matrícula" error={errors.fechaMatricula} required>
 						<input type="date" bind:value={fechaMatricula} max={todayIso()} />
 					</FormField>
-				{:else if step === 4}
 					<FormField label="CCAA del comprador" error={errors.ccaa} required>
 						<SearchSelect options={ccaaOptions} bind:value={ccaaId} />
 					</FormField>
@@ -649,7 +723,7 @@
 							]}
 						/>
 					</FormField>
-				{:else if step === 5}
+				{:else if step === 2}
 					<FormField label="¿Cuál es tu rol?" required>
 						<RadioCards
 							name="rol"
@@ -675,12 +749,6 @@
 					<FormField label="Teléfono" error={errors.telefono} required>
 						<input type="tel" bind:value={telefono} inputmode="tel" placeholder="612345678" />
 					</FormField>
-					<label class="check">
-						<input type="checkbox" bind:checked={acceptPrivacy} />
-						He leído y acepto la <a href="/legal/privacidad" target="_blank">política de privacidad</a>
-					</label>
-					{#if errors.privacy}<p class="err">{errors.privacy}</p>{/if}
-				{:else if step === 6}
 					<p class="info">
 						Puedes invitar a la otra parte por email para que complete sus datos, o continuar y
 						añadirlos después.
@@ -688,7 +756,7 @@
 					<FormField label="Email de la otra parte (opcional)" error={errors.otraParteEmail}>
 						<input type="email" bind:value={otraParteEmail} placeholder="vendedor@email.com" />
 					</FormField>
-				{:else if step === 7}
+				{:else if step === 3}
 					<FormField label="Provincia" error={errors.provincia} required>
 						<input bind:value={provincia} placeholder="Madrid" />
 					</FormField>
@@ -701,7 +769,6 @@
 					<FormField label="Código postal" error={errors.cp} required>
 						<input bind:value={cp} maxlength="5" inputmode="numeric" />
 					</FormField>
-				{:else if step === 8}
 					<p class="info">
 						Puedes subir documentos ahora o después del pago. Formatos: PDF o JPG.
 					</p>
@@ -757,7 +824,7 @@
 							type="button"
 							class="btn pay-cta"
 							onclick={continueToPayment}
-							disabled={submitting || !acceptPrivacy || !breakdown}
+							disabled={submitting || !acceptPrivacy}
 						>
 							{submitting ? 'Registrando solicitud…' : 'Continuar a pasarela de pago'}
 						</button>
@@ -770,9 +837,19 @@
 					{:else}
 						<span></span>
 					{/if}
-					{#if step < 9}
-						<button type="button" class="btn" onclick={next}>Siguiente</button>
-					{/if}
+					<div class="nav-right">
+						<button
+							type="button"
+							class="btn ghost save-btn"
+							onclick={saveToAccount}
+							disabled={saving || submitting}
+						>
+							{saving ? 'Guardando…' : page.data.user ? 'Guardar' : 'Guardar (iniciar sesión)'}
+						</button>
+						{#if step < TOTAL_STEPS}
+							<button type="button" class="btn" onclick={next}>Siguiente</button>
+						{/if}
+					</div>
 				</div>
 		</div>
 		<PriceSidebar {breakdown} loading={factorLoading} error={factorError} />
@@ -799,9 +876,29 @@
 	.nav-btns {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
+		gap: 12px;
 		margin-top: 32px;
 		padding-top: 24px;
 		border-top: 1px solid var(--border);
+		flex-wrap: wrap;
+	}
+	.nav-right {
+		display: flex;
+		gap: 10px;
+		flex-wrap: wrap;
+		margin-left: auto;
+	}
+	.save-btn {
+		white-space: nowrap;
+	}
+	.save-ok {
+		background: #e8f5ee;
+		color: #0f5132;
+		padding: 10px 12px;
+		border-radius: 8px;
+		font-size: 14px;
+		margin-bottom: 16px;
 	}
 	.info {
 		font-size: 15px;
@@ -858,41 +955,6 @@
 	.pay-cta:disabled {
 		opacity: 0.55;
 		cursor: not-allowed;
-	}
-	.success {
-		text-align: center;
-		padding: 40px 20px;
-	}
-	.success .icon {
-		width: 64px;
-		height: 64px;
-		border-radius: 50%;
-		background: #d1fae5;
-		color: var(--success);
-		font-size: 32px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin: 0 auto 20px;
-		font-weight: 800;
-	}
-	.success h1 {
-		margin-bottom: 12px;
-	}
-	.success .sub {
-		color: var(--text2);
-		margin: 12px 0 24px;
-	}
-	.ok-actions {
-		display: flex;
-		gap: 10px;
-		justify-content: center;
-		flex-wrap: wrap;
-	}
-	a.btn.secondary {
-		background: transparent;
-		border: 1px solid var(--navy, #003050);
-		color: var(--navy, #003050);
 	}
 	@media (max-width: 900px) {
 		.layout {

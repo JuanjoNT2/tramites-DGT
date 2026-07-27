@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import StepProgress from '$lib/components/ui/StepProgress.svelte';
+	import { page } from '$app/state';
+	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import {
@@ -24,6 +25,7 @@
 	} from '$lib/utils/validators';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
 	import { createSolicitud } from '$lib/pago/client';
+	import { handleWizardSave } from '$lib/tramite/save';
 	import { funnel, initAnalytics } from '$lib/analytics';
 	import { goto } from '$app/navigation';
 	import {
@@ -56,8 +58,13 @@
 
 	let step = $state(1);
 	let errors = $state<Record<string, string | null>>({});
+	let errorSteps = $state<number[]>([]);
 	let submitting = $state(false);
+	let saving = $state(false);
 	let payError = $state<string | null>(null);
+	let saveMsg = $state<string | null>(null);
+	let saveError = $state<string | null>(null);
+	let solicitudId = $state<string | null>(null);
 
 	let matricula = $state('');
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
@@ -168,7 +175,12 @@
 		if (hasDraftStorageAck()) draftReady = true;
 		const data = loadDraft<Record<string, unknown>>(storageKey);
 		if (data) {
-			if (typeof data.step === 'number') step = data.step;
+			if (typeof data.step === 'number') {
+				step = Math.min(Math.max(1, data.step), steps.length);
+			}
+			if (typeof data.solicitudId === 'string' && data.solicitudId) {
+				solicitudId = data.solicitudId;
+			}
 			if (typeof data.matricula === 'string') matricula = data.matricula;
 			if (typeof data.tipoVehiculo === 'string')
 				tipoVehiculo = data.tipoVehiculo as 'coche' | 'moto';
@@ -217,6 +229,7 @@
 	function draftSnapshot(): Record<string, unknown> {
 		return {
 			step,
+			solicitudId,
 			matricula,
 			tipoVehiculo,
 			distintivoTipo,
@@ -408,7 +421,7 @@
 			e.cp = validateCodigoPostal(cp);
 		}
 
-		if (variant === 'cancelacion' && s === 4) {
+		if (variant === 'cancelacion' && s === 3) {
 			if (!docsConfirmados) e.docs = 'Confirma la documentación requerida';
 		}
 
@@ -419,22 +432,44 @@
 		return e;
 	}
 
-	function validateStep(): boolean {
-		errors = validateStepAt(step);
-		return !Object.values(errors).some(Boolean);
+	function stepHasErrors(s: number): boolean {
+		return Object.values(validateStepAt(s)).some(Boolean);
+	}
+
+	function firstInvalidStep(): number {
+		for (let s = 1; s <= finalStep; s++) {
+			if (stepHasErrors(s)) return s;
+		}
+		return finalStep;
 	}
 
 	function validateAllSteps(): boolean {
 		const merged: Record<string, string | null> = {};
+		const bad: number[] = [];
 		for (let s = 1; s <= finalStep; s++) {
-			Object.assign(merged, validateStepAt(s));
+			const e = validateStepAt(s);
+			Object.assign(merged, e);
+			if (Object.values(e).some(Boolean)) bad.push(s);
 		}
 		errors = merged;
-		return !Object.values(merged).some(Boolean);
+		errorSteps = bad;
+		return bad.length === 0;
+	}
+
+	function goTo(n: number) {
+		if (n < 1 || n > finalStep || n === step) return;
+		funnel.stepViewed({
+			tramite: tipo,
+			step: n,
+			step_name: steps[n - 1],
+			total_steps: steps.length
+		});
+		step = n;
+		noteProgress();
+		save();
 	}
 
 	function next() {
-		if (!validateStep()) return;
 		funnel.stepCompleted({
 			tramite: tipo,
 			step,
@@ -459,9 +494,84 @@
 		save();
 	}
 
+	function buildPayload(): Record<string, unknown> {
+		return {
+			tipo,
+			variant,
+			wizardStep: step,
+			matricula,
+			tipoVehiculo,
+			distintivoTipo,
+			vmpCertificado,
+			vmpNumCertificado,
+			vmpNumSerie,
+			vmpMarca,
+			vmpModelo,
+			motivoDuplicado,
+			clasePermiso,
+			fechaCaducidad,
+			email,
+			nif,
+			nombre,
+			apellido1,
+			apellido2,
+			telefono,
+			sexo,
+			fechaNacimiento,
+			provincia,
+			municipio,
+			pueblo,
+			tipoVia,
+			direccion,
+			numero,
+			piso,
+			puerta,
+			bloque,
+			escalera,
+			cp,
+			localidad,
+			tipoEnvio,
+			cartaFinalizacion,
+			docsConfirmados,
+			acceptPrivacy,
+			priceLines: priceLines.lines,
+			total: priceLines.total,
+			amount: priceLines.total
+		};
+	}
+
+	async function saveToAccount() {
+		saving = true;
+		saveMsg = null;
+		saveError = null;
+		try {
+			const outcome = await handleWizardSave({
+				tipo,
+				storageKey,
+				draftSnapshot: draftSnapshot(),
+				payload: buildPayload(),
+				solicitudId,
+				returnPath: page.url.pathname
+			});
+			if (outcome.kind === 'login') return;
+			if (outcome.kind === 'error') {
+				saveError = outcome.error;
+				return;
+			}
+			solicitudId = outcome.result.solicitudId;
+			saveMsg = outcome.result.message;
+			draftReady = true;
+			setDraftStorageAck();
+			save();
+		} finally {
+			saving = false;
+		}
+	}
+
 	async function continueToPayment() {
 		if (!validateAllSteps()) {
 			payError = 'Revisa los datos del formulario: hay campos incompletos o no válidos.';
+			step = firstInvalidStep();
 			return;
 		}
 		submitting = true;
@@ -469,48 +579,8 @@
 		try {
 			const result = await createSolicitud({
 				amount: priceLines.total,
-				payload: {
-					tipo,
-					variant,
-					matricula,
-					tipoVehiculo,
-					distintivoTipo,
-					vmpCertificado,
-					vmpNumCertificado,
-					vmpNumSerie,
-					vmpMarca,
-					vmpModelo,
-					motivoDuplicado,
-					clasePermiso,
-					fechaCaducidad,
-					email,
-					nif,
-					nombre,
-					apellido1,
-					apellido2,
-					telefono,
-					sexo,
-					fechaNacimiento,
-					provincia,
-					municipio,
-					pueblo,
-					tipoVia,
-					direccion,
-					numero,
-					piso,
-					puerta,
-					bloque,
-					escalera,
-					cp,
-					localidad,
-					tipoEnvio,
-					cartaFinalizacion,
-					docsConfirmados,
-					acceptPrivacy,
-					priceLines: priceLines.lines,
-					total: priceLines.total,
-					amount: priceLines.total
-				}
+				solicitudId,
+				payload: buildPayload()
 			});
 
 			if (!result.ok) {
@@ -544,8 +614,10 @@
 <section class="section wizard-section">
 	<div class="wrap wizard-layout">
 		<div class="main card pad">
-			<StepProgress current={step} total={steps.length} labels={steps} />
+			<WizardStepper current={step} labels={steps} {errorSteps} onchange={goTo} />
 			<h1>{title}</h1>
+			{#if saveMsg}<p class="save-ok" role="status">{saveMsg}</p>{/if}
+			{#if saveError}<p class="field-error" role="alert">{saveError}</p>{/if}
 
 				{#if variant === 'etiqueta' && step === 1}
 					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
@@ -760,7 +832,6 @@
 							]}
 						/>
 					</FormField>
-				{:else if variant === 'cancelacion' && step === 4}
 					<div class="docs-list">
 						<h2>Documentación requerida</h2>
 						<ul>
@@ -856,9 +927,19 @@
 					{#if step > 1}
 						<button type="button" class="btn ghost" onclick={prev}>Anterior</button>
 					{:else}<span></span>{/if}
-					{#if step < finalStep}
-						<button type="button" class="btn" onclick={next}>Siguiente</button>
-					{/if}
+					<div class="nav-right">
+						<button
+							type="button"
+							class="btn ghost save-btn"
+							onclick={saveToAccount}
+							disabled={saving || submitting}
+						>
+							{saving ? 'Guardando…' : page.data.user ? 'Guardar' : 'Guardar (iniciar sesión)'}
+						</button>
+						{#if step < finalStep}
+							<button type="button" class="btn" onclick={next}>Siguiente</button>
+						{/if}
+					</div>
 				</div>
 		</div>
 
@@ -990,24 +1071,32 @@
 		font-size: 13px;
 		margin-top: 8px;
 	}
-	.pay-box {
-		text-align: center;
-		padding: 24px;
-		background: var(--primary-dim);
-		border-radius: var(--radius-lg);
+	.save-ok {
+		background: #e8f5ee;
+		color: #0f5132;
+		padding: 10px 12px;
+		border-radius: 8px;
+		font-size: 14px;
 		margin-bottom: 16px;
-	}
-	.pay-total {
-		font-size: 34px;
-		font-weight: 800;
-		color: var(--primary);
 	}
 	.nav {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
+		gap: 12px;
 		margin-top: 28px;
 		padding-top: 20px;
 		border-top: 1px solid var(--border-light);
+		flex-wrap: wrap;
+	}
+	.nav-right {
+		display: flex;
+		gap: 10px;
+		flex-wrap: wrap;
+		margin-left: auto;
+	}
+	.save-btn {
+		white-space: nowrap;
 	}
 	.sidebar {
 		padding: 24px;

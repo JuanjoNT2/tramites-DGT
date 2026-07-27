@@ -37,10 +37,47 @@ export function postToRedsys(redsys: RedsysFormFields) {
 export async function createSolicitud(opts: {
 	payload: Record<string, unknown>;
 	amount: number;
+	/** Si viene de un Guardar previo, reutiliza la fila `nueva` en lugar de crear otra */
+	solicitudId?: string | null;
 }): Promise<
 	| { ok: true; solicitudId: string; accessToken: string | null; pagoUrl: string }
 	| { ok: false; error: string }
 > {
+	if (opts.solicitudId) {
+		const promoRes = await fetch('/api/cuenta/promover-pago', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				solicitudId: opts.solicitudId,
+				payload: { ...opts.payload, amount: opts.amount, total: opts.amount },
+				amount: opts.amount
+			})
+		});
+		const promoData = await promoRes.json().catch(() => ({}));
+		if (promoRes.ok) {
+			const solicitudId = String(promoData.id || opts.solicitudId);
+			const accessToken =
+				typeof promoData.accessToken === 'string' ? promoData.accessToken : null;
+			const pagoUrl =
+				typeof promoData.pagoUrl === 'string'
+					? promoData.pagoUrl
+					: accessToken
+						? `/pago/${solicitudId}?t=${encodeURIComponent(accessToken)}`
+						: `/pago/${solicitudId}`;
+			return { ok: true, solicitudId, accessToken, pagoUrl };
+		}
+		// Si no es del usuario / no es nueva, cae a crear una nueva
+		if (promoRes.status !== 401 && promoRes.status !== 403 && promoRes.status !== 404) {
+			return {
+				ok: false,
+				error:
+					typeof promoData.error === 'string'
+						? promoData.error
+						: 'No se pudo actualizar la solicitud guardada'
+			};
+		}
+	}
+
 	const solRes = await fetch('/api/solicitud', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },

@@ -13,5 +13,5 @@
 	title="Cancelación reserva de dominio"
 	tipo="cancelacion-reserva"
 	variant="cancelacion"
-	steps={['Vehículo', 'Propietario', 'Carta de pago', 'Documentación', 'Resumen']}
+	steps={['Vehículo', 'Propietario', 'Documentación', 'Resumen']}
 />
