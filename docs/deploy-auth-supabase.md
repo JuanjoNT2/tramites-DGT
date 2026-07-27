@@ -98,7 +98,7 @@ npm run seed:demo-users
 - [ ] Trámite **sin** login → fila en `solicitudes` y visible en `/gestor`
 - [ ] Trámite **con** login → `user_id` poblado
 - [ ] Admin eleva a gestor → acceso `/gestor` + CSV/Excel/PDF
-- [ ] Último paso → Confirmar y pagar (con `REDSYS_*`: redirect TPV; sin claves: solicitud `pendiente_pago`)
+- [ ] Último paso → pagar (con `STRIPE_*`: Checkout Stripe; si no, Redsys; sin claves: `pendiente_pago`)
 
 ## 6. Notas
 
