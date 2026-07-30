@@ -20,7 +20,7 @@
 
 <label class="pw-field">
 	{label}
-	<span class="wrap">
+	<span class="box">
 		<input
 			type={visible ? 'text' : 'password'}
 			{name}
@@ -57,57 +57,71 @@
 	.pw-field {
 		display: grid;
 		gap: 6px;
+		width: 100%;
 		font-weight: 600;
 		font-size: 0.9rem;
+		color: inherit;
 	}
 
-	.wrap {
-		position: relative;
-		display: block;
-	}
-
-	input {
+	.box {
+		display: flex;
+		align-items: center;
 		width: 100%;
-		padding: 10px 44px 10px 12px;
-		border: 1.5px solid #c5d0da;
+		min-height: 42px;
+		box-sizing: border-box;
+		border: 1px solid #c5d0da;
 		border-radius: 8px;
-		font: inherit;
-		font-weight: 400;
 		background: #fff;
-		color: var(--ink, #1a2b3c);
+		overflow: hidden;
 	}
 
-	input:focus {
-		outline: none;
+	.box:focus-within {
 		border-color: var(--border-focus, #00c6d1);
 		box-shadow: 0 0 0 3px rgba(0, 198, 209, 0.2);
 	}
 
+	input {
+		flex: 1 1 auto;
+		min-width: 0;
+		width: 100%;
+		height: 100%;
+		padding: 10px 8px 10px 12px;
+		border: none;
+		border-radius: 0;
+		background: transparent;
+		font: inherit;
+		font-weight: 400;
+		color: var(--ink, #1a2b3c);
+		box-sizing: border-box;
+	}
+
+	input:focus {
+		outline: none;
+		box-shadow: none;
+	}
+
 	.toggle {
-		position: absolute;
-		right: 6px;
-		top: 50%;
-		transform: translateY(-50%);
+		flex: 0 0 44px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 36px;
-		height: 36px;
+		align-self: stretch;
+		width: 44px;
 		border: none;
 		background: transparent;
 		color: #5a6b7d;
 		cursor: pointer;
-		border-radius: 6px;
 		padding: 0;
+		margin: 0;
 	}
 
 	.toggle:hover {
 		color: var(--ink, #1a2b3c);
-		background: rgba(0, 48, 80, 0.06);
+		background: rgba(0, 48, 80, 0.05);
 	}
 
 	.toggle:focus-visible {
 		outline: 2px solid var(--border-focus, #00c6d1);
-		outline-offset: 1px;
+		outline-offset: -2px;
 	}
 </style>
