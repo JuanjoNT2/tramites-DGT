@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -28,10 +29,7 @@
 				Email
 				<input type="email" name="email" required autocomplete="email" value={emailValue} />
 			</label>
-			<label>
-				Contraseña
-				<input type="password" name="password" required autocomplete="current-password" minlength="6" />
-			</label>
+			<PasswordInput name="password" autocomplete="current-password" minlength={6} />
 			<button type="submit" class="btn">Entrar</button>
 		</form>
 
