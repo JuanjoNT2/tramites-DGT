@@ -54,13 +54,13 @@
 		font-size: clamp(1.75rem, 3vw, 2rem);
 		font-weight: 800;
 		margin: 0 0 10px;
-		color: var(--ink, #003050);
+		color: var(--ink-on-dark, #ffffff);
 	}
 
 	.lead {
 		margin: 0 0 28px;
 		max-width: 58ch;
-		color: var(--text2, #5a6b7d);
+		color: var(--text2-on-dark, rgba(255, 255, 255, 0.86));
 		line-height: 1.5;
 		font-size: 1.05rem;
 	}
@@ -75,7 +75,7 @@
 		margin: 0 0 12px;
 		font-size: 1.15rem;
 		font-weight: 800;
-		color: var(--ink, #003050);
+		color: var(--brand-teal, #00c6d1);
 		letter-spacing: -0.02em;
 	}
 
@@ -101,7 +101,7 @@
 		font-weight: 700;
 		cursor: pointer;
 		list-style: none;
-		color: var(--ink, #003050);
+		color: var(--ink, #1a2b3c);
 		line-height: 1.35;
 	}
 
@@ -134,7 +134,7 @@
 		background: rgba(0, 198, 209, 0.06);
 	}
 
-	p {
+	.item p {
 		margin: 0;
 		padding: 0 18px 18px;
 		color: var(--text2, #5a6b7d);
@@ -146,14 +146,18 @@
 		margin: 40px 0 0;
 		max-width: 760px;
 		font-size: 0.95rem;
-		color: var(--text2, #5a6b7d);
+		color: var(--text2-on-dark, rgba(255, 255, 255, 0.86));
 		line-height: 1.5;
 	}
 
 	.more a {
 		font-weight: 700;
-		color: var(--primary-dark, #003050);
+		color: var(--brand-teal, #00c6d1);
 		text-decoration: underline;
 		text-underline-offset: 2px;
+	}
+
+	.more strong {
+		color: #fff;
 	}
 </style>
