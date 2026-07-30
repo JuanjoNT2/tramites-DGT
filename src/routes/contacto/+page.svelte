@@ -34,7 +34,7 @@
 <section class="section">
 	<div class="wrap card pad">
 		<h1>Contacto</h1>
-		<p class="sub">¿Necesitas ayuda? Escríbenos o llámanos al <a href="tel:+34629314828">629 314 828</a></p>
+		<p class="sub">¿Necesitas ayuda? Escríbenos a través del formulario o a <a href="mailto:info@tramitesdgtonline.com">info@tramitesdgtonline.com</a>.</p>
 		{#if sent}
 			<p class="ok">Mensaje enviado. Te responderemos pronto.</p>
 		{:else}

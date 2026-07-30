@@ -33,7 +33,7 @@ export const faqSections: FaqSection[] = [
 			},
 			{
 				q: '¿Puedo hacer el trámite por teléfono?',
-				a: 'El trámite se completa online en la web. Si tienes dudas, puedes contactarnos y te orientamos sobre el proceso y la documentación.'
+				a: 'El trámite se completa online en la web. Si tienes dudas, puedes escribirnos desde la página de contacto o a info@tramitesdgtonline.com y te orientamos sobre el proceso y la documentación.'
 			}
 		]
 	},

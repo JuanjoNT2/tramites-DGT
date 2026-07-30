@@ -264,9 +264,10 @@ export function organizationJsonLd() {
 		name: SITE_NAME,
 		url: SITE_ORIGIN,
 		logo: `${SITE_ORIGIN}/favicon.png`,
+		email: 'info@tramitesdgtonline.com',
 		contactPoint: {
 			'@type': 'ContactPoint',
-			telephone: '+34-629-314-828',
+			email: 'info@tramitesdgtonline.com',
 			contactType: 'customer service',
 			availableLanguage: 'Spanish'
 		}

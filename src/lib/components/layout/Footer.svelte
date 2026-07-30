@@ -9,7 +9,6 @@
 			<a href="/" class="brand-link"><Logo variant="white" height={52} /></a>
 			<p class="desc">Trámites de vehículos 100% online. Tramitados al momento por nuestros expertos.</p>
 			<p class="contact">
-				<a href="tel:+34629314828">+34 629 314 828</a><br />
 				<a href="mailto:info@tramitesdgtonline.com">info@tramitesdgtonline.com</a>
 			</p>
 		</div>

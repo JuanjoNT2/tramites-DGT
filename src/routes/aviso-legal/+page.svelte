@@ -31,10 +31,6 @@
 				<a href="mailto:info@tramitesdgtonline.com">info@tramitesdgtonline.com</a>
 			</li>
 			<li>
-				<strong>Teléfono:</strong>
-				<a href="tel:+34629314828">+34 629 314 828</a>
-			</li>
-			<li>
 				<strong>Nombre de dominio:</strong>
 				<a href="https://tramitesdgtonline.com">tramitesdgtonline.com</a>
 			</li>

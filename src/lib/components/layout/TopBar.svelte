@@ -1,11 +1,10 @@
 <script lang="ts">
-	let { phone = '+34 629 314 828' } = $props();
 </script>
 
 <div class="topbar">
 	<div class="wrap topbar-in">
 		<span>Trámites de vehículos 100% online · 365 días al año</span>
-		<a href="tel:{phone.replace(/\s/g, '')}" class="phone">{phone}</a>
+		<a href="/contacto" class="contact-link">Contacto</a>
 	</div>
 </div>
 
@@ -25,13 +24,13 @@
 		gap: 12px;
 	}
 
-	.phone {
+	.contact-link {
 		font-weight: 700;
 		color: var(--brand-teal);
 		white-space: nowrap;
 	}
 
-	.phone:hover {
+	.contact-link:hover {
 		text-decoration: underline;
 	}
 
