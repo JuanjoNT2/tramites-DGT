@@ -75,6 +75,7 @@
 	.auth {
 		max-width: 420px;
 		margin: 48px auto;
+		padding: 32px 28px;
 	}
 	h1 {
 		margin: 0 0 8px;

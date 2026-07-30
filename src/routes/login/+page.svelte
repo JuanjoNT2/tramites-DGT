@@ -48,14 +48,16 @@
 	.auth {
 		max-width: 420px;
 		margin: 48px auto;
+		padding: 32px 28px;
 	}
 	h1 {
-		margin: 0 0 8px;
+		margin: 0 0 10px;
 		color: var(--navy, #003050);
 	}
 	.lead {
 		color: #5a6b7d;
 		margin: 0 0 24px;
+		line-height: 1.45;
 	}
 	.form {
 		display: grid;
@@ -83,5 +85,8 @@
 	.alt {
 		margin-top: 20px;
 		font-size: 0.95rem;
+	}
+	.alt:last-child {
+		margin-bottom: 0;
 	}
 </style>
