@@ -12,46 +12,72 @@
 	} = $props();
 
 	const tramitesActive = $derived(typeof vista === 'string' && vista.startsWith('tramites'));
+	let menuOpen = $state(false);
+
+	function closeMenu() {
+		menuOpen = false;
+	}
 </script>
 
 <div class="gestor">
-	<aside class="side">
-		<div class="brand">
-			<span class="brand-title">Panel de gestores</span>
-			<span class="brand-sub">Usuarios y trámites</span>
+	<aside class="side" class:open={menuOpen}>
+		<div class="top">
+			<div class="brand">
+				<span class="brand-title">Panel de gestores</span>
+				<span class="brand-sub">Usuarios y trámites</span>
+			</div>
+			<button
+				type="button"
+				class="menu-btn"
+				aria-expanded={menuOpen}
+				aria-controls="gestor-nav"
+				onclick={() => (menuOpen = !menuOpen)}
+			>
+				{menuOpen ? 'Cerrar' : 'Menú'}
+			</button>
 		</div>
-		<p class="badge">Operación · no es el área del ciudadano ni /admin</p>
-		<nav>
-			<a href="/gestor?vista=todos" class:active={vista === 'todos'}>Todos los usuarios</a>
-			<a
-				href="/gestor?vista=en_curso"
-				class:active={vista === 'en_curso' || vista === 'pendientes'}
-				>Con trámites en curso</a
-			>
-			<a href="/gestor?vista=finalizados" class:active={vista === 'finalizados'}
-				>Trámites finalizados</a
-			>
-			<a href="/gestor?vista=sin_tramites" class:active={vista === 'sin_tramites'}>Sin trámites</a>
-			<a href="/gestor/tramites?vista=pendientes" class:active={tramitesActive}
-				>Cola de trámites</a
-			>
-			<a href="/gestor/seguridad" class:active={vista === 'seguridad'}>Cambiar contraseña</a>
-		</nav>
-		{#if email}
-			<p class="who">
-				{email}
-				{#if role}<span class="role">{role}</span>{/if}
-			</p>
-		{:else}
-			<p class="who">
-				Sin sesión · <a href="/login?next=/gestor">Iniciar sesión</a>
-			</p>
-		{/if}
-		<form method="POST" action="/gestor?/logout" class="logout">
-			<button type="submit">Cerrar sesión</button>
-		</form>
-		<a class="home" href="/">← Sitio público</a>
+
+		<div id="gestor-nav" class="drawer" class:open={menuOpen}>
+			<nav onclick={closeMenu}>
+				<a href="/gestor?vista=todos" class:active={vista === 'todos'}>Todos los usuarios</a>
+				<a
+					href="/gestor?vista=en_curso"
+					class:active={vista === 'en_curso' || vista === 'pendientes'}
+					>Con trámites en curso</a
+				>
+				<a href="/gestor?vista=finalizados" class:active={vista === 'finalizados'}
+					>Trámites finalizados</a
+				>
+				<a href="/gestor?vista=sin_tramites" class:active={vista === 'sin_tramites'}>Sin trámites</a>
+				<a href="/gestor/tramites?vista=pendientes" class:active={tramitesActive}
+					>Cola de trámites</a
+				>
+				<a href="/gestor/seguridad" class:active={vista === 'seguridad'}>Cambiar contraseña</a>
+			</nav>
+
+			<div class="foot">
+				{#if email}
+					<p class="who">
+						{email}
+						{#if role}<span class="role">{role}</span>{/if}
+					</p>
+				{:else}
+					<p class="who">
+						Sin sesión · <a href="/login?next=/gestor">Iniciar sesión</a>
+					</p>
+				{/if}
+				<form method="POST" action="/gestor?/logout" class="logout">
+					<button type="submit">Cerrar sesión</button>
+				</form>
+				<a class="home" href="/">← Sitio público</a>
+			</div>
+		</div>
 	</aside>
+
+	{#if menuOpen}
+		<button type="button" class="scrim" aria-label="Cerrar menú" onclick={closeMenu}></button>
+	{/if}
+
 	<div class="main">
 		{@render children()}
 	</div>
@@ -69,15 +95,27 @@
 	.side {
 		background: #003050;
 		color: #fff;
-		padding: 24px 16px;
+		padding: 20px 16px;
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
+		gap: 16px;
+		position: sticky;
+		top: 0;
+		align-self: start;
+		min-height: 100vh;
+		z-index: 40;
+	}
+	.top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 12px;
 	}
 	.brand {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
+		min-width: 0;
 	}
 	.brand-title {
 		font-weight: 800;
@@ -88,19 +126,30 @@
 		opacity: 0.75;
 		font-weight: 500;
 	}
-	.badge {
-		margin: 0;
-		font-size: 0.7rem;
-		line-height: 1.35;
-		padding: 8px 10px;
+	.menu-btn {
+		display: none;
+		flex-shrink: 0;
+		border: 1px solid rgba(255, 255, 255, 0.35);
+		background: rgba(255, 255, 255, 0.08);
+		color: #fff;
 		border-radius: 8px;
-		background: rgba(255, 255, 255, 0.1);
-		color: #c5e8f2;
+		padding: 8px 12px;
+		font: inherit;
+		font-size: 0.85rem;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.drawer {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		flex: 1;
+		min-height: 0;
 	}
 	nav {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 6px;
 	}
 	nav a {
 		color: #fff;
@@ -118,8 +167,14 @@
 	nav a.active {
 		outline: 1px solid rgba(159, 216, 232, 0.45);
 	}
-	.who {
+	.foot {
 		margin-top: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.who {
+		margin: 0;
 		font-size: 0.75rem;
 		opacity: 0.9;
 		word-break: break-all;
@@ -161,22 +216,57 @@
 		font-size: 0.85rem;
 		text-decoration: none;
 	}
+	.scrim {
+		display: none;
+	}
 	.main {
 		padding: 28px 32px;
 		overflow: auto;
+		min-width: 0;
 	}
-	@media (max-width: 800px) {
+
+	@media (max-width: 900px) {
 		.gestor {
 			grid-template-columns: 1fr;
 		}
 		.side {
-			flex-direction: row;
-			flex-wrap: wrap;
+			position: sticky;
+			top: 0;
+			min-height: 0;
+			padding: 12px 14px;
+			gap: 0;
+		}
+		.menu-btn {
+			display: inline-flex;
 			align-items: center;
 		}
-		.who {
-			margin-top: 0;
-			width: 100%;
+		.drawer {
+			display: none;
+			margin-top: 12px;
+			padding-top: 4px;
+			border-top: 1px solid rgba(255, 255, 255, 0.12);
+		}
+		.drawer.open {
+			display: flex;
+		}
+		.foot {
+			margin-top: 8px;
+		}
+		.scrim {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 30;
+			border: none;
+			padding: 0;
+			background: rgba(0, 24, 40, 0.35);
+			cursor: pointer;
+		}
+		.side {
+			z-index: 40;
+		}
+		.main {
+			padding: 20px 16px;
 		}
 	}
 </style>
