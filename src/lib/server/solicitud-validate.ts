@@ -72,6 +72,8 @@ export function validateSolicitudPayload(
 			validateEmail(str(body.email)),
 			validateNifNie(str(body.nif)),
 			validateRequired(str(body.nombre), 'El nombre'),
+			validateRequired(str(body.apellido1), 'El primer apellido'),
+			validateRequired(str(body.apellido2), 'El segundo apellido'),
 			validatePhone(str(body.telefono)),
 			validateCodigoPostal(str(body.cp)),
 			amount == null ? 'Importe no válido' : null
@@ -89,6 +91,9 @@ export function validateSolicitudPayload(
 			certificado ? validateRequired(str(body.vmpNumCertificado), 'El número de certificado') : null,
 			validateEmail(str(body.email)),
 			validateNifNie(str(body.nif)),
+			validateRequired(str(body.nombre), 'El nombre'),
+			validateRequired(str(body.apellido1), 'El primer apellido'),
+			validateRequired(str(body.apellido2), 'El segundo apellido'),
 			validatePhone(str(body.telefono)),
 			validateCodigoPostal(str(body.cp)),
 			amount == null ? 'Importe no válido' : null
@@ -102,6 +107,9 @@ export function validateSolicitudPayload(
 			validateRequired(str(body.motivoDuplicado), 'El motivo'),
 			validateEmail(str(body.email)),
 			validateNifNie(str(body.nif)),
+			validateRequired(str(body.nombre), 'El nombre'),
+			validateRequired(str(body.apellido1), 'El primer apellido'),
+			validateRequired(str(body.apellido2), 'El segundo apellido'),
 			validatePhone(str(body.telefono)),
 			validateDate(str(body.fechaNacimiento), {
 				label: 'La fecha de nacimiento',
@@ -127,6 +135,9 @@ export function validateSolicitudPayload(
 			validateMatricula(str(body.matricula)),
 			validateEmail(str(body.email)),
 			validateNifNie(str(body.nif)),
+			validateRequired(str(body.nombre), 'El nombre'),
+			validateRequired(str(body.apellido1), 'El primer apellido'),
+			validateRequired(str(body.apellido2), 'El segundo apellido'),
 			validatePhone(str(body.telefono)),
 			body.cp ? validateCodigoPostal(str(body.cp)) : null,
 			amount == null ? 'Importe no válido' : null

@@ -84,6 +84,7 @@
 	let step = $state(1);
 	let errors = $state<Record<string, string | null>>({});
 	let errorSteps = $state<number[]>([]);
+	let validationAttempted = $state(false);
 	let submitting = $state(false);
 	let saving = $state(false);
 	let payError = $state<string | null>(null);
@@ -131,6 +132,7 @@
 	let nif = $state('');
 	let nombre = $state('');
 	let apellido1 = $state('');
+	let apellido2 = $state('');
 	let telefono = $state('');
 	let otraParteEmail = $state('');
 	let provincia = $state('');
@@ -281,6 +283,7 @@
 		if (typeof data.nif === 'string') nif = data.nif;
 		if (typeof data.nombre === 'string') nombre = data.nombre;
 		if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
+		if (typeof data.apellido2 === 'string') apellido2 = data.apellido2;
 		if (typeof data.telefono === 'string') telefono = data.telefono;
 		if (typeof data.otraParteEmail === 'string') otraParteEmail = data.otraParteEmail;
 		if (typeof data.provincia === 'string') provincia = normalizeProvince(data.provincia);
@@ -338,6 +341,7 @@
 			nif,
 			nombre,
 			apellido1,
+			apellido2,
 			telefono,
 			otraParteEmail,
 			provincia,
@@ -409,13 +413,55 @@
 		void nif;
 		void nombre;
 		void apellido1;
+		void apellido2;
 		void telefono;
 		void otraParteEmail;
 		void provincia;
 		void municipio;
 		void direccion;
 		void cp;
+		void acceptPrivacy;
+		void docFiles;
 		scheduleSave();
+	});
+
+	$effect(() => {
+		if (!validationAttempted) return;
+		void step;
+		void tipoVehiculo;
+		void matricula;
+		void bastidor;
+		void marcaId;
+		void marcaNombre;
+		void combustibleId;
+		void modeloId;
+		void modeloNombre;
+		void marcaMotoId;
+		void modeloMotoId;
+		void modeloMotoNombre;
+		void cilindradaMoto;
+		void fechaMatricula;
+		void ccaaId;
+		void precioVenta;
+		void fechaVenta;
+		void facturaEmpresa;
+		void incluirInforme;
+		void rol;
+		void email;
+		void nif;
+		void nombre;
+		void apellido1;
+		void apellido2;
+		void telefono;
+		void otraParteEmail;
+		void provincia;
+		void municipio;
+		void direccion;
+		void cp;
+		void acceptPrivacy;
+		void docFiles;
+		void breakdown;
+		applyValidationState();
 	});
 
 	function validateStepAt(s: number): Record<string, string | null> {
@@ -456,6 +502,7 @@
 			e.nif = validateNifNie(nif);
 			e.nombre = validateRequired(nombre, 'El nombre');
 			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
+			e.apellido2 = validateRequired(apellido2, 'El segundo apellido');
 			e.telefono = validatePhone(telefono);
 			if (otraParteEmail.trim()) {
 				e.otraParteEmail = validateEmail(otraParteEmail);
@@ -498,7 +545,7 @@
 		return TOTAL_STEPS;
 	}
 
-	function validateAllSteps(): boolean {
+	function applyValidationState(): boolean {
 		const merged: Record<string, string | null> = {};
 		const bad: number[] = [];
 		for (let s = 1; s <= TOTAL_STEPS; s++) {
@@ -509,6 +556,11 @@
 		errors = merged;
 		errorSteps = bad;
 		return bad.length === 0;
+	}
+
+	function validateAllSteps(): boolean {
+		validationAttempted = true;
+		return applyValidationState();
 	}
 
 	function goTo(n: number) {
@@ -589,6 +641,7 @@
 			nif,
 			nombre,
 			apellido1,
+			apellido2,
 			telefono,
 			rol,
 			otraParteEmail,
@@ -875,6 +928,9 @@
 					<FormField label="Primer apellido" error={errors.apellido1} required>
 						<input bind:value={apellido1} />
 					</FormField>
+					<FormField label="Segundo apellido" error={errors.apellido2} required>
+						<input bind:value={apellido2} />
+					</FormField>
 					<FormField label="Teléfono" error={errors.telefono} required>
 						<input type="tel" bind:value={telefono} inputmode="tel" placeholder="612345678" />
 					</FormField>
@@ -933,7 +989,7 @@
 							</li>
 							<li><span>Bastidor</span><span>{bastidor || '—'}</span></li>
 							<li><span>Rol</span><span>{rol}</span></li>
-							<li><span>Solicitante</span><span>{nombre} {apellido1}</span></li>
+							<li><span>Solicitante</span><span>{nombre} {apellido1} {apellido2}</span></li>
 							<li><span>NIF/NIE</span><span>{nif || '—'}</span></li>
 							<li><span>Email</span><span>{email}</span></li>
 							<li><span>Teléfono</span><span>{telefono || '—'}</span></li>

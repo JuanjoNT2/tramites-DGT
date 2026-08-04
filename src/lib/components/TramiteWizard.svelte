@@ -84,6 +84,8 @@
 	let step = $state(1);
 	let errors = $state<Record<string, string | null>>({});
 	let errorSteps = $state<number[]>([]);
+	/** Tras un intento de pago/envío, revalidar al editar para quitar el rojo al corregir */
+	let validationAttempted = $state(false);
 	let submitting = $state(false);
 	let saving = $state(false);
 	let payError = $state<string | null>(null);
@@ -416,20 +418,70 @@
 		void localidad;
 		void tipoEnvio;
 		void cartaFinalizacion;
+		void acceptPrivacy;
+		void docFiles;
 		scheduleSave();
 	});
 
-	function mockDistintivo(mat: string): string {
-		const types = ['Etiqueta C', 'Etiqueta B', 'Etiqueta ECO', 'Etiqueta Cero'];
-		return types[mat.length % types.length];
-	}
+	$effect(() => {
+		if (!validationAttempted) return;
+		void step;
+		void matricula;
+		void bastidor;
+		void tipoVehiculo;
+		void distintivoTipo;
+		void vmpCertificado;
+		void vmpNumCertificado;
+		void vmpNumSerie;
+		void vmpMarca;
+		void vmpModelo;
+		void vmpMarcaId;
+		void vmpModeloId;
+		void motivoDuplicado;
+		void clasePermiso;
+		void fechaCaducidad;
+		void email;
+		void nif;
+		void nombre;
+		void apellido1;
+		void apellido2;
+		void telefono;
+		void sexo;
+		void fechaNacimiento;
+		void provincia;
+		void municipio;
+		void pueblo;
+		void tipoVia;
+		void direccion;
+		void numero;
+		void piso;
+		void puerta;
+		void bloque;
+		void escalera;
+		void cp;
+		void localidad;
+		void tipoEnvio;
+		void cartaFinalizacion;
+		void acceptPrivacy;
+		void docFiles;
+		applyValidationState();
+	});
+
+	/** Resultado de la consulta de pegatina (cuando exista API se rellenará el tipo). */
+	const distintivoConsulta = $derived.by(() => {
+		if (variant !== 'etiqueta') return null;
+		if (!matricula.trim() || validateMatricula(matricula)) return null;
+		if (distintivoTipo) {
+			return { status: 'ok' as const, tipo: distintivoTipo };
+		}
+		return { status: 'unavailable' as const };
+	});
 
 	function validateStepAt(s: number): Record<string, string | null> {
 		const e: Record<string, string | null> = {};
 
 		if (variant === 'etiqueta' && s === 1) {
 			e.matricula = validateMatricula(matricula);
-			if (!e.matricula) distintivoTipo = mockDistintivo(matricula);
 		}
 
 		if (variant === 'etiqueta-vmp' && s === 1) {
@@ -477,6 +529,7 @@
 			e.nif = validateNifNie(nif);
 			e.nombre = validateRequired(nombre, 'El nombre');
 			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
+			e.apellido2 = validateRequired(apellido2, 'El segundo apellido');
 			e.telefono = validatePhone(telefono);
 			if (!sexo) e.sexo = 'Selecciona el sexo';
 			e.fechaNacimiento = validateDate(fechaNacimiento, {
@@ -491,6 +544,7 @@
 			e.nif = validateNifNie(nif);
 			e.nombre = validateRequired(nombre, 'El nombre');
 			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
+			e.apellido2 = validateRequired(apellido2, 'El segundo apellido');
 			e.telefono = validatePhone(telefono);
 			e.direccion = validateRequired(direccion, 'La dirección');
 			e.cp = validateCodigoPostal(cp);
@@ -542,7 +596,7 @@
 		return finalStep;
 	}
 
-	function validateAllSteps(): boolean {
+	function applyValidationState(): boolean {
 		const merged: Record<string, string | null> = {};
 		const bad: number[] = [];
 		for (let s = 1; s <= finalStep; s++) {
@@ -553,6 +607,11 @@
 		errors = merged;
 		errorSteps = bad;
 		return bad.length === 0;
+	}
+
+	function validateAllSteps(): boolean {
+		validationAttempted = true;
+		return applyValidationState();
 	}
 
 	function goTo(n: number) {
@@ -751,12 +810,27 @@
 			{#if saveError}<p class="field-error" role="alert">{saveError}</p>{/if}
 
 				{#if variant === 'etiqueta' && step === 1}
-					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
+					<FormField
+						label="Matrícula del vehículo"
+						error={errors.matricula}
+						hint="Ej: 3990WDS (sin espacios ni guiones)"
+						required
+					>
 						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />
 					</FormField>
-					{#if matricula && !errors.matricula}
-						<div class="distintivo-info">
-							<p>Distintivo estimado: <strong>{distintivoTipo || mockDistintivo(matricula)}</strong></p>
+					{#if distintivoConsulta?.status === 'ok'}
+						<div class="distintivo-info" role="status">
+							<p>
+								Distintivo correspondiente: <strong>{distintivoConsulta.tipo}</strong>
+							</p>
+						</div>
+					{:else if distintivoConsulta?.status === 'unavailable'}
+						<div class="distintivo-warning" role="status">
+							<p>
+								No podemos mostrar de momento la pegatina correspondiente a esta matrícula. Si el
+								vehículo no tiene derecho a distintivo medioambiental, no podrás completar este
+								trámite.
+							</p>
 						</div>
 					{/if}
 				{:else if variant === 'etiqueta-vmp' && step === 1}
@@ -884,11 +958,11 @@
 							<input bind:value={apellido1} />
 						</FormField>
 					</div>
-					<FormField label="Segundo apellido">
+					<FormField label="Segundo apellido" error={errors.apellido2} required>
 						<input bind:value={apellido2} />
 					</FormField>
 					<FormField label="Teléfono" error={errors.telefono} required>
-						<input type="tel" bind:value={telefono} />
+						<input type="tel" bind:value={telefono} inputmode="tel" placeholder="612345678" />
 					</FormField>
 					<div class="row-2">
 						<FormField label="Sexo" error={errors.sexo} required>
@@ -918,8 +992,11 @@
 							<input bind:value={apellido1} />
 						</FormField>
 					</div>
+					<FormField label="Segundo apellido" error={errors.apellido2} required>
+						<input bind:value={apellido2} />
+					</FormField>
 					<FormField label="Teléfono" error={errors.telefono} required>
-						<input type="tel" bind:value={telefono} />
+						<input type="tel" bind:value={telefono} inputmode="tel" placeholder="612345678" />
 					</FormField>
 					<FormField label="Dirección" error={errors.direccion} required>
 						<input bind:value={direccion} />
@@ -1173,13 +1250,26 @@
 		font-size: 14px;
 		margin-bottom: 12px;
 	}
-	.distintivo-info {
+	.distintivo-info,
+	.distintivo-warning {
 		padding: 12px 14px;
-		background: var(--primary-dim);
 		border-radius: var(--radius);
-		border-left: 3px solid var(--brand-teal);
-		font-size: 14px;
 		margin-bottom: 12px;
+		font-size: 14px;
+		line-height: 1.45;
+	}
+	.distintivo-info {
+		background: var(--primary-dim);
+		border-left: 3px solid var(--brand-teal);
+	}
+	.distintivo-warning {
+		background: #fff8e8;
+		border-left: 3px solid #e6a800;
+		color: var(--text2);
+	}
+	.distintivo-info p,
+	.distintivo-warning p {
+		margin: 0;
 	}
 	.summary-final h2 {
 		margin: 0 0 6px;

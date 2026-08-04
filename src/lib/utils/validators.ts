@@ -107,18 +107,22 @@ export function validateEmail(value: string): string | null {
 	return null;
 }
 
-/** Acepta móvil 6–9… o fijo 9…; normaliza +34 y espacios. */
+/** Acepta móvil 6–9… o fijo 8/9…; normaliza +34, 0034, 34 y espacios. */
+export function normalizePhone(value: string): string {
+	let digits = value.replace(/[\s().-]/g, '');
+	if (digits.startsWith('+34')) digits = digits.slice(3);
+	else if (digits.startsWith('0034')) digits = digits.slice(4);
+	else if (/^34\d{9}$/.test(digits)) digits = digits.slice(2);
+	return digits;
+}
+
 export function validatePhone(value: string): string | null {
-	const digits = value.replace(/[\s().-]/g, '').replace(/^\+34/, '').replace(/^0034/, '');
+	const digits = normalizePhone(value);
 	if (!digits) return 'Introduce un teléfono';
 	if (!/^[6-9]\d{8}$/.test(digits)) {
 		return 'Teléfono no válido (9 dígitos, móvil o fijo español)';
 	}
 	return null;
-}
-
-export function normalizePhone(value: string): string {
-	return value.replace(/[\s().-]/g, '').replace(/^\+34/, '').replace(/^0034/, '');
 }
 
 export function validateRequired(

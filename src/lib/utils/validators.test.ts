@@ -55,6 +55,7 @@ describe('validatePhone', () => {
 		assert.equal(validatePhone('612345678'), null);
 		assert.equal(validatePhone('+34 612 345 678'), null);
 		assert.equal(validatePhone('912345678'), null);
+		assert.equal(validatePhone('34612345678'), null);
 	});
 	it('rechaza cortos', () => {
 		assert.ok(validatePhone('61234'));
