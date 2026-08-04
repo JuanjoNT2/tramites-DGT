@@ -21,8 +21,8 @@
 		>
 			<h2 id="draft-restore-title">Tienes un borrador guardado</h2>
 			<p id="draft-restore-desc">
-				En este dispositivo hay datos de un trámite anterior (matrícula, bastidor, contacto…).
-				¿Quieres continuar donde lo dejaste o empezar de nuevo?
+				En este dispositivo hay datos de un trámite anterior (matrícula, bastidor, contacto y
+				documentos adjuntos). ¿Quieres continuar donde lo dejaste o empezar de nuevo?
 			</p>
 			<div class="actions">
 				<button type="button" class="ok" onclick={oncontinue}>Continuar borrador</button>

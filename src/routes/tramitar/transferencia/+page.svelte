@@ -52,6 +52,13 @@
 		saveDraft,
 		setDraftStorageAck
 	} from '$lib/tramite/draft';
+	import {
+		clearDraftFiles,
+		draftFilesCount,
+		loadDraftFiles,
+		removeDraftFile,
+		saveDraftFile
+	} from '$lib/tramite/draft-files';
 
 	const seo = getStaticSeo('/tramitar/transferencia')!;
 	const STORAGE_KEY = 'dgt-transfer-wizard';
@@ -226,11 +233,13 @@
 
 		if (hasDraftStorageAck()) draftReady = true;
 		const data = loadDraft<Record<string, unknown>>(STORAGE_KEY);
-		if (draftLooksMeaningful(data)) {
-			pendingDraft = data;
-			showDraftRestore = true;
-			draftReady = false;
-		}
+		void draftFilesCount(STORAGE_KEY).then((n) => {
+			if (draftLooksMeaningful(data) || n > 0) {
+				pendingDraft = data ?? {};
+				showDraftRestore = true;
+				draftReady = false;
+			}
+		});
 
 		return () => {
 			window.removeEventListener('pagehide', onLeave);
@@ -280,16 +289,19 @@
 		if (typeof data.cp === 'string') cp = data.cp;
 	}
 
-	function continueDraft() {
+	async function continueDraft() {
 		if (pendingDraft) applyDraft(pendingDraft);
 		pendingDraft = null;
 		showDraftRestore = false;
 		setDraftStorageAck();
 		draftReady = true;
+		docFiles = await loadDraftFiles(STORAGE_KEY);
 	}
 
 	function startFreshDraft() {
 		clearDraft(STORAGE_KEY);
+		void clearDraftFiles(STORAGE_KEY);
+		docFiles = {};
 		pendingDraft = null;
 		showDraftRestore = false;
 		if (hasDraftStorageAck()) draftReady = true;
@@ -608,7 +620,9 @@
 
 	function setDocFile(id: string, file: File | null) {
 		docFiles = { ...docFiles, [id]: file };
-		noteProgress();
+		if (file) void saveDraftFile(STORAGE_KEY, id, file);
+		else void removeDraftFile(STORAGE_KEY, id);
+		noteProgress(true);
 	}
 
 	async function uploadDocsIfAny(id: string, accessToken?: string | null) {
@@ -696,6 +710,7 @@
 				total_steps: TOTAL_STEPS
 			});
 			clearDraft(STORAGE_KEY);
+			void clearDraftFiles(STORAGE_KEY);
 			await goto(result.pagoUrl);
 		} finally {
 			submitting = false;

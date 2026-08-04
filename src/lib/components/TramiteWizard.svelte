@@ -46,6 +46,13 @@
 		saveDraft,
 		setDraftStorageAck
 	} from '$lib/tramite/draft';
+	import {
+		clearDraftFiles,
+		draftFilesCount,
+		loadDraftFiles,
+		removeDraftFile,
+		saveDraftFile
+	} from '$lib/tramite/draft-files';
 
 	type Variant =
 		| 'etiqueta'
@@ -213,11 +220,13 @@
 
 		if (hasDraftStorageAck()) draftReady = true;
 		const data = loadDraft<Record<string, unknown>>(storageKey);
-		if (draftLooksMeaningful(data)) {
-			pendingDraft = data;
-			showDraftRestore = true;
-			draftReady = false;
-		}
+		void draftFilesCount(storageKey).then((n) => {
+			if (draftLooksMeaningful(data) || n > 0) {
+				pendingDraft = data ?? {};
+				showDraftRestore = true;
+				draftReady = false;
+			}
+		});
 
 		return () => {
 			window.removeEventListener('pagehide', onLeave);
@@ -272,16 +281,19 @@
 		if (typeof data.cartaFinalizacion === 'string') cartaFinalizacion = data.cartaFinalizacion;
 	}
 
-	function continueDraft() {
+	async function continueDraft() {
 		if (pendingDraft) applyDraft(pendingDraft);
 		pendingDraft = null;
 		showDraftRestore = false;
 		setDraftStorageAck();
 		draftReady = true;
+		docFiles = await loadDraftFiles(storageKey);
 	}
 
 	function startFreshDraft() {
 		clearDraft(storageKey);
+		void clearDraftFiles(storageKey);
+		docFiles = {};
 		pendingDraft = null;
 		showDraftRestore = false;
 		if (hasDraftStorageAck()) draftReady = true;
@@ -632,6 +644,8 @@
 
 	function setDocFile(id: string, file: File | null) {
 		docFiles = { ...docFiles, [id]: file };
+		if (file) void saveDraftFile(storageKey, id, file);
+		else void removeDraftFile(storageKey, id);
 		noteProgress();
 	}
 
@@ -716,6 +730,7 @@
 				total_steps: steps.length
 			});
 			clearDraft(storageKey);
+			void clearDraftFiles(storageKey);
 			await goto(result.pagoUrl);
 		} finally {
 			submitting = false;

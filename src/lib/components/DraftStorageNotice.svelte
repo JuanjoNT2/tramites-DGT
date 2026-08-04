@@ -29,12 +29,13 @@
 			<h2 id="draft-notice-title">Guardamos un borrador de tu trámite</h2>
 			<p id="draft-notice-desc">
 				A partir de ahora almacenamos en este dispositivo los datos que vayas introduciendo
-				(matrícula, datos de contacto y del trámite) para que no los pierdas si cierras la página o
-				vuelves más tarde.
+				(matrícula, contacto, trámite y fotos/documentos adjuntos) para que no los pierdas si cierras
+				la página o vuelves más tarde.
 			</p>
 			<p class="legal">
-				El borrador se guarda de forma local en tu navegador. Cuando completes el trámite, los datos
-				se envían a nuestros sistemas para gestionar la solicitud. Más información en la
+				El borrador se guarda de forma local en tu navegador (los documentos en un almacén del propio
+				dispositivo). Cuando completes el trámite, los datos se envían a nuestros sistemas para
+				gestionar la solicitud. Más información en la
 				<a href="/politica-de-privacidad" onclick={openPrivacy}>política de privacidad</a>.
 			</p>
 			<button type="button" class="ok" onclick={onconfirm}>Entendido</button>
