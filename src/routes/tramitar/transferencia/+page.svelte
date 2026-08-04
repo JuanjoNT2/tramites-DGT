@@ -35,12 +35,14 @@
 	import { funnel, initAnalytics } from '$lib/analytics';
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
+	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
 	import { getStaticSeo } from '$lib/seo/site';
 	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
 	import { uploadTramiteDocuments } from '$lib/tramite/upload-docs';
 	import {
 		clearDraft,
+		draftLooksMeaningful,
 		hasDraftStorageAck,
 		loadDraft,
 		looksLikeStartedDraft,
@@ -121,6 +123,8 @@
 	let docFiles = $state<Record<string, File | null>>({});
 	let acceptPrivacy = $state(false);
 	let showDraftNotice = $state(false);
+	let showDraftRestore = $state(false);
+	let pendingDraft = $state<Record<string, unknown> | null>(null);
 	let draftReady = $state(false);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -212,47 +216,10 @@
 
 		if (hasDraftStorageAck()) draftReady = true;
 		const data = loadDraft<Record<string, unknown>>(STORAGE_KEY);
-		if (data) {
-			if (typeof data.step === 'number') step = clampLegacyStep(data.step);
-			if (typeof data.solicitudId === 'string' && data.solicitudId) {
-				solicitudId = data.solicitudId;
-			}
-			if (data.tipoVehiculo === 'coche' || data.tipoVehiculo === 'moto')
-				tipoVehiculo = data.tipoVehiculo;
-			if (typeof data.matricula === 'string') matricula = data.matricula;
-			if (typeof data.bastidor === 'string') bastidor = data.bastidor;
-			if (typeof data.marcaId === 'string') marcaId = data.marcaId;
-			if (typeof data.marcaNombre === 'string') marcaNombre = data.marcaNombre;
-			if (typeof data.combustibleId === 'string') combustibleId = data.combustibleId;
-			if (typeof data.combustibleNombre === 'string') combustibleNombre = data.combustibleNombre;
-			if (typeof data.modeloId === 'string') modeloId = data.modeloId;
-			if (typeof data.modeloNombre === 'string') modeloNombre = data.modeloNombre;
-			if (typeof data.marcaMotoId === 'string') marcaMotoId = data.marcaMotoId;
-			if (typeof data.marcaMotoNombre === 'string') marcaMotoNombre = data.marcaMotoNombre;
-			if (typeof data.modeloMotoId === 'string') modeloMotoId = data.modeloMotoId;
-			if (typeof data.modeloMotoNombre === 'string') modeloMotoNombre = data.modeloMotoNombre;
-			if (typeof data.cilindradaMoto === 'string') cilindradaMoto = data.cilindradaMoto;
-			if (typeof data.fechaMatricula === 'string') fechaMatricula = data.fechaMatricula;
-			if (typeof data.ccaaId === 'string') ccaaId = data.ccaaId;
-			if (typeof data.precioVenta === 'number') precioVenta = data.precioVenta;
-			if (typeof data.fechaVenta === 'string') fechaVenta = data.fechaVenta;
-			if (typeof data.facturaEmpresa === 'string') facturaEmpresa = data.facturaEmpresa;
-			if (typeof data.incluirInforme === 'string') incluirInforme = data.incluirInforme;
-			if (data.motivoTransferencia === 'compraventa' || data.motivoTransferencia === 'donacion')
-				motivoTransferencia = data.motivoTransferencia;
-			if (typeof data.liquidarItp === 'string') liquidarItp = data.liquidarItp;
-			if (data.rol === 'comprador' || data.rol === 'vendedor') rol = data.rol;
-			if (typeof data.email === 'string') email = data.email;
-			if (typeof data.nif === 'string') nif = data.nif;
-			if (typeof data.nombre === 'string') nombre = data.nombre;
-			if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
-			if (typeof data.telefono === 'string') telefono = data.telefono;
-			if (typeof data.otraParteEmail === 'string') otraParteEmail = data.otraParteEmail;
-			if (typeof data.provincia === 'string') provincia = data.provincia;
-			if (typeof data.municipio === 'string') municipio = data.municipio;
-			if (typeof data.direccion === 'string') direccion = data.direccion;
-			if (typeof data.cp === 'string') cp = data.cp;
-			if (!hasDraftStorageAck()) showDraftNotice = true;
+		if (draftLooksMeaningful(data)) {
+			pendingDraft = data;
+			showDraftRestore = true;
+			draftReady = false;
 		}
 
 		return () => {
@@ -260,6 +227,63 @@
 			if (saveTimer) clearTimeout(saveTimer);
 		};
 	});
+
+	function applyDraft(data: Record<string, unknown>) {
+		if (typeof data.step === 'number') step = clampLegacyStep(data.step);
+		if (typeof data.solicitudId === 'string' && data.solicitudId) {
+			solicitudId = data.solicitudId;
+		}
+		if (data.tipoVehiculo === 'coche' || data.tipoVehiculo === 'moto')
+			tipoVehiculo = data.tipoVehiculo;
+		if (typeof data.matricula === 'string') matricula = data.matricula;
+		if (typeof data.bastidor === 'string') bastidor = data.bastidor;
+		if (typeof data.marcaId === 'string') marcaId = data.marcaId;
+		if (typeof data.marcaNombre === 'string') marcaNombre = data.marcaNombre;
+		if (typeof data.combustibleId === 'string') combustibleId = data.combustibleId;
+		if (typeof data.combustibleNombre === 'string') combustibleNombre = data.combustibleNombre;
+		if (typeof data.modeloId === 'string') modeloId = data.modeloId;
+		if (typeof data.modeloNombre === 'string') modeloNombre = data.modeloNombre;
+		if (typeof data.marcaMotoId === 'string') marcaMotoId = data.marcaMotoId;
+		if (typeof data.marcaMotoNombre === 'string') marcaMotoNombre = data.marcaMotoNombre;
+		if (typeof data.modeloMotoId === 'string') modeloMotoId = data.modeloMotoId;
+		if (typeof data.modeloMotoNombre === 'string') modeloMotoNombre = data.modeloMotoNombre;
+		if (typeof data.cilindradaMoto === 'string') cilindradaMoto = data.cilindradaMoto;
+		if (typeof data.fechaMatricula === 'string') fechaMatricula = data.fechaMatricula;
+		if (typeof data.ccaaId === 'string') ccaaId = data.ccaaId;
+		if (typeof data.precioVenta === 'number') precioVenta = data.precioVenta;
+		if (typeof data.fechaVenta === 'string') fechaVenta = data.fechaVenta;
+		if (typeof data.facturaEmpresa === 'string') facturaEmpresa = data.facturaEmpresa;
+		if (typeof data.incluirInforme === 'string') incluirInforme = data.incluirInforme;
+		if (data.motivoTransferencia === 'compraventa' || data.motivoTransferencia === 'donacion')
+			motivoTransferencia = data.motivoTransferencia;
+		if (typeof data.liquidarItp === 'string') liquidarItp = data.liquidarItp;
+		if (data.rol === 'comprador' || data.rol === 'vendedor') rol = data.rol;
+		if (typeof data.email === 'string') email = data.email;
+		if (typeof data.nif === 'string') nif = data.nif;
+		if (typeof data.nombre === 'string') nombre = data.nombre;
+		if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
+		if (typeof data.telefono === 'string') telefono = data.telefono;
+		if (typeof data.otraParteEmail === 'string') otraParteEmail = data.otraParteEmail;
+		if (typeof data.provincia === 'string') provincia = data.provincia;
+		if (typeof data.municipio === 'string') municipio = data.municipio;
+		if (typeof data.direccion === 'string') direccion = data.direccion;
+		if (typeof data.cp === 'string') cp = data.cp;
+	}
+
+	function continueDraft() {
+		if (pendingDraft) applyDraft(pendingDraft);
+		pendingDraft = null;
+		showDraftRestore = false;
+		setDraftStorageAck();
+		draftReady = true;
+	}
+
+	function startFreshDraft() {
+		clearDraft(STORAGE_KEY);
+		pendingDraft = null;
+		showDraftRestore = false;
+		if (hasDraftStorageAck()) draftReady = true;
+	}
 
 	function draftSnapshot(): Record<string, unknown> {
 		return {
@@ -916,6 +940,11 @@
 </section>
 
 <DraftStorageNotice open={showDraftNotice} onconfirm={confirmDraftNotice} />
+<DraftRestoreNotice
+	open={showDraftRestore}
+	oncontinue={continueDraft}
+	onfresh={startFreshDraft}
+/>
 
 <style>
 	.layout {

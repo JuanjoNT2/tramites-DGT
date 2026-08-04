@@ -96,7 +96,6 @@ export const services: Service[] = [
 export const calculators = [
 	{ title: 'Precio de una transferencia', path: '/calcular/precio-transferencia' },
 	{ title: 'Valor venal en Hacienda', path: '/calcular/valor-venal' },
-	{ title: 'Contrato de compraventa', path: '/calcular/precio-transferencia' },
 	{ title: 'Potencia fiscal', path: '/calcular/potencia-fiscal' },
 	{ title: 'Calculadora de ITP', path: '/calcular/itp' }
 ];

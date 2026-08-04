@@ -66,60 +66,24 @@
 		marcaNombre = brandsData.find((b) => b.id === id)?.name ?? '';
 	}
 
-	function clearFuelAndModel() {
+	/** Cambio manual de marca: limpia dependientes; las listas las hidrata el $effect. */
+	function onMarcaChange(id: string) {
+		syncBrandName(id);
 		combustibleId = '';
 		combustibleNombre = '';
-		fuels = [];
-		clearModel();
-	}
-
-	function clearModel() {
 		modeloId = '';
 		modeloNombre = '';
 		modeloMeta = null;
-		models = [];
+		loadError = null;
 	}
 
-	async function onMarcaChange(id: string) {
-		syncBrandName(id);
-		clearFuelAndModel();
+	/** Cambio manual de combustible: limpia modelo; la lista la hidrata el $effect. */
+	function onCombustibleChange(id: string) {
+		combustibleNombre = fuels.find((f) => f.id === id)?.name ?? combustibleNombre;
+		modeloId = '';
+		modeloNombre = '';
+		modeloMeta = null;
 		loadError = null;
-		if (!id) return;
-
-		loadingFuels = true;
-		try {
-			const res = await fetch(`/api/vehicles/fuels?marcaId=${encodeURIComponent(id)}`);
-			const data = await res.json().catch(() => ({}));
-			if (!res.ok) throw new Error(data?.message ?? 'No se pudieron cargar combustibles');
-			fuels = data.fuels ?? [];
-		} catch (e) {
-			fuels = [];
-			loadError = e instanceof Error ? e.message : 'Error al cargar combustibles';
-		} finally {
-			loadingFuels = false;
-		}
-	}
-
-	async function onCombustibleChange(id: string) {
-		combustibleNombre = fuels.find((f) => f.id === id)?.name ?? '';
-		clearModel();
-		loadError = null;
-		if (!marcaId || !id) return;
-
-		loadingModels = true;
-		try {
-			const res = await fetch(
-				`/api/vehicles/models?marcaId=${encodeURIComponent(marcaId)}&combustibleId=${encodeURIComponent(id)}`
-			);
-			const data = await res.json().catch(() => ({}));
-			if (!res.ok) throw new Error(data?.message ?? 'No se pudieron cargar modelos');
-			models = data.models ?? [];
-		} catch (e) {
-			models = [];
-			loadError = e instanceof Error ? e.message : 'Error al cargar modelos';
-		} finally {
-			loadingModels = false;
-		}
 	}
 
 	function onModeloChange(id: string) {
@@ -127,6 +91,92 @@
 		modeloMeta = model;
 		modeloNombre = model?.label ?? '';
 	}
+
+	// Hidrata combustibles al tener marca (incluye restauración de borrador).
+	$effect(() => {
+		const id = marcaId;
+		syncBrandName(id);
+		if (!id) {
+			fuels = [];
+			loadingFuels = false;
+			return;
+		}
+
+		let cancelled = false;
+		loadingFuels = true;
+		loadError = null;
+
+		fetch(`/api/vehicles/fuels?marcaId=${encodeURIComponent(id)}`)
+			.then(async (res) => {
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) throw new Error(data?.message ?? 'No se pudieron cargar combustibles');
+				if (!cancelled) fuels = data.fuels ?? [];
+			})
+			.catch((e) => {
+				if (cancelled) return;
+				fuels = [];
+				loadError = e instanceof Error ? e.message : 'Error al cargar combustibles';
+			})
+			.finally(() => {
+				if (!cancelled) loadingFuels = false;
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	});
+
+	// Hidrata modelos al tener marca + combustible (incluye borrador).
+	$effect(() => {
+		const mid = marcaId;
+		const cid = combustibleId;
+		if (!mid || !cid) {
+			models = [];
+			loadingModels = false;
+			return;
+		}
+
+		let cancelled = false;
+		loadingModels = true;
+		loadError = null;
+
+		fetch(
+			`/api/vehicles/models?marcaId=${encodeURIComponent(mid)}&combustibleId=${encodeURIComponent(cid)}`
+		)
+			.then(async (res) => {
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) throw new Error(data?.message ?? 'No se pudieron cargar modelos');
+				if (!cancelled) models = data.models ?? [];
+			})
+			.catch((e) => {
+				if (cancelled) return;
+				models = [];
+				loadError = e instanceof Error ? e.message : 'Error al cargar modelos';
+			})
+			.finally(() => {
+				if (!cancelled) loadingModels = false;
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	});
+
+	// Sincroniza nombres/meta cuando llegan las listas tras un borrador.
+	$effect(() => {
+		if (!combustibleId || !fuels.length) return;
+		const name = fuels.find((f) => f.id === combustibleId)?.name;
+		if (name) combustibleNombre = name;
+	});
+
+	$effect(() => {
+		if (!modeloId || !models.length) return;
+		const model = models.find((m) => m.id === modeloId) ?? null;
+		if (model) {
+			modeloMeta = model;
+			modeloNombre = model.label;
+		}
+	});
 </script>
 
 <FormField

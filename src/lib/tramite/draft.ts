@@ -55,3 +55,26 @@ export function clearDraft(key: string): void {
 export function looksLikeStartedDraft(value: string | null | undefined): boolean {
 	return Boolean(value && value.trim().length >= 2);
 }
+
+/** ¿El borrador guardado merece preguntar si continuar o empezar de nuevo? */
+export function draftLooksMeaningful(data: Record<string, unknown> | null): boolean {
+	if (!data) return false;
+	if (typeof data.step === 'number' && data.step > 1) return true;
+	const keys = [
+		'matricula',
+		'bastidor',
+		'email',
+		'nombre',
+		'nif',
+		'telefono',
+		'modeloNombre',
+		'modeloMotoNombre',
+		'vmpNumSerie',
+		'motivoDuplicado'
+	];
+	for (const k of keys) {
+		const v = data[k];
+		if (typeof v === 'string' && looksLikeStartedDraft(v)) return true;
+	}
+	return false;
+}

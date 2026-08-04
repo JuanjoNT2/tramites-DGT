@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { afterNavigate } from '$app/navigation';
+	import { browser } from '$app/environment';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { env } from '$env/dynamic/public';
@@ -7,6 +8,9 @@
 	import ConsentBanner from '$lib/components/ConsentBanner.svelte';
 	import Nav from '$lib/components/layout/Nav.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
+	import SessionIdleModal from '$lib/components/SessionIdleModal.svelte';
+	import { createIdleTimeout } from '$lib/auth/idle-timeout';
+	import { getSupabaseBrowser } from '$lib/supabase/browser';
 	import { initAnalytics, trackPageView } from '$lib/analytics';
 	import { organizationJsonLd, websiteJsonLd } from '$lib/seo/site';
 
@@ -18,6 +22,52 @@
 			page.url.pathname.startsWith('/cuenta')
 	);
 	const siteLd = $derived(isShell ? null : [organizationJsonLd(), websiteJsonLd()]);
+	const isLoggedIn = $derived(Boolean(page.data.user));
+
+	let showIdleWarn = $state(false);
+	let idleCtrl: ReturnType<typeof createIdleTimeout> | null = null;
+	let loggingOut = false;
+
+	async function logoutIdle() {
+		if (loggingOut) return;
+		loggingOut = true;
+		showIdleWarn = false;
+		idleCtrl?.stop();
+		idleCtrl = null;
+		try {
+			const sb = getSupabaseBrowser();
+			if (sb) await sb.auth.signOut();
+		} catch {
+			/* ignore */
+		}
+		await goto('/login?reason=idle', { invalidateAll: true });
+		loggingOut = false;
+	}
+
+	function keepSession() {
+		showIdleWarn = false;
+		idleCtrl?.extend();
+	}
+
+	function syncIdleWatch() {
+		if (!browser) return;
+		if (!isLoggedIn) {
+			showIdleWarn = false;
+			idleCtrl?.stop();
+			idleCtrl = null;
+			return;
+		}
+		if (idleCtrl) return;
+		idleCtrl = createIdleTimeout({
+			onWarn: () => {
+				showIdleWarn = true;
+			},
+			onExpire: () => {
+				void logoutIdle();
+			}
+		});
+		idleCtrl.start();
+	}
 
 	function injectGtm(id: string) {
 		if (document.getElementById('gtm-script')) return;
@@ -36,10 +86,21 @@
 	}
 
 	onMount(() => {
-		if (isShell) return;
-		initAnalytics();
-		const gtmId = env.PUBLIC_GTM_ID;
-		if (gtmId) injectGtm(gtmId);
+		syncIdleWatch();
+		if (!isShell) {
+			initAnalytics();
+			const gtmId = env.PUBLIC_GTM_ID;
+			if (gtmId) injectGtm(gtmId);
+		}
+		return () => {
+			idleCtrl?.stop();
+			idleCtrl = null;
+		};
+	});
+
+	$effect(() => {
+		void isLoggedIn;
+		syncIdleWatch();
 	});
 
 	afterNavigate(({ to }) => {
@@ -81,6 +142,8 @@
 	<Footer />
 	<ConsentBanner />
 {/if}
+
+<SessionIdleModal open={showIdleWarn} onkeep={keepSession} onlogout={logoutIdle} />
 
 <style>
 	main {

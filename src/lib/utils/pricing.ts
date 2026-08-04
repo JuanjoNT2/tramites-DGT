@@ -26,7 +26,7 @@ function round2(n: number): number {
 	return Math.round(n * 100) / 100;
 }
 
-function parsePrecioBase(raw: string | number | null | undefined): number | null {
+export function parsePrecioBase(raw: string | number | null | undefined): number | null {
 	if (raw == null || raw === '') return null;
 	if (typeof raw === 'number') {
 		return Number.isFinite(raw) && raw > 0 ? raw : null;
@@ -107,4 +107,14 @@ export function calculateTransferPrice(opts: {
 
 export function formatEur(n: number): string {
 	return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+}
+
+/** Valor venal Hacienda = precio medio BOE × (factor Anexo IV / 100). */
+export function computeValorVenal(
+	precioBase: string | number | null | undefined,
+	factorCorreccion: number | null
+): number | null {
+	const base = parsePrecioBase(precioBase);
+	if (base == null || factorCorreccion == null || !Number.isFinite(factorCorreccion)) return null;
+	return round2(base * (factorCorreccion / 100));
 }

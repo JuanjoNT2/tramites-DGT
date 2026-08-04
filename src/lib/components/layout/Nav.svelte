@@ -79,7 +79,7 @@
 				</div>
 			</div>
 			<div class="dropdown">
-				<button type="button" class="drop-btn">Calculador ▾</button>
+				<button type="button" class="drop-btn">Calculadora ▾</button>
 				<div class="drop-menu" role="menu">
 					{#each calculators as c}
 						<a
@@ -246,7 +246,7 @@
 						aria-expanded={openCalculador}
 						onclick={() => (openCalculador = !openCalculador)}
 					>
-						Calculador
+						Calculadora
 						<span aria-hidden="true">{openCalculador ? '▴' : '▾'}</span>
 					</button>
 					{#if openCalculador}

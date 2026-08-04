@@ -39,41 +39,64 @@
 		marcaNombre = brandsData.find((b) => b.id === id)?.name ?? '';
 	}
 
-	function clearModel() {
+	function onMarcaChange(id: string) {
+		syncBrandName(id);
 		modeloId = '';
 		modeloNombre = '';
 		customModelo = '';
-		models = [];
-	}
-
-	async function onMarcaChange(id: string) {
-		syncBrandName(id);
-		clearModel();
 		loadError = null;
 		allowCustom = false;
 		useCustom = false;
-		if (!id) return;
-
-		loadingModels = true;
-		try {
-			const res = await fetch(`/api/vehicles/moto/models?marcaId=${encodeURIComponent(id)}`);
-			const data = await res.json().catch(() => ({}));
-			if (!res.ok) throw new Error(data?.message ?? 'No se pudieron cargar modelos');
-			models = data.models ?? [];
-			allowCustom = Boolean(data.allowCustom) || models.length === 0;
-		} catch (e) {
-			models = [];
-			allowCustom = true;
-			loadError = e instanceof Error ? e.message : 'Error al cargar modelos';
-		} finally {
-			loadingModels = false;
-		}
 	}
 
 	function onModeloChange(id: string) {
 		customModelo = '';
 		modeloNombre = models.find((m) => m.id === id)?.label ?? '';
 	}
+
+	// Hidrata modelos al tener marca (incluye restauración de borrador).
+	$effect(() => {
+		const id = marcaId;
+		syncBrandName(id);
+		if (!id) {
+			models = [];
+			allowCustom = false;
+			loadingModels = false;
+			return;
+		}
+
+		let cancelled = false;
+		loadingModels = true;
+		loadError = null;
+
+		fetch(`/api/vehicles/moto/models?marcaId=${encodeURIComponent(id)}`)
+			.then(async (res) => {
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) throw new Error(data?.message ?? 'No se pudieron cargar modelos');
+				if (cancelled) return;
+				models = data.models ?? [];
+				allowCustom = Boolean(data.allowCustom) || models.length === 0;
+			})
+			.catch((e) => {
+				if (cancelled) return;
+				models = [];
+				allowCustom = true;
+				loadError = e instanceof Error ? e.message : 'Error al cargar modelos';
+			})
+			.finally(() => {
+				if (!cancelled) loadingModels = false;
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	});
+
+	$effect(() => {
+		if (!modeloId || !models.length) return;
+		const label = models.find((m) => m.id === modeloId)?.label;
+		if (label) modeloNombre = label;
+	});
 
 	function onCustomModeloInput() {
 		modeloId = '';

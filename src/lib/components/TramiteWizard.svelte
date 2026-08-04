@@ -26,6 +26,7 @@
 		todayIso
 	} from '$lib/utils/validators';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
+	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
 	import VmpModelPicker from '$lib/components/VmpModelPicker.svelte';
 	import { createSolicitud } from '$lib/pago/client';
@@ -36,6 +37,7 @@
 	import { goto } from '$app/navigation';
 	import {
 		clearDraft,
+		draftLooksMeaningful,
 		hasDraftStorageAck,
 		loadDraft,
 		looksLikeStartedDraft,
@@ -118,6 +120,8 @@
 	let cartaFinalizacion = $state('si');
 	let acceptPrivacy = $state(false);
 	let showDraftNotice = $state(false);
+	let showDraftRestore = $state(false);
+	let pendingDraft = $state<Record<string, unknown> | null>(null);
 	let draftReady = $state(false);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 	let docFiles = $state<Record<string, File | null>>({});
@@ -207,52 +211,10 @@
 
 		if (hasDraftStorageAck()) draftReady = true;
 		const data = loadDraft<Record<string, unknown>>(storageKey);
-		if (data) {
-			if (typeof data.step === 'number') {
-				step = Math.min(Math.max(1, data.step), steps.length);
-			}
-			if (typeof data.solicitudId === 'string' && data.solicitudId) {
-				solicitudId = data.solicitudId;
-			}
-			if (typeof data.matricula === 'string') matricula = data.matricula;
-			if (typeof data.bastidor === 'string') bastidor = data.bastidor;
-			if (typeof data.tipoVehiculo === 'string')
-				tipoVehiculo = data.tipoVehiculo as 'coche' | 'moto';
-			if (typeof data.distintivoTipo === 'string') distintivoTipo = data.distintivoTipo;
-			if (typeof data.vmpCertificado === 'string')
-				vmpCertificado = data.vmpCertificado as 'si' | 'no';
-			if (typeof data.vmpNumCertificado === 'string') vmpNumCertificado = data.vmpNumCertificado;
-			if (typeof data.vmpNumSerie === 'string') vmpNumSerie = data.vmpNumSerie;
-			if (typeof data.vmpMarca === 'string') vmpMarca = data.vmpMarca;
-			if (typeof data.vmpModelo === 'string') vmpModelo = data.vmpModelo;
-			if (typeof data.vmpMarcaId === 'string') vmpMarcaId = data.vmpMarcaId;
-			if (typeof data.vmpModeloId === 'string') vmpModeloId = data.vmpModeloId;
-			if (typeof data.motivoDuplicado === 'string') motivoDuplicado = data.motivoDuplicado;
-			if (typeof data.clasePermiso === 'string') clasePermiso = data.clasePermiso;
-			if (typeof data.fechaCaducidad === 'string') fechaCaducidad = data.fechaCaducidad;
-			if (typeof data.email === 'string') email = data.email;
-			if (typeof data.nif === 'string') nif = data.nif;
-			if (typeof data.nombre === 'string') nombre = data.nombre;
-			if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
-			if (typeof data.apellido2 === 'string') apellido2 = data.apellido2;
-			if (typeof data.telefono === 'string') telefono = data.telefono;
-			if (typeof data.sexo === 'string') sexo = data.sexo;
-			if (typeof data.fechaNacimiento === 'string') fechaNacimiento = data.fechaNacimiento;
-			if (typeof data.provincia === 'string') provincia = data.provincia;
-			if (typeof data.municipio === 'string') municipio = data.municipio;
-			if (typeof data.pueblo === 'string') pueblo = data.pueblo;
-			if (typeof data.tipoVia === 'string') tipoVia = data.tipoVia;
-			if (typeof data.direccion === 'string') direccion = data.direccion;
-			if (typeof data.numero === 'string') numero = data.numero;
-			if (typeof data.piso === 'string') piso = data.piso;
-			if (typeof data.puerta === 'string') puerta = data.puerta;
-			if (typeof data.bloque === 'string') bloque = data.bloque;
-			if (typeof data.escalera === 'string') escalera = data.escalera;
-			if (typeof data.cp === 'string') cp = data.cp;
-			if (typeof data.localidad === 'string') localidad = data.localidad;
-			if (typeof data.tipoEnvio === 'string') tipoEnvio = data.tipoEnvio;
-			if (typeof data.cartaFinalizacion === 'string') cartaFinalizacion = data.cartaFinalizacion;
-			if (!hasDraftStorageAck()) showDraftNotice = true;
+		if (draftLooksMeaningful(data)) {
+			pendingDraft = data;
+			showDraftRestore = true;
+			draftReady = false;
 		}
 
 		return () => {
@@ -260,6 +222,68 @@
 			if (saveTimer) clearTimeout(saveTimer);
 		};
 	});
+
+	function applyDraft(data: Record<string, unknown>) {
+		if (typeof data.step === 'number') {
+			step = Math.min(Math.max(1, data.step), steps.length);
+		}
+		if (typeof data.solicitudId === 'string' && data.solicitudId) {
+			solicitudId = data.solicitudId;
+		}
+		if (typeof data.matricula === 'string') matricula = data.matricula;
+		if (typeof data.bastidor === 'string') bastidor = data.bastidor;
+		if (typeof data.tipoVehiculo === 'string')
+			tipoVehiculo = data.tipoVehiculo as 'coche' | 'moto';
+		if (typeof data.distintivoTipo === 'string') distintivoTipo = data.distintivoTipo;
+		if (typeof data.vmpCertificado === 'string')
+			vmpCertificado = data.vmpCertificado as 'si' | 'no';
+		if (typeof data.vmpNumCertificado === 'string') vmpNumCertificado = data.vmpNumCertificado;
+		if (typeof data.vmpNumSerie === 'string') vmpNumSerie = data.vmpNumSerie;
+		if (typeof data.vmpMarca === 'string') vmpMarca = data.vmpMarca;
+		if (typeof data.vmpModelo === 'string') vmpModelo = data.vmpModelo;
+		if (typeof data.vmpMarcaId === 'string') vmpMarcaId = data.vmpMarcaId;
+		if (typeof data.vmpModeloId === 'string') vmpModeloId = data.vmpModeloId;
+		if (typeof data.motivoDuplicado === 'string') motivoDuplicado = data.motivoDuplicado;
+		if (typeof data.clasePermiso === 'string') clasePermiso = data.clasePermiso;
+		if (typeof data.fechaCaducidad === 'string') fechaCaducidad = data.fechaCaducidad;
+		if (typeof data.email === 'string') email = data.email;
+		if (typeof data.nif === 'string') nif = data.nif;
+		if (typeof data.nombre === 'string') nombre = data.nombre;
+		if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
+		if (typeof data.apellido2 === 'string') apellido2 = data.apellido2;
+		if (typeof data.telefono === 'string') telefono = data.telefono;
+		if (typeof data.sexo === 'string') sexo = data.sexo;
+		if (typeof data.fechaNacimiento === 'string') fechaNacimiento = data.fechaNacimiento;
+		if (typeof data.provincia === 'string') provincia = data.provincia;
+		if (typeof data.municipio === 'string') municipio = data.municipio;
+		if (typeof data.pueblo === 'string') pueblo = data.pueblo;
+		if (typeof data.tipoVia === 'string') tipoVia = data.tipoVia;
+		if (typeof data.direccion === 'string') direccion = data.direccion;
+		if (typeof data.numero === 'string') numero = data.numero;
+		if (typeof data.piso === 'string') piso = data.piso;
+		if (typeof data.puerta === 'string') puerta = data.puerta;
+		if (typeof data.bloque === 'string') bloque = data.bloque;
+		if (typeof data.escalera === 'string') escalera = data.escalera;
+		if (typeof data.cp === 'string') cp = data.cp;
+		if (typeof data.localidad === 'string') localidad = data.localidad;
+		if (typeof data.tipoEnvio === 'string') tipoEnvio = data.tipoEnvio;
+		if (typeof data.cartaFinalizacion === 'string') cartaFinalizacion = data.cartaFinalizacion;
+	}
+
+	function continueDraft() {
+		if (pendingDraft) applyDraft(pendingDraft);
+		pendingDraft = null;
+		showDraftRestore = false;
+		setDraftStorageAck();
+		draftReady = true;
+	}
+
+	function startFreshDraft() {
+		clearDraft(storageKey);
+		pendingDraft = null;
+		showDraftRestore = false;
+		if (hasDraftStorageAck()) draftReady = true;
+	}
 
 	function draftSnapshot(): Record<string, unknown> {
 		return {
@@ -1085,6 +1109,11 @@
 </section>
 
 <DraftStorageNotice open={showDraftNotice} onconfirm={confirmDraftNotice} />
+<DraftRestoreNotice
+	open={showDraftRestore}
+	oncontinue={continueDraft}
+	onfresh={startFreshDraft}
+/>
 
 <style>
 	.wizard-section {
