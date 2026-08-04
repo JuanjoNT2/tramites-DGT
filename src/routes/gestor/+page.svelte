@@ -1,7 +1,24 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	type LayoutMode = 'lista' | 'tarjetas';
+	const STORAGE_KEY = 'gestor-usuarios-layout';
+
+	let layout = $state<LayoutMode>('lista');
+
+	onMount(() => {
+		const saved = localStorage.getItem(STORAGE_KEY);
+		if (saved === 'lista' || saved === 'tarjetas') layout = saved;
+	});
+
+	function setLayout(mode: LayoutMode) {
+		layout = mode;
+		if (browser) localStorage.setItem(STORAGE_KEY, mode);
+	}
 
 	function clientHref(c: PageData['items'][number]) {
 		if (c.userId) return `/gestor/cliente/${c.userId}`;
@@ -21,8 +38,6 @@
 		<h1>{data.title}</h1>
 		<p class="sub">
 			Ciudadanos de la web (no incluye gestores ni admins). Filtra por estado de sus trámites.
-			Pulsa el nombre o <strong>Ver ficha</strong> para abrir los datos, trámites y vehículos de
-			cada usuario.
 		</p>
 	</div>
 	<div class="exports">
@@ -50,84 +65,93 @@
 	</a>
 </nav>
 
-<form class="filters" method="GET">
-	<input type="hidden" name="vista" value={data.vista} />
-	<label>
-		Buscar usuario
-		<input
-			type="search"
-			name="q"
-			value={data.q}
-			placeholder="email, nombre, NIF, teléfono, matrícula…"
-		/>
-	</label>
-	<button type="submit" class="btn secondary">Filtrar</button>
-</form>
+<div class="toolbar">
+	<form class="filters" method="GET">
+		<input type="hidden" name="vista" value={data.vista} />
+		<label>
+			Buscar usuario
+			<input
+				type="search"
+				name="q"
+				value={data.q}
+				placeholder="email, nombre, NIF, teléfono, matrícula…"
+			/>
+		</label>
+		<button type="submit" class="btn secondary">Filtrar</button>
+	</form>
 
-<div class="table-wrap">
-	<table>
-		<thead>
-			<tr>
-				<th>Usuario</th>
-				<th>Email</th>
-				<th>Teléfono</th>
-				<th>NIF</th>
-				<th>En curso</th>
-				<th>Finalizados</th>
-				<th>Matrículas</th>
-				<th>Última actividad</th>
-				<th>Ficha</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each data.items as c}
-				{@const href = clientHref(c)}
-				<tr>
-					<td>
-						{#if href}
-							<a class="name-link" href={href}>{c.fullName || 'Sin nombre'}</a>
-						{:else}
-							<strong>{c.fullName || '—'}</strong>
-						{/if}
-						{#if c.anonimo}<span class="tag">sin cuenta</span>{/if}
-					</td>
-					<td class="email">{c.email || '—'}</td>
-					<td>{c.telefono || '—'}</td>
-					<td>{c.nif || '—'}</td>
-					<td>{c.pendingCount}</td>
-					<td>{c.doneCount}</td>
-					<td>{c.matriculas.join(', ') || '—'}</td>
-					<td>
-						{c.lastAt ? new Date(c.lastAt).toLocaleString('es-ES') : '—'}
-					</td>
-					<td class="action">
-						{#if href}
-							<a class="btn-ficha" href={href}>Ver ficha</a>
-						{:else}
-							<span class="muted">Sin enlace</span>
-						{/if}
-					</td>
-				</tr>
-			{:else}
-				<tr>
-					<td colspan="9" class="empty">No hay usuarios en esta vista.</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+	<div class="layout-toggle" role="group" aria-label="Formato de listado">
+		<button
+			type="button"
+			class:active={layout === 'lista'}
+			aria-pressed={layout === 'lista'}
+			onclick={() => setLayout('lista')}
+		>
+			Lista
+		</button>
+		<button
+			type="button"
+			class:active={layout === 'tarjetas'}
+			aria-pressed={layout === 'tarjetas'}
+			onclick={() => setLayout('tarjetas')}
+		>
+			Tarjetas
+		</button>
+	</div>
 </div>
 
-{#if data.items.length}
+{#if layout === 'lista'}
+	<div class="table-wrap">
+		<table>
+			<thead>
+				<tr>
+					<th>Usuario</th>
+					<th>Email</th>
+					<th>Teléfono</th>
+					<th>NIF</th>
+					<th>En curso</th>
+					<th>Finalizados</th>
+					<th>Matrículas</th>
+					<th>Última actividad</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.items as c}
+					{@const href = clientHref(c)}
+					<tr>
+						<td>
+							{#if href}
+								<a href={href}>{c.fullName || 'Sin nombre'}</a>
+							{:else}
+								<strong>{c.fullName || '—'}</strong>
+							{/if}
+							{#if c.anonimo}<span class="tag">sin cuenta</span>{/if}
+						</td>
+						<td class="email">{c.email || '—'}</td>
+						<td>{c.telefono || '—'}</td>
+						<td>{c.nif || '—'}</td>
+						<td>{c.pendingCount}</td>
+						<td>{c.doneCount}</td>
+						<td>{c.matriculas.join(', ') || '—'}</td>
+						<td>
+							{c.lastAt ? new Date(c.lastAt).toLocaleString('es-ES') : '—'}
+						</td>
+					</tr>
+				{:else}
+					<tr>
+						<td colspan="8" class="empty">No hay usuarios en esta vista.</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+{:else if data.items.length}
 	<ul class="cards" aria-label="Usuarios">
 		{#each data.items as c}
 			{@const href = clientHref(c)}
 			<li class="card">
 				<div class="card-top">
-					{#if href}
-						<a class="name-link" href={href}>{c.fullName || 'Sin nombre'}</a>
-					{:else}
-						<strong>{c.fullName || '—'}</strong>
-					{/if}
+					<strong>{c.fullName || 'Sin nombre'}</strong>
 					{#if c.anonimo}<span class="tag">sin cuenta</span>{/if}
 				</div>
 				<p class="email">{c.email || '—'}</p>
@@ -146,6 +170,8 @@
 			</li>
 		{/each}
 	</ul>
+{:else}
+	<p class="empty-block">No hay usuarios en esta vista.</p>
 {/if}
 
 <style>
@@ -228,12 +254,19 @@
 	.tabs a.active span {
 		background: rgba(255, 255, 255, 0.2);
 	}
+	.toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
 	.filters {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 12px;
 		align-items: flex-end;
-		margin-bottom: 16px;
 	}
 	.filters label {
 		display: grid;
@@ -248,6 +281,30 @@
 		border-radius: 8px;
 		font: inherit;
 		min-width: 280px;
+	}
+	.layout-toggle {
+		display: inline-flex;
+		border: 1px solid #d8e0e8;
+		border-radius: 8px;
+		overflow: hidden;
+		background: #fff;
+	}
+	.layout-toggle button {
+		border: none;
+		background: transparent;
+		padding: 8px 14px;
+		font: inherit;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #5a6b7d;
+		cursor: pointer;
+	}
+	.layout-toggle button + button {
+		border-left: 1px solid #d8e0e8;
+	}
+	.layout-toggle button.active {
+		background: #003050;
+		color: #fff;
 	}
 	.table-wrap {
 		overflow: auto;
@@ -275,20 +332,17 @@
 		color: #5a6b7d;
 		white-space: nowrap;
 	}
-	th:last-child,
-	td.action {
-		position: sticky;
-		right: 0;
-		background: #fff;
-		box-shadow: -6px 0 8px -6px rgba(0, 48, 80, 0.18);
-	}
-	th:last-child {
-		background: #f4f7fa;
-	}
-	.empty {
+	.empty,
+	.empty-block {
 		color: #5a6b7d;
 		text-align: center;
 		padding: 28px !important;
+	}
+	.empty-block {
+		background: #fff;
+		border: 1px solid #d8e0e8;
+		border-radius: 12px;
+		margin: 0;
 	}
 	.tag {
 		display: inline-block;
@@ -301,41 +355,20 @@
 		font-weight: 700;
 		text-transform: uppercase;
 	}
-	.name-link {
+	.table-wrap a {
 		color: #003050;
-		font-weight: 800;
-		text-decoration: underline;
-		text-underline-offset: 2px;
+		font-weight: 700;
+		text-decoration: none;
 	}
-	.name-link:hover {
-		color: #00a8b0;
+	.table-wrap a:hover {
+		text-decoration: underline;
 	}
 	.email {
 		overflow-wrap: anywhere;
 		word-break: break-word;
 	}
-	.btn-ficha {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 7px 12px;
-		background: #003050;
-		color: #fff !important;
-		font-weight: 700;
-		font-size: 0.8rem;
-		border-radius: 8px;
-		text-decoration: none !important;
-		white-space: nowrap;
-	}
-	.btn-ficha:hover {
-		background: #004a6e;
-	}
-	.muted {
-		color: #8a9aab;
-		font-size: 0.8rem;
-	}
 	.cards {
-		display: none;
+		display: grid;
 		list-style: none;
 		margin: 0;
 		padding: 0;
@@ -382,21 +415,36 @@
 		font-size: 0.85rem;
 		color: #5a6b7d;
 	}
-	.card .btn-ficha {
+	.btn-ficha {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		justify-self: start;
 		margin-top: 4px;
+		padding: 7px 12px;
+		background: #003050;
+		color: #fff;
+		font-weight: 700;
+		font-size: 0.8rem;
+		border-radius: 8px;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.btn-ficha:hover {
+		background: #004a6e;
 	}
 
 	@media (max-width: 860px) {
-		.table-wrap {
-			display: none;
-		}
-		.cards {
-			display: grid;
-		}
 		.filters input {
 			min-width: 0;
 			width: 100%;
+		}
+		.toolbar {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.layout-toggle {
+			align-self: flex-end;
 		}
 	}
 </style>
