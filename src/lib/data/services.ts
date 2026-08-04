@@ -1,3 +1,5 @@
+export type ServiceGroupId = 'titularidad' | 'documentacion' | 'etiquetas' | 'situacion';
+
 export type Service = {
 	id: string;
 	slug: string;
@@ -6,7 +8,16 @@ export type Service = {
 	landingPath: string;
 	tramitarPath: string;
 	image: string;
+	/** Agrupación para menús (titularidad, docs, etiquetas…) */
+	group: ServiceGroupId;
 };
+
+export const SERVICE_GROUPS: { id: ServiceGroupId; label: string }[] = [
+	{ id: 'titularidad', label: 'Titularidad y compraventa' },
+	{ id: 'documentacion', label: 'Documentación del vehículo' },
+	{ id: 'etiquetas', label: 'Etiquetas y distintivos' },
+	{ id: 'situacion', label: 'Situación del vehículo' }
+];
 
 export const services: Service[] = [
 	{
@@ -16,7 +27,58 @@ export const services: Service[] = [
 		description: 'Cambia la titularidad de tu vehículo de manera fácil y rápida',
 		landingPath: '/transferencia-vehiculos',
 		tramitarPath: '/tramitar/transferencia',
-		image: '/images/services/transferencia.webp'
+		image: '/images/services/transferencia.webp',
+		group: 'titularidad'
+	},
+	{
+		id: 'notificacion-venta',
+		slug: 'notificacion-de-venta',
+		title: 'Notificación de venta',
+		description: 'Notifica la venta de tu vehículo ante la DGT de forma online',
+		landingPath: '/notificacion-de-venta',
+		tramitarPath: '/tramitar/notificacion-venta',
+		image: '/images/services/transferencia.webp',
+		group: 'titularidad'
+	},
+	{
+		id: 'cancelacion',
+		slug: 'cancelacion-de-reserva-de-dominio',
+		title: 'Cancelación de reserva de dominio',
+		description: 'Cancela la reserva de dominio a la entidad de crédito',
+		landingPath: '/cancelacion-de-reserva-de-dominio',
+		tramitarPath: '/tramitar/cancelacion-reserva',
+		image: '/images/services/cancelacion.webp',
+		group: 'titularidad'
+	},
+	{
+		id: 'informe',
+		slug: 'informe-trafico',
+		title: 'Informe de Vehículo DGT',
+		description: 'Emitido directamente por la DGT y autentificado por nosotros',
+		landingPath: '/informe-trafico',
+		tramitarPath: '/tramitar/informe-dgt',
+		image: '/images/services/informe.webp',
+		group: 'documentacion'
+	},
+	{
+		id: 'nota-simple',
+		slug: 'nota-simple-vehiculo',
+		title: 'Nota simple de vehículo',
+		description: 'Obtén la nota simple registral del vehículo de forma rápida y online',
+		landingPath: '/nota-simple-vehiculo',
+		tramitarPath: '/tramitar/nota-simple',
+		image: '/images/services/informe.webp',
+		group: 'documentacion'
+	},
+	{
+		id: 'duplicado',
+		slug: 'duplicado-de-carnet-de-conducir',
+		title: 'Duplicado permiso de circulación',
+		description: 'Solicita un duplicado del permiso de circulación de tu vehículo',
+		landingPath: '/duplicado-de-carnet-de-conducir',
+		tramitarPath: '/tramitar/duplicado-carnet',
+		image: '/images/services/duplicado.webp',
+		group: 'documentacion'
 	},
 	{
 		id: 'etiqueta',
@@ -25,7 +87,8 @@ export const services: Service[] = [
 		description: 'Consigue la etiqueta medioambiental oficial de la DGT para tu vehículo',
 		landingPath: '/distintivo-medioambiental',
 		tramitarPath: '/tramitar/etiqueta',
-		image: '/images/services/etiqueta.webp'
+		image: '/images/services/etiqueta.webp',
+		group: 'etiquetas'
 	},
 	{
 		id: 'etiqueta-vmp',
@@ -35,52 +98,8 @@ export const services: Service[] = [
 			'Inscripción y etiqueta identificativa de tu patinete eléctrico (VMP) según la normativa DGT',
 		landingPath: '/etiqueta-vmp',
 		tramitarPath: '/tramitar/etiqueta-vmp',
-		image: '/images/services/etiqueta-vmp.webp'
-	},
-	{
-		id: 'informe',
-		slug: 'informe-trafico',
-		title: 'Informe de Vehículo DGT',
-		description: 'Emitido directamente por la DGT y autentificado por nosotros',
-		landingPath: '/informe-trafico',
-		tramitarPath: '/tramitar/informe-dgt',
-		image: '/images/services/informe.webp'
-	},
-	{
-		id: 'duplicado',
-		slug: 'duplicado-de-carnet-de-conducir',
-		title: 'Duplicado permiso de circulación',
-		description: 'Solicita un duplicado del permiso de circulación de tu vehículo',
-		landingPath: '/duplicado-de-carnet-de-conducir',
-		tramitarPath: '/tramitar/duplicado-carnet',
-		image: '/images/services/duplicado.webp'
-	},
-	{
-		id: 'cancelacion',
-		slug: 'cancelacion-de-reserva-de-dominio',
-		title: 'Cancelación de reserva de dominio',
-		description: 'Cancela la reserva de dominio a la entidad de crédito',
-		landingPath: '/cancelacion-de-reserva-de-dominio',
-		tramitarPath: '/tramitar/cancelacion-reserva',
-		image: '/images/services/cancelacion.webp'
-	},
-	{
-		id: 'notificacion-venta',
-		slug: 'notificacion-de-venta',
-		title: 'Notificación de venta',
-		description: 'Notifica la venta de tu vehículo ante la DGT de forma online',
-		landingPath: '/notificacion-de-venta',
-		tramitarPath: '/tramitar/notificacion-venta',
-		image: '/images/services/transferencia.webp'
-	},
-	{
-		id: 'nota-simple',
-		slug: 'nota-simple-vehiculo',
-		title: 'Nota simple de vehículo',
-		description: 'Obtén la nota simple registral del vehículo de forma rápida y online',
-		landingPath: '/nota-simple-vehiculo',
-		tramitarPath: '/tramitar/nota-simple',
-		image: '/images/services/informe.webp'
+		image: '/images/services/etiqueta-vmp.webp',
+		group: 'etiquetas'
 	},
 	{
 		id: 'baja-temporal',
@@ -89,9 +108,18 @@ export const services: Service[] = [
 		description: 'Tramita la baja temporal de tu vehículo ante la DGT sin desplazamientos',
 		landingPath: '/baja-temporal-vehiculo',
 		tramitarPath: '/tramitar/baja-temporal',
-		image: '/images/services/cancelacion.webp'
+		image: '/images/services/cancelacion.webp',
+		group: 'situacion'
 	}
 ];
+
+/** Servicios agrupados para menús (omite grupos vacíos). */
+export function servicesByGroup(): { id: ServiceGroupId; label: string; items: Service[] }[] {
+	return SERVICE_GROUPS.map((g) => ({
+		...g,
+		items: services.filter((s) => s.group === g.id)
+	})).filter((g) => g.items.length > 0);
+}
 
 export const calculators = [
 	{ title: 'Precio de una transferencia', path: '/calcular/precio-transferencia' },

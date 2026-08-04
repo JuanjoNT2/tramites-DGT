@@ -3,13 +3,15 @@
 	import { page } from '$app/state';
 	import { CtaIds, trackClick } from '$lib/analytics';
 	import { isStaffRole } from '$lib/auth/roles';
-	import { services, calculators } from '$lib/data/services';
+	import { servicesByGroup, calculators } from '$lib/data/services';
 	import Logo from '$lib/components/layout/Logo.svelte';
 
 	let open = $state(false);
 	let openTramites = $state(false);
 	let openCalculador = $state(false);
 	let openAccount = $state(false);
+
+	const tramiteGroups = servicesByGroup();
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
@@ -75,17 +77,26 @@
 			{:else}
 				<div class="dropdown">
 					<button type="button" class="drop-btn">Trámites ▾</button>
-					<div class="drop-menu" role="menu">
-						{#each services as s (s.id)}
-							<a
-								href={s.tramitarPath}
-								role="menuitem"
-								data-analytics={CtaIds.NAV_TRAMITE}
-								onclick={() =>
-									trackClick(CtaIds.NAV_TRAMITE, { tramite: s.id, destination: s.tramitarPath })}
-							>
-								{s.title}
-							</a>
+					<div class="drop-menu tramites-menu" role="menu">
+						{#each tramiteGroups as group (group.id)}
+							<div class="drop-section" data-group={group.id}>
+								<span class="drop-section-label" role="presentation">{group.label}</span>
+								{#each group.items as s (s.id)}
+									<a
+										href={s.tramitarPath}
+										class="g-{group.id}"
+										role="menuitem"
+										data-analytics={CtaIds.NAV_TRAMITE}
+										onclick={() =>
+											trackClick(CtaIds.NAV_TRAMITE, {
+												tramite: s.id,
+												destination: s.tramitarPath
+											})}
+									>
+										{s.title}
+									</a>
+								{/each}
+							</div>
 						{/each}
 					</div>
 				</div>
@@ -245,19 +256,23 @@
 							<span aria-hidden="true">{openTramites ? '▴' : '▾'}</span>
 						</button>
 						{#if openTramites}
-							<div class="mobile-sub">
-								{#each services as s (s.id)}
-									<a
-										href={s.tramitarPath}
-										onclick={() => {
-											trackClick(CtaIds.NAV_TRAMITE, {
-												tramite: s.id,
-												destination: s.tramitarPath,
-												nav: 'mobile'
-											});
-											closeMobile();
-										}}>{s.title}</a
-									>
+							<div class="mobile-sub tramites-mobile">
+								{#each tramiteGroups as group (group.id)}
+									<p class="mobile-section-label" data-group={group.id}>{group.label}</p>
+									{#each group.items as s (s.id)}
+										<a
+											href={s.tramitarPath}
+											class="g-{group.id}"
+											onclick={() => {
+												trackClick(CtaIds.NAV_TRAMITE, {
+													tramite: s.id,
+													destination: s.tramitarPath,
+													nav: 'mobile'
+												});
+												closeMobile();
+											}}>{s.title}</a
+										>
+									{/each}
 								{/each}
 							</div>
 						{/if}
@@ -427,6 +442,10 @@
 		z-index: 20;
 	}
 
+	.drop-menu.tramites-menu {
+		min-width: 300px;
+	}
+
 	.drop-menu::before {
 		content: '';
 		position: absolute;
@@ -444,21 +463,68 @@
 		display: block;
 	}
 
+	.drop-section {
+		position: relative;
+		padding: 8px 0 4px;
+	}
+
+	.drop-section + .drop-section {
+		border-top: 1px solid rgba(0, 48, 80, 0.08);
+		margin-top: 2px;
+	}
+
+	.drop-section:first-child {
+		padding-top: 12px;
+	}
+
+	.drop-section:last-child {
+		padding-bottom: 10px;
+	}
+
+	.drop-section-label {
+		display: block;
+		padding: 4px 16px 6px;
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: #6b7c8d;
+	}
+
+	.drop-section[data-group='titularidad'] .drop-section-label {
+		color: #007a82;
+	}
+	.drop-section[data-group='documentacion'] .drop-section-label {
+		color: #003050;
+	}
+	.drop-section[data-group='etiquetas'] .drop-section-label {
+		color: #2f7d4a;
+	}
+	.drop-section[data-group='situacion'] .drop-section-label {
+		color: #8a5a00;
+	}
+
 	.drop-menu a {
 		display: block;
 		position: relative;
-		padding: 10px 16px;
+		padding: 9px 16px 9px 14px;
 		font-size: 14px;
 		font-weight: 600;
 		color: var(--ink);
+		border-left: 3px solid transparent;
 	}
 
-	.drop-menu a:first-child {
-		padding-top: 14px;
+	.drop-menu a.g-titularidad {
+		border-left-color: #00c6d1;
 	}
-
-	.drop-menu a:last-child {
-		padding-bottom: 14px;
+	.drop-menu a.g-documentacion {
+		border-left-color: #003050;
+	}
+	.drop-menu a.g-etiquetas {
+		border-left-color: #3da86a;
+	}
+	.drop-menu a.g-situacion {
+		border-left-color: #d4a017;
 	}
 
 	.drop-menu a:hover {
@@ -573,6 +639,52 @@
 	.mobile-sub a:hover {
 		color: var(--primary-dark);
 		background: rgba(0, 198, 209, 0.1);
+	}
+
+	.mobile-section-label {
+		margin: 10px 20px 2px;
+		padding: 0 0 0 10px;
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: #6b7c8d;
+		border-left: 3px solid #c5d0da;
+	}
+
+	.mobile-section-label[data-group='titularidad'] {
+		color: #007a82;
+		border-left-color: #00c6d1;
+	}
+	.mobile-section-label[data-group='documentacion'] {
+		color: #003050;
+		border-left-color: #003050;
+	}
+	.mobile-section-label[data-group='etiquetas'] {
+		color: #2f7d4a;
+		border-left-color: #3da86a;
+	}
+	.mobile-section-label[data-group='situacion'] {
+		color: #8a5a00;
+		border-left-color: #d4a017;
+	}
+
+	.tramites-mobile a {
+		border-left: 3px solid transparent;
+		margin-left: 20px;
+		padding-left: 12px;
+	}
+	.tramites-mobile a.g-titularidad {
+		border-left-color: #00c6d1;
+	}
+	.tramites-mobile a.g-documentacion {
+		border-left-color: #003050;
+	}
+	.tramites-mobile a.g-etiquetas {
+		border-left-color: #3da86a;
+	}
+	.tramites-mobile a.g-situacion {
+		border-left-color: #d4a017;
 	}
 
 	.mobile-cta {
