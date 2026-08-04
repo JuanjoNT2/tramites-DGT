@@ -50,18 +50,20 @@
 		<circle cx="24" cy="24" r="17.5" stroke="currentColor" stroke-width="1.5" opacity="0.45" />
 		<text
 			x="24"
-			y="13"
+			y="14.5"
 			text-anchor="middle"
+			dominant-baseline="middle"
 			fill="currentColor"
-			font-size="7.5"
+			font-size="6"
 			font-weight="800"
 			font-family="system-ui, Arial, sans-serif"
-			letter-spacing="1">DGT</text
+			letter-spacing="0.4">DGT</text
 		>
-		<!-- 0 grande dibujado (más legible que texto fino) -->
+		<!-- 0 ovalado (más alto que ancho, como el dígito) -->
 		<path
-			d="M24 16.5c-5.2 0-9 3.6-9 9.2s3.8 9.2 9 9.2 9-3.6 9-9.2-3.8-9.2-9-9.2Zm0 3.4c3.1 0 5.2 2.2 5.2 5.8S27.1 31.5 24 31.5s-5.2-2.2-5.2-5.8 2.1-5.8 5.2-5.8Z"
 			fill="currentColor"
+			fill-rule="evenodd"
+			d="M24 17.2c-4.6 0-7.2 3.7-7.2 10.3S19.4 37.8 24 37.8s7.2-3.7 7.2-10.3S28.6 17.2 24 17.2Zm0 3.8c2.8 0 3.9 2.5 3.9 6.5S26.8 34 24 34s-3.9-2.5-3.9-6.5 1.1-6.5 3.9-6.5Z"
 		/>
 	{:else if id === 'etiqueta-vmp'}
 		<circle cx="10" cy="36" r="6.2" stroke="currentColor" stroke-width="2.6" />
