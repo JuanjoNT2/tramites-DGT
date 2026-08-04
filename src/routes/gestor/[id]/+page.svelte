@@ -84,7 +84,7 @@
 			{#if s.user_id}
 				<a href="/gestor/cliente/{s.user_id}">Ver ficha del cliente</a>
 			{:else}
-				anónimo
+				no registrado
 			{/if}
 		</dd>
 	</div>
@@ -154,7 +154,7 @@
 			{#if s.user_id}
 				Este usuario no tiene vehículos registrados en su cuenta.
 			{:else}
-				Solicitud anónima: no hay cuenta vinculada. Revisa la matrícula en el formulario.
+				Solicitud sin registro: no hay cuenta vinculada. Revisa la matrícula en el formulario.
 			{/if}
 		</p>
 		{#if s.payload?.matricula}

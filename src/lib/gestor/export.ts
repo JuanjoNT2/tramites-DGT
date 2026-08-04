@@ -68,7 +68,7 @@ export function buildSolicitudExcelXml(s: Solicitud): string {
 		{ Campo: 'Email de la solicitud', Valor: s.email || '—' },
 		{ Campo: 'ID solicitud', Valor: s.id },
 		{ Campo: 'Fecha de alta', Valor: new Date(s.created_at).toLocaleString('es-ES') },
-		{ Campo: 'ID usuario', Valor: s.user_id || 'Anónimo' },
+		{ Campo: 'ID usuario', Valor: s.user_id || 'No registrado' },
 		...fields.map((f) => ({ Campo: f.label, Valor: f.value }))
 	];
 
