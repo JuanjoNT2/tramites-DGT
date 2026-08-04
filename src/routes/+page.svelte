@@ -28,13 +28,14 @@
 					class="service-card"
 					href={s.tramitarPath}
 					data-analytics={CtaIds.HOME_TRAMITAR}
-					onclick={() => trackClick(CtaIds.HOME_TRAMITAR, { tramite: s.id, destination: s.tramitarPath })}
+					onclick={() =>
+						trackClick(CtaIds.HOME_TRAMITAR, { tramite: s.id, destination: s.tramitarPath })}
 				>
-					<div class="icon-circle">
-						<ServiceIcon id={s.id} size={22} />
+					<div class="icon-circle" class:icon-circle-lg={s.id === 'etiqueta'}>
+						<ServiceIcon id={s.id} size={s.id === 'etiqueta' ? 58 : 50} />
 					</div>
 					<h3>{s.title}</h3>
-					<p>{s.description}</p>
+					<span class="card-cta" aria-hidden="true">Tramitar</span>
 				</a>
 			{/each}
 		</div>
@@ -235,26 +236,46 @@
 	.service-row {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: 12px;
+		gap: 14px;
 	}
 
 	.service-card {
 		display: flex;
 		flex-direction: column;
-		padding: 18px 14px;
-		background: #00305066;
-		border: 1px solid var(--brand-teal);
-		border-radius: 12px;
-		backdrop-filter: blur(6px);
-		min-height: 220px;
-		transition: background 0.25s var(--ease);
+		align-items: center;
+		text-align: center;
+		gap: 14px;
+		padding: 22px 16px 18px;
+		background: rgba(0, 48, 80, 0.45);
+		border: 1.5px solid rgba(0, 198, 209, 0.55);
+		border-radius: 16px;
+		backdrop-filter: blur(8px);
 		text-decoration: none;
 		color: inherit;
 		cursor: pointer;
+		transition:
+			transform 0.22s var(--ease),
+			background 0.22s var(--ease),
+			border-color 0.22s var(--ease),
+			box-shadow 0.22s var(--ease);
+		box-shadow: 0 8px 24px rgba(0, 20, 36, 0.18);
 	}
 
 	.service-card:hover {
-		background: #003050;
+		background: rgba(0, 48, 80, 0.92);
+		border-color: var(--brand-teal);
+		transform: translateY(-4px);
+		box-shadow: 0 14px 32px rgba(0, 198, 209, 0.22);
+	}
+
+	.service-card:hover .icon-circle {
+		transform: scale(1.06);
+		box-shadow: 0 0 0 4px rgba(0, 198, 209, 0.28);
+	}
+
+	.service-card:hover .card-cta {
+		opacity: 1;
+		transform: translateY(0);
 	}
 
 	.service-card:focus-visible {
@@ -263,34 +284,65 @@
 	}
 
 	.icon-circle {
-		width: 40px;
-		height: 40px;
+		width: 88px;
+		height: 88px;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		background: var(--brand-teal);
-		margin-bottom: 12px;
+		flex-shrink: 0;
+		transition:
+			transform 0.22s var(--ease),
+			box-shadow 0.22s var(--ease);
+	}
+
+	.icon-circle-lg {
+		width: 96px;
+		height: 96px;
 	}
 
 	.icon-circle :global(.service-icon) {
-		color: #fff;
+		color: #003050;
 	}
 
 	.service-card h3 {
-		font-size: 14px;
+		font-size: 15px;
 		font-weight: 800;
 		color: #fff;
-		line-height: 1.25;
-		margin-bottom: 8px;
+		line-height: 1.3;
+		margin: 0;
+		max-width: 18ch;
 	}
 
-	.service-card p {
+	.card-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: auto;
+		padding: 6px 12px;
+		border-radius: 999px;
+		background: rgba(0, 198, 209, 0.18);
+		color: var(--brand-teal);
 		font-size: 12px;
-		line-height: 1.4;
-		color: rgba(255, 255, 255, 0.78);
-		flex: 1;
-		margin-bottom: 14px;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		opacity: 0.85;
+		transform: translateY(2px);
+		transition:
+			opacity 0.22s var(--ease),
+			transform 0.22s var(--ease),
+			background 0.22s var(--ease);
+	}
+
+	.card-cta::after {
+		content: '→';
+		font-weight: 800;
+	}
+
+	.service-card:hover .card-cta {
+		background: var(--brand-teal);
+		color: #003050;
 	}
 
 	.advantages {
