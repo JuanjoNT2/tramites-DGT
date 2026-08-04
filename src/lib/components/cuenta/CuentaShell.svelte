@@ -3,11 +3,13 @@
 		email,
 		displayName,
 		unread = 0,
+		profileIncomplete = false,
 		children
 	}: {
 		email?: string | null;
 		displayName?: string | null;
 		unread?: number;
+		profileIncomplete?: boolean;
 		children: import('svelte').Snippet;
 	} = $props();
 
@@ -48,6 +50,12 @@
 		<a class="home" href="/">← Sitio público</a>
 	</aside>
 	<div class="main">
+		{#if profileIncomplete}
+			<p class="incomplete" role="status">
+				Faltan datos obligatorios (móvil y/o NIF/NIE).
+				<a href="/cuenta/datos">Completar en Mis datos</a>
+			</p>
+		{/if}
 		{@render children()}
 	</div>
 </div>
@@ -133,6 +141,19 @@
 	.main {
 		padding: 28px 32px;
 		overflow: auto;
+	}
+	.incomplete {
+		margin: 0 0 16px;
+		padding: 12px 14px;
+		background: #fff4e5;
+		color: #7a4b00;
+		border-radius: 10px;
+		font-size: 0.92rem;
+		font-weight: 600;
+	}
+	.incomplete a {
+		color: #003050;
+		font-weight: 800;
 	}
 	@media (max-width: 860px) {
 		.cuenta {

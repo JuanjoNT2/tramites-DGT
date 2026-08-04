@@ -11,10 +11,15 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		}
 	}
 	const name = locals.profile?.full_name?.trim().split(/\s+/)[0] || null;
+	const profileIncomplete = Boolean(
+		locals.user &&
+			(!locals.profile?.telefono?.trim() || !locals.profile?.nif?.trim() || !locals.user.email)
+	);
 	return {
 		email: locals.user?.email ?? null,
 		displayName: name,
 		unread,
-		profile: locals.profile
+		profile: locals.profile,
+		profileIncomplete
 	};
 };

@@ -9,6 +9,11 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<CuentaShell email={data.email} displayName={data.displayName} unread={data.unread}>
+<CuentaShell
+	email={data.email}
+	displayName={data.displayName}
+	unread={data.unread}
+	profileIncomplete={data.profileIncomplete}
+>
 	{@render children()}
 </CuentaShell>

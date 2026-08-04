@@ -55,12 +55,14 @@ const sb = createClient(url, key, {
 const DEMO_USER_PASSWORD = 'DemoUser2026!';
 const GESTOR_PASSWORD = 'GestorDemo2026!';
 
-/** @type {{ email: string, password: string, fullName: string, role: 'user'|'gestor', vehicles: { matricula: string, tipo: string, marca: string, modelo: string, bastidor?: string }[] }[]} */
+/** @type {{ email: string, password: string, fullName: string, telefono: string, nif: string, role: 'user'|'gestor', vehicles: { matricula: string, tipo: string, marca: string, modelo: string, bastidor?: string }[] }[]} */
 const ACCOUNTS = [
 	{
 		email: 'demo1@tramitesdgtonline.com',
 		password: DEMO_USER_PASSWORD,
 		fullName: 'Ana Demo Uno',
+		telefono: '612345001',
+		nif: '12345678Z',
 		role: 'user',
 		vehicles: [
 			{ matricula: '1234ABC', tipo: 'coche', marca: 'Seat', modelo: 'León', bastidor: 'VSSZZZ5FZJR000001' },
@@ -71,6 +73,8 @@ const ACCOUNTS = [
 		email: 'demo2@tramitesdgtonline.com',
 		password: DEMO_USER_PASSWORD,
 		fullName: 'Bruno Demo Dos',
+		telefono: '612345002',
+		nif: '87654321X',
 		role: 'user',
 		vehicles: [
 			{ matricula: '2345BCD', tipo: 'coche', marca: 'Volkswagen', modelo: 'Golf', bastidor: 'WVWZZZ1KZAW000002' }
@@ -80,6 +84,8 @@ const ACCOUNTS = [
 		email: 'demo3@tramitesdgtonline.com',
 		password: DEMO_USER_PASSWORD,
 		fullName: 'Carla Demo Tres',
+		telefono: '612345003',
+		nif: '11223344B',
 		role: 'user',
 		vehicles: [
 			{ matricula: '3456CDE', tipo: 'coche', marca: 'Renault', modelo: 'Clio', bastidor: 'VF1RJA00000000003' },
@@ -90,6 +96,8 @@ const ACCOUNTS = [
 		email: 'demo4@tramitesdgtonline.com',
 		password: DEMO_USER_PASSWORD,
 		fullName: 'Diego Demo Cuatro',
+		telefono: '612345004',
+		nif: '44332211X',
 		role: 'user',
 		vehicles: [
 			{ matricula: '4567DEF', tipo: 'moto', marca: 'Honda', modelo: 'CB500', bastidor: 'JH2PC350000000004' }
@@ -99,6 +107,8 @@ const ACCOUNTS = [
 		email: 'demo5@tramitesdgtonline.com',
 		password: DEMO_USER_PASSWORD,
 		fullName: 'Elena Demo Cinco',
+		telefono: '612345005',
+		nif: '55667788Z',
 		role: 'user',
 		vehicles: [
 			{ matricula: '6789EFG', tipo: 'coche', marca: 'Ford', modelo: 'Focus', bastidor: 'WF0XXXGCDX0000005' },
@@ -109,6 +119,8 @@ const ACCOUNTS = [
 		email: 'gestor@tramitesdgtonline.com',
 		password: GESTOR_PASSWORD,
 		fullName: 'Gestor Demo',
+		telefono: '612345099',
+		nif: '99998888V',
 		role: 'gestor',
 		vehicles: [
 			{ matricula: '9999GST', tipo: 'coche', marca: 'Skoda', modelo: 'Octavia', bastidor: 'TMBZZZ1Z000000099' }
@@ -132,7 +144,11 @@ async function ensureUser(account) {
 			email: account.email,
 			password: account.password,
 			email_confirm: true,
-			user_metadata: { full_name: account.fullName }
+			user_metadata: {
+				full_name: account.fullName,
+				telefono: account.telefono,
+				nif: account.nif
+			}
 		});
 		if (error) throw new Error(`createUser ${account.email}: ${error.message}`);
 		id = data.user.id;
@@ -142,7 +158,11 @@ async function ensureUser(account) {
 		await sb.auth.admin.updateUserById(id, {
 			password: account.password,
 			email_confirm: true,
-			user_metadata: { full_name: account.fullName }
+			user_metadata: {
+				full_name: account.fullName,
+				telefono: account.telefono,
+				nif: account.nif
+			}
 		});
 	}
 
@@ -158,7 +178,9 @@ async function ensureUser(account) {
 		.update({
 			role: account.role,
 			full_name: account.fullName,
-			email: account.email
+			email: account.email,
+			telefono: account.telefono,
+			nif: account.nif
 		})
 		.eq('id', id);
 
@@ -168,6 +190,8 @@ async function ensureUser(account) {
 			id,
 			email: account.email,
 			full_name: account.fullName,
+			telefono: account.telefono,
+			nif: account.nif,
 			role: account.role
 		});
 		if (insErr) throw new Error(`profiles ${account.email}: ${insErr.message}`);

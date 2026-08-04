@@ -1,6 +1,14 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { authCallbackUrl } from '$lib/auth/urls';
+import { getServiceSupabase } from '$lib/supabase/admin';
+import {
+	normalizePhone,
+	validateEmail,
+	validateNifNie,
+	validatePhone,
+	validateRequired
+} from '$lib/utils/validators';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (locals.user) throw redirect(303, '/');
@@ -18,21 +26,39 @@ export const actions: Actions = {
 			.toLowerCase();
 		const password = String(form.get('password') || '');
 		const fullName = String(form.get('full_name') || '').trim();
+		const telefonoRaw = String(form.get('telefono') || '').trim();
+		const nifRaw = String(form.get('nif') || '')
+			.trim()
+			.toUpperCase()
+			.replace(/[\s-]/g, '');
 
-		if (!email || !password) {
-			return fail(400, {
-				error: 'Email y contraseña son obligatorios.',
-				email,
-				full_name: fullName
-			} as const);
+		const fields = {
+			email,
+			full_name: fullName,
+			telefono: telefonoRaw,
+			nif: nifRaw
+		} as const;
+
+		const nameErr = validateRequired(fullName, 'El nombre completo');
+		const emailErr = validateEmail(email);
+		const phoneErr = validatePhone(telefonoRaw);
+		const nifErr = validateNifNie(nifRaw);
+		const firstErr = nameErr || emailErr || phoneErr || nifErr;
+		if (firstErr) {
+			return fail(400, { error: firstErr, ...fields } as const);
+		}
+		if (!password) {
+			return fail(400, { error: 'La contraseña es obligatoria.', ...fields } as const);
 		}
 		if (password.length < 8) {
 			return fail(400, {
 				error: 'La contraseña debe tener al menos 8 caracteres.',
-				email,
-				full_name: fullName
+				...fields
 			} as const);
 		}
+
+		const telefono = normalizePhone(telefonoRaw);
+		const nif = nifRaw;
 
 		const emailRedirectTo = authCallbackUrl(url);
 		let data;
@@ -42,7 +68,7 @@ export const actions: Actions = {
 				email,
 				password,
 				options: {
-					data: { full_name: fullName },
+					data: { full_name: fullName, telefono, nif },
 					emailRedirectTo
 				}
 			});
@@ -53,16 +79,13 @@ export const actions: Actions = {
 			console.error('[registro] signUp threw', e);
 			return fail(500, {
 				error: `Error de conexión con Auth: ${msg || 'desconocido'}`,
-				email,
-				full_name: fullName
+				...fields
 			} as const);
 		}
 
 		if (error) {
 			const detail = [
-				typeof error.message === 'string' && error.message !== '{}'
-					? error.message
-					: null,
+				typeof error.message === 'string' && error.message !== '{}' ? error.message : null,
 				error.code,
 				error.status,
 				!error.message || error.message === '{}'
@@ -76,20 +99,35 @@ export const actions: Actions = {
 				error:
 					detail ||
 					'No se pudo crear la cuenta. Revisa SMTP SendGrid y Auth Logs en Supabase.',
-				email,
-				full_name: fullName
+				...fields
 			} as const);
 		}
 
-		// Si el proyecto no exige confirmación, ya hay sesión
+		if (data.user?.id) {
+			const sb = getServiceSupabase();
+			if (sb) {
+				await sb
+					.from('profiles')
+					.update({
+						email,
+						full_name: fullName,
+						telefono,
+						nif
+					})
+					.eq('id', data.user.id)
+					.then(({ error: upErr }) => {
+						if (upErr) console.error('[registro] profile update', upErr.message);
+					});
+			}
+		}
+
 		if (data.session) {
-			throw redirect(303, '/');
+			throw redirect(303, '/cuenta/datos');
 		}
 
 		return {
 			ok: true as const,
-			email,
-			full_name: fullName,
+			...fields,
 			message:
 				'Revisa tu correo para verificar la cuenta. Después podrás iniciar sesión.'
 		};

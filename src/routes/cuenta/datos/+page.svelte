@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { validateNifNie, validatePhone, validateRequired } from '$lib/utils/validators';
 
 	let { data }: { data: PageData } = $props();
 	let full_name = $state(data.profile?.full_name || '');
@@ -13,11 +14,20 @@
 	let err = $state<string | null>(null);
 	let saving = $state(false);
 
+	const incomplete = $derived(!data.profile?.telefono?.trim() || !data.profile?.nif?.trim());
+
 	async function save(e: Event) {
 		e.preventDefault();
 		saving = true;
 		msg = null;
-		err = null;
+		err =
+			validateRequired(full_name, 'El nombre completo') ||
+			validatePhone(telefono) ||
+			validateNifNie(nif);
+		if (err) {
+			saving = false;
+			return;
+		}
 		try {
 			const res = await fetch('/api/cuenta/perfil', {
 				method: 'PATCH',
@@ -45,6 +55,11 @@
 	<p class="sub">Email de cuenta: {data.email}</p>
 </header>
 
+{#if incomplete}
+	<p class="warn" role="status">
+		Completa móvil y NIF/NIE: son obligatorios en todos los perfiles registrados.
+	</p>
+{/if}
 {#if !data.emailConfirmed}
 	<p class="warn">Email no verificado.</p>
 {/if}
@@ -55,9 +70,23 @@
 {#if err}<p class="err">{err}</p>{/if}
 
 <form class="card form" onsubmit={save}>
-	<label>Nombre completo<input bind:value={full_name} /></label>
-	<label>Teléfono<input bind:value={telefono} type="tel" /></label>
-	<label>NIF / NIE<input bind:value={nif} /></label>
+	<label>
+		Email
+		<input type="email" value={data.email || ''} disabled readonly />
+		<span class="hint">El email de la cuenta no se cambia aquí.</span>
+	</label>
+	<label>
+		Nombre completo *
+		<input bind:value={full_name} required autocomplete="name" />
+	</label>
+	<label>
+		Móvil *
+		<input bind:value={telefono} type="tel" required autocomplete="tel" placeholder="612345678" />
+	</label>
+	<label>
+		NIF / NIE *
+		<input bind:value={nif} required autocomplete="off" placeholder="12345678Z" />
+	</label>
 	<label>Calle<input bind:value={calle} /></label>
 	<label>Código postal<input bind:value={cp} /></label>
 	<label>Ciudad<input bind:value={ciudad} /></label>
@@ -76,6 +105,7 @@
 	.sub {
 		margin: 0;
 		color: #5a6b7d;
+		overflow-wrap: anywhere;
 	}
 	.card {
 		background: #fff;
@@ -94,11 +124,20 @@
 		font-weight: 600;
 		font-size: 0.85rem;
 	}
+	.hint {
+		font-weight: 500;
+		font-size: 0.75rem;
+		color: #5a6b7d;
+	}
 	input {
 		padding: 8px 10px;
 		border: 1px solid #c5d0da;
 		border-radius: 8px;
 		font: inherit;
+	}
+	input:disabled {
+		background: #f4f7fa;
+		color: #5a6b7d;
 	}
 	.btn {
 		justify-self: start;

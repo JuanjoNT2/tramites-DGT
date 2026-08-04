@@ -4,6 +4,7 @@
 
 	let { data }: { data: PageData } = $props();
 	const p = $derived(data.profile);
+	const c = $derived(data.contact);
 
 	function statusLabel(status: string) {
 		return data.statusLabels[status as SolicitudStatus] || status;
@@ -18,7 +19,7 @@
 
 <header class="head">
 	<div>
-		<h1>{p.full_name || p.email || 'Cliente'}</h1>
+		<h1>{c.nombre || p.full_name || p.email || 'Cliente'}</h1>
 		<p class="sub">Ficha del ciudadano · no es la cuenta del gestor</p>
 	</div>
 </header>
@@ -26,12 +27,23 @@
 <section class="card">
 	<h2>Datos del usuario</h2>
 	<dl class="grid">
-		<div><dt>Email</dt><dd>{p.email || '—'}</dd></div>
-		<div><dt>Nombre</dt><dd>{p.full_name || '—'}</dd></div>
-		<div><dt>Teléfono</dt><dd>{p.telefono || '—'}</dd></div>
-		<div><dt>NIF</dt><dd>{p.nif || '—'}</dd></div>
+		<div><dt>Nombre</dt><dd>{c.nombre || '—'}</dd></div>
+		<div><dt>Teléfono</dt><dd>
+			{c.telefono || '—'}
+			{#if c.fromTramite.telefono}<span class="src">del trámite</span>{/if}
+		</dd></div>
+		<div><dt>NIF</dt><dd>
+			{c.nif || '—'}
+			{#if c.fromTramite.nif}<span class="src">del trámite</span>{/if}
+		</dd></div>
 		<div><dt>Alta</dt><dd>{new Date(p.created_at).toLocaleString('es-ES')}</dd></div>
+		<div class="email"><dt>Email</dt><dd>{c.email || '—'}</dd></div>
 	</dl>
+	{#if !c.telefono && !c.nif}
+		<p class="hint">
+			Esta cuenta no tiene teléfono ni NIF guardados en el perfil ni en sus trámites vinculados.
+		</p>
+	{/if}
 </section>
 
 <section class="card">
@@ -156,9 +168,19 @@
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 12px;
 		margin: 0;
+	}
+	.grid > div {
+		min-width: 0;
+		padding: 10px 12px;
+		background: #f8fafc;
+		border-radius: 8px;
+		border: 1px solid #e8eef3;
+	}
+	.grid .email {
+		grid-column: 1 / -1;
 	}
 	dt {
 		font-size: 0.72rem;
@@ -168,6 +190,24 @@
 	}
 	dd {
 		margin: 4px 0 0;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+	.src {
+		display: inline-block;
+		margin-left: 6px;
+		padding: 1px 6px;
+		border-radius: 999px;
+		background: #e0f7fa;
+		color: #006064;
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+	@media (max-width: 560px) {
+		.grid {
+			grid-template-columns: 1fr;
+		}
 	}
 	table {
 		width: 100%;

@@ -10,6 +10,12 @@
 	const emailValue = $derived(
 		form && 'email' in form && typeof form.email === 'string' ? form.email : ''
 	);
+	const telefonoValue = $derived(
+		form && 'telefono' in form && typeof form.telefono === 'string' ? form.telefono : ''
+	);
+	const nifValue = $derived(
+		form && 'nif' in form && typeof form.nif === 'string' ? form.nif : ''
+	);
 </script>
 
 <svelte:head>
@@ -20,7 +26,9 @@
 <section class="section">
 	<div class="wrap auth card pad">
 		<h1>Crear cuenta</h1>
-		<p class="lead">Regístrate para asociar tus trámites a tu email. El registro es gratuito.</p>
+		<p class="lead">
+			Regístrate para asociar tus trámites a tu email. Email, móvil y NIF/NIE son obligatorios.
+		</p>
 
 		{#if form?.ok}
 			<div class="ok" role="status">
@@ -38,6 +46,7 @@
 					<input
 						type="text"
 						name="full_name"
+						required
 						autocomplete="name"
 						value={fullNameValue}
 					/>
@@ -52,11 +61,30 @@
 						value={emailValue}
 					/>
 				</label>
-				<PasswordInput
-					name="password"
-					autocomplete="new-password"
-					minlength={8}
-				/>
+				<label>
+					Móvil
+					<input
+						type="tel"
+						name="telefono"
+						required
+						autocomplete="tel"
+						inputmode="tel"
+						placeholder="612345678"
+						value={telefonoValue}
+					/>
+				</label>
+				<label>
+					NIF / NIE
+					<input
+						type="text"
+						name="nif"
+						required
+						autocomplete="off"
+						placeholder="12345678Z"
+						value={nifValue}
+					/>
+				</label>
+				<PasswordInput name="password" autocomplete="new-password" minlength={8} />
 				<button type="submit" class="btn">Registrarme</button>
 			</form>
 
