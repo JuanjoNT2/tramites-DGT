@@ -66,7 +66,10 @@
 		<h1>{data.label}</h1>
 		<p class="sub">ID {s.id}</p>
 	</div>
-	<a class="btn" href={`/gestor/api/export/pdf?id=${s.id}`}>Descargar PDF</a>
+	<div class="actions">
+		<a class="btn ghost" href={`/gestor/api/export/excel?id=${s.id}`}>Descargar Excel</a>
+		<a class="btn" href={`/gestor/api/export/pdf?id=${s.id}`}>Descargar PDF</a>
+	</div>
 </header>
 
 {#if msg}<p class="ok">{msg}</p>{/if}
@@ -223,6 +226,11 @@
 		margin-bottom: 20px;
 		flex-wrap: wrap;
 	}
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
 	h1 {
 		margin: 0 0 4px;
 		color: #003050;
@@ -235,6 +243,7 @@
 	}
 	.btn {
 		display: inline-flex;
+		align-items: center;
 		padding: 8px 14px;
 		background: #00c6d1;
 		color: #003050;
@@ -244,6 +253,14 @@
 		border: none;
 		cursor: pointer;
 		font: inherit;
+	}
+	.btn.ghost {
+		background: #fff;
+		border: 1px solid #c5d0da;
+		color: #003050;
+	}
+	.btn.ghost:hover {
+		background: #f4f7fa;
 	}
 	.meta {
 		display: grid;
