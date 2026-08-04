@@ -46,8 +46,11 @@
 	{/if}
 </section>
 
-<section class="card">
-	<h2>Trámites en curso ({data.pendientes.length})</h2>
+<section class="card card-tramites">
+	<h2>
+		<span class="badge badge-tramites">Trámites</span>
+		En curso ({data.pendientes.length})
+	</h2>
 	{#if data.pendientes.length}
 		<table>
 			<thead>
@@ -74,8 +77,11 @@
 	{/if}
 </section>
 
-<section class="card">
-	<h2>Trámites finalizados ({data.finalizados.length})</h2>
+<section class="card card-tramites">
+	<h2>
+		<span class="badge badge-tramites">Trámites</span>
+		Finalizados ({data.finalizados.length})
+	</h2>
 	{#if data.finalizados.length}
 		<table>
 			<thead>
@@ -102,8 +108,11 @@
 	{/if}
 </section>
 
-<section class="card">
-	<h2>Vehículos del cliente ({data.vehiculos.length})</h2>
+<section class="card card-vehiculos">
+	<h2>
+		<span class="badge badge-vehiculos">Vehículos</span>
+		Del cliente ({data.vehiculos.length})
+	</h2>
 	<p class="hint">Vehículos asociados a la cuenta del ciudadano (no del gestor).</p>
 	{#if data.vehiculos.length}
 		<table>
@@ -156,9 +165,39 @@
 		padding: 16px 18px;
 		margin-bottom: 16px;
 	}
+	.card-tramites {
+		border-left: 4px solid #00c6d1;
+		background: linear-gradient(90deg, rgba(0, 198, 209, 0.06), #fff 40%);
+	}
+	.card-vehiculos {
+		border-left: 4px solid #003050;
+		background: linear-gradient(90deg, rgba(0, 48, 80, 0.06), #fff 40%);
+	}
 	h2 {
 		margin: 0 0 12px;
 		font-size: 1rem;
+		color: #003050;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+	}
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 3px 9px;
+		border-radius: 999px;
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+	.badge-tramites {
+		background: #e0f7fa;
+		color: #006064;
+	}
+	.badge-vehiculos {
+		background: #e3edf5;
 		color: #003050;
 	}
 	.hint {
