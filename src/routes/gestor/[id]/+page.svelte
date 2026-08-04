@@ -67,7 +67,7 @@
 		<p class="sub">ID {s.id}</p>
 	</div>
 	<div class="actions">
-		<a class="btn ghost" href={`/gestor/api/export/excel?id=${s.id}`}>Descargar Excel</a>
+		<a class="btn excel" href={`/gestor/api/export/excel?id=${s.id}`}>Descargar Excel</a>
 		<a class="btn" href={`/gestor/api/export/pdf?id=${s.id}`}>Descargar PDF</a>
 	</div>
 </header>
@@ -77,7 +77,7 @@
 
 <dl class="meta">
 	<div><dt>Estado</dt><dd>{data.statusLabels[s.status as SolicitudStatus] || s.status}</dd></div>
-	<div><dt>Email</dt><dd>{s.email || '—'}</dd></div>
+	<div><dt>Fecha</dt><dd>{new Date(s.created_at).toLocaleString('es-ES')}</dd></div>
 	<div>
 		<dt>Cliente</dt>
 		<dd>
@@ -88,7 +88,10 @@
 			{/if}
 		</dd>
 	</div>
-	<div><dt>Fecha</dt><dd>{new Date(s.created_at).toLocaleString('es-ES')}</dd></div>
+	<div class="email">
+		<dt>Email</dt>
+		<dd>{s.email || '—'}</dd>
+	</div>
 </dl>
 
 {#if data.canChangeStatus}
@@ -254,17 +257,18 @@
 		cursor: pointer;
 		font: inherit;
 	}
-	.btn.ghost {
-		background: #fff;
-		border: 1px solid #c5d0da;
-		color: #003050;
+	.btn.excel {
+		background: #217346;
+		color: #fff;
+		border: 1px solid #1a5c38;
 	}
-	.btn.ghost:hover {
-		background: #f4f7fa;
+	.btn.excel:hover {
+		background: #1a5c38;
+		color: #fff;
 	}
 	.meta {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 12px;
 		margin: 0 0 20px;
 	}
@@ -273,6 +277,10 @@
 		border: 1px solid #d8e0e8;
 		border-radius: 10px;
 		padding: 12px 14px;
+		min-width: 0;
+	}
+	.meta .email {
+		grid-column: 1 / -1;
 	}
 	dt {
 		font-size: 0.75rem;
@@ -282,6 +290,13 @@
 	}
 	dd {
 		margin: 4px 0 0;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+	@media (max-width: 720px) {
+		.meta {
+			grid-template-columns: 1fr;
+		}
 	}
 	.card {
 		background: #fff;
