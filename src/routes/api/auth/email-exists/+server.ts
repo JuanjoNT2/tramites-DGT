@@ -26,10 +26,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ exists: false });
 	}
 
+	// profiles.email (comparación case-insensitive)
 	const { data, error } = await sb
 		.from('profiles')
 		.select('id')
-		.eq('email', email)
+		.ilike('email', email)
 		.limit(1)
 		.maybeSingle();
 

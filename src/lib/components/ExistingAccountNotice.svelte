@@ -6,7 +6,6 @@
 		email,
 		returnPath = '',
 		exists = $bindable(false),
-		/** prompt = paso solicitante; reminder = resumen/pago */
 		mode = 'prompt'
 	}: {
 		email: string;
@@ -16,13 +15,15 @@
 	} = $props();
 
 	let checking = $state(false);
-	let lastChecked = $state('');
-	/** Email para el que el usuario pulsó «continuar sin iniciar sesión» */
+	let accountExists = $state(false);
 	let dismissedEmail = $state('');
+	let lastQueried = '';
+	let timer: ReturnType<typeof setTimeout> | null = null;
 
 	const loggedIn = $derived(Boolean(page.data.user));
 	const emailNorm = $derived(email.trim().toLowerCase());
-	const dismissed = $derived(Boolean(dismissedEmail) && dismissedEmail === emailNorm);
+	const emailValid = $derived(Boolean(emailNorm) && validateEmail(emailNorm) === null);
+	const dismissed = $derived(dismissedEmail === emailNorm && dismissedEmail !== '');
 	const nextPath = $derived(
 		(returnPath || page.url.pathname).startsWith('/')
 			? returnPath || page.url.pathname
@@ -32,112 +33,116 @@
 		`/login?next=${encodeURIComponent(nextPath)}&email=${encodeURIComponent(emailNorm)}`
 	);
 
-	$effect(() => {
-		if (loggedIn) {
-			exists = false;
+	const showBanner = $derived(emailValid && !loggedIn && !dismissed);
+
+	function syncExists(v: boolean) {
+		accountExists = v;
+		exists = v;
+	}
+
+	function queryEmail(trimmed: string) {
+		if (loggedIn || !trimmed || validateEmail(trimmed)) {
 			checking = false;
-			lastChecked = '';
+			syncExists(false);
+			lastQueried = '';
 			return;
 		}
-
-		const trimmed = email.trim().toLowerCase();
-		if (!trimmed || validateEmail(trimmed)) {
-			exists = false;
-			checking = false;
-			lastChecked = '';
-			return;
-		}
-
-		if (trimmed === lastChecked) return;
+		if (trimmed === lastQueried) return;
 
 		checking = true;
-		const handle = setTimeout(async () => {
+		if (timer) clearTimeout(timer);
+		timer = setTimeout(async () => {
 			try {
 				const res = await fetch('/api/auth/email-exists', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ email: trimmed })
 				});
-				const data = (await res.json().catch(() => ({}))) as {
-					exists?: boolean;
-				};
+				const data = (await res.json().catch(() => ({}))) as { exists?: boolean };
 				if (email.trim().toLowerCase() !== trimmed) return;
-				exists = Boolean(data.exists);
-				lastChecked = trimmed;
+				lastQueried = trimmed;
+				syncExists(Boolean(data.exists));
 			} catch {
-				if (email.trim().toLowerCase() === trimmed) exists = false;
+				if (email.trim().toLowerCase() === trimmed) syncExists(false);
 			} finally {
 				if (email.trim().toLowerCase() === trimmed) checking = false;
 			}
-		}, 450);
+		}, 350);
+	}
 
-		return () => clearTimeout(handle);
+	$effect(() => {
+		const trimmed = emailNorm;
+		const valid = emailValid;
+		const session = loggedIn;
+		if (session || !valid) {
+			if (timer) clearTimeout(timer);
+			checking = false;
+			syncExists(false);
+			lastQueried = '';
+			return;
+		}
+		queryEmail(trimmed);
+		return () => {
+			if (timer) clearTimeout(timer);
+		};
 	});
 </script>
 
-{#if mode === 'prompt'}
-	{#if checking && !exists}
-		<p class="checking" role="status">Comprobando si ya tienes cuenta…</p>
-	{:else if exists && !dismissed}
-		<div class="notice" role="status">
+{#if showBanner}
+	<div class="notice" class:soft={!accountExists} class:reminder={mode === 'reminder'} role="status">
+		{#if accountExists}
 			<p>
 				Este correo ya tiene una cuenta. Inicia sesión para reutilizar tus datos y ver tus
 				trámites, o continúa sin iniciar sesión.
 			</p>
 			<div class="actions">
 				<a class="btn" href={loginHref}>Iniciar sesión</a>
-				<button
-					type="button"
-					class="btn ghost"
-					onclick={() => {
-						dismissedEmail = emailNorm;
-					}}
-				>
-					Continuar sin iniciar sesión
-				</button>
+				{#if mode === 'prompt'}
+					<button type="button" class="btn ghost" onclick={() => (dismissedEmail = emailNorm)}>
+						Continuar sin iniciar sesión
+					</button>
+				{/if}
 			</div>
-		</div>
-	{/if}
-{:else if !loggedIn}
-	{#if exists}
-		<div class="notice reminder" role="status">
+		{:else}
 			<p>
-				Este correo ya tiene cuenta. Si inicias sesión, este trámite quedará en tu historial y
-				podrás reutilizar tus datos la próxima vez.
+				{#if checking}
+					Comprobando si ya tienes cuenta…
+				{:else}
+					¿Ya tienes cuenta? Inicia sesión para reutilizar tus datos y guardar el trámite en tu
+					área personal.
+				{/if}
 			</p>
-			<a class="btn" href={loginHref}>Iniciar sesión</a>
-		</div>
-	{:else if email.trim() && !validateEmail(email)}
-		<div class="notice soft" role="status">
-			<p>
-				¿Tienes cuenta? Inicia sesión para guardar este trámite en tu área personal. También
-				puedes pagar sin iniciar sesión.
-			</p>
-			<a class="btn ghost" href={loginHref}>Iniciar sesión</a>
-		</div>
-	{/if}
+			{#if !checking}
+				<div class="actions">
+					<a class="btn ghost" href={loginHref}>Iniciar sesión</a>
+					{#if mode === 'prompt'}
+						<button type="button" class="btn ghost" onclick={() => (dismissedEmail = emailNorm)}>
+							Continuar sin iniciar sesión
+						</button>
+					{/if}
+				</div>
+			{/if}
+		{/if}
+	</div>
 {/if}
 
 <style>
-	.checking {
-		margin: -8px 0 16px;
-		font-size: 13px;
-		color: var(--text3, #5a6b7d);
-	}
 	.notice {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 12px 16px;
-		margin: -4px 0 20px;
+		margin: 0 0 20px;
 		padding: 14px 16px;
 		background: #fff8e8;
 		border-left: 3px solid #e6a800;
-		border-radius: var(--radius, 8px);
+		border-radius: 8px;
+		box-sizing: border-box;
+		width: 100%;
 	}
 	.notice.soft {
-		background: var(--primary-dim, #eef7f8);
-		border-left-color: var(--brand-teal, #00c6d1);
+		background: #e8f7f8;
+		border-left-color: #00a8b3;
 	}
 	.notice.reminder {
 		margin: 0 0 18px;
@@ -147,14 +152,14 @@
 		flex: 1 1 220px;
 		font-size: 14px;
 		line-height: 1.45;
-		color: var(--text2, #3d4f5f);
+		color: #3d4f5f;
 	}
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px;
 	}
-	.notice .btn {
+	.notice :global(.btn) {
 		flex: 0 0 auto;
 		text-decoration: none;
 		padding: 10px 16px;

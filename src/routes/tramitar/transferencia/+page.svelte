@@ -979,7 +979,9 @@
 					<FormField label="Email" error={errors.email} required>
 						<input type="email" bind:value={email} autocomplete="email" />
 					</FormField>
-					<ExistingAccountNotice bind:exists={emailAccountExists} {email} />
+					{#if email.trim() && !validateEmail(email) && !page.data.user}
+						<ExistingAccountNotice bind:exists={emailAccountExists} email={email.trim()} />
+					{/if}
 					<FormField
 						label="NIF/NIE"
 						error={errors.nif}

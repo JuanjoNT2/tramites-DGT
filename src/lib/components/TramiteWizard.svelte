@@ -1005,7 +1005,9 @@
 					<FormField label="Correo electrónico" error={errors.email} required>
 						<input type="email" bind:value={email} autocomplete="email" />
 					</FormField>
-					<ExistingAccountNotice bind:exists={emailAccountExists} {email} />
+					{#if email.trim() && !validateEmail(email) && !page.data.user}
+						<ExistingAccountNotice bind:exists={emailAccountExists} email={email.trim()} />
+					{/if}
 					<FormField
 						label="NIF/NIE/CIF"
 						error={errors.nif}
@@ -1045,7 +1047,9 @@
 					<FormField label="Correo electrónico" error={errors.email} required>
 						<input type="email" bind:value={email} autocomplete="email" />
 					</FormField>
-					<ExistingAccountNotice bind:exists={emailAccountExists} {email} />
+					{#if email.trim() && !validateEmail(email) && !page.data.user}
+						<ExistingAccountNotice bind:exists={emailAccountExists} email={email.trim()} />
+					{/if}
 					<FormField
 						label="NIF/NIE/CIF"
 						error={errors.nif}
