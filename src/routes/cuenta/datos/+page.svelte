@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import { validateNifNie, validatePhone, validateRequired } from '$lib/utils/validators';
 
 	let { data }: { data: PageData } = $props();
@@ -85,7 +86,8 @@
 	</label>
 	<label>
 		NIF / NIE *
-		<input bind:value={nif} required autocomplete="off" placeholder="12345678Z" />
+		<span class="hint">Escribe los dígitos: la letra se calcula sola</span>
+		<NifInput bind:value={nif} required />
 	</label>
 	<label>Calle<input bind:value={calle} /></label>
 	<label>Código postal<input bind:value={cp} /></label>

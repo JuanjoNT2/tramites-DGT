@@ -4,6 +4,7 @@
 	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import DateInput from '$lib/components/ui/DateInput.svelte';
+	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
@@ -919,8 +920,13 @@
 					<FormField label="Email" error={errors.email} required>
 						<input type="email" bind:value={email} autocomplete="email" />
 					</FormField>
-					<FormField label="NIF/NIE" error={errors.nif} required>
-						<input bind:value={nif} placeholder="12345678Z" />
+					<FormField
+						label="NIF/NIE"
+						error={errors.nif}
+						hint="Escribe los dígitos: la letra se calcula sola"
+						required
+					>
+						<NifInput bind:value={nif} />
 					</FormField>
 					<FormField label="Nombre" error={errors.nombre} required>
 						<input bind:value={nombre} />

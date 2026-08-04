@@ -24,20 +24,55 @@ export function validateMatricula(value: string): string | null {
 	return 'Matrícula no válida. Usa formato actual (1234BCD) o antiguo (M1234AB, SE1234CD). Matrículas especiales (diplomáticas, temporales) no se tramitan online.';
 }
 
+export function normalizeDocumento(value: string): string {
+	return value.trim().toUpperCase().replace(/[\s-]/g, '');
+}
+
+const NIE_PREFIX: Record<string, string> = { X: '0', Y: '1', Z: '2' };
+
+/** Letra de control NIF (8 dígitos) o NIE (X/Y/Z + 7 dígitos). */
+export function nifNieControlLetter(body: string): string | null {
+	const v = normalizeDocumento(body);
+	if (/^\d{8}$/.test(v)) {
+		return NIF_LETTERS[parseInt(v, 10) % 23];
+	}
+	if (/^[XYZ]\d{7}$/.test(v)) {
+		const num = parseInt(NIE_PREFIX[v[0]] + v.slice(1), 10);
+		return NIF_LETTERS[num % 23];
+	}
+	return null;
+}
+
+/**
+ * Normaliza el documento y, si el cuerpo NIF/NIE está completo, añade o mantiene la letra.
+ * Si la letra escrita no coincide, no la pisa: la validación avisará con la letra correcta.
+ */
+export function applyNifNieLetter(value: string): string {
+	const v = normalizeDocumento(value);
+	if (/^\d{8}$/.test(v) || /^[XYZ]\d{7}$/.test(v)) {
+		const letter = nifNieControlLetter(v);
+		return letter ? v + letter : v;
+	}
+	return v;
+}
+
 export function validateNifNie(value: string): string | null {
-	const v = value.trim().toUpperCase().replace(/[\s-]/g, '');
+	const v = normalizeDocumento(value);
 	if (!v) return 'Introduce un NIF/NIE/CIF';
 
 	if (/^\d{8}[A-Z]$/.test(v)) {
-		const num = parseInt(v.slice(0, 8), 10);
-		if (NIF_LETTERS[num % 23] !== v[8]) return 'NIF no válido';
+		const expected = nifNieControlLetter(v.slice(0, 8));
+		if (expected && expected !== v[8]) {
+			return `La letra del NIF no es correcta (debería ser ${expected})`;
+		}
 		return null;
 	}
 
 	if (/^[XYZ]\d{7}[A-Z]$/.test(v)) {
-		const map: Record<string, string> = { X: '0', Y: '1', Z: '2' };
-		const num = parseInt(map[v[0]] + v.slice(1, 8), 10);
-		if (NIF_LETTERS[num % 23] !== v[8]) return 'NIE no válido';
+		const expected = nifNieControlLetter(v.slice(0, 8));
+		if (expected && expected !== v[8]) {
+			return `La letra del NIE no es correcta (debería ser ${expected})`;
+		}
 		return null;
 	}
 

@@ -8,7 +8,8 @@ import {
 	validateDate,
 	validateDateOrder,
 	parseDateInput,
-	normalizeMatricula
+	normalizeMatricula,
+	applyNifNieLetter
 } from './validators.ts';
 
 describe('validateMatricula', () => {
@@ -40,13 +41,23 @@ describe('validateNifNie / CIF', () => {
 	it('NIF válido', () => {
 		assert.equal(validateNifNie('12345678Z'), null);
 	});
-	it('NIF inválido', () => {
-		assert.ok(validateNifNie('12345678A'));
+	it('NIF inválido indica la letra correcta', () => {
+		const err = validateNifNie('12345678A');
+		assert.ok(err);
+		assert.match(err || '', /debería ser Z/i);
 	});
 	it('CIF con control', () => {
 		assert.equal(validateNifNie('A58818501'), null);
 		assert.equal(validateNifNie('B12345674'), null);
 		assert.ok(validateNifNie('B00000001'));
+	});
+});
+
+describe('applyNifNieLetter', () => {
+	it('completa letra NIF y no pisa una letra ya escrita', () => {
+		assert.equal(applyNifNieLetter('12345678'), '12345678Z');
+		assert.equal(applyNifNieLetter('12345678a'), '12345678A');
+		assert.equal(applyNifNieLetter('12345678Z'), '12345678Z');
 	});
 });
 

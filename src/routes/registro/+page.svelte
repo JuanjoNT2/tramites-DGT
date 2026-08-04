@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
+	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
@@ -13,7 +14,7 @@
 	const telefonoValue = $derived(
 		form && 'telefono' in form && typeof form.telefono === 'string' ? form.telefono : ''
 	);
-	const nifValue = $derived(
+	let nif = $state(
 		form && 'nif' in form && typeof form.nif === 'string' ? form.nif : ''
 	);
 </script>
@@ -75,14 +76,8 @@
 				</label>
 				<label>
 					NIF / NIE
-					<input
-						type="text"
-						name="nif"
-						required
-						autocomplete="off"
-						placeholder="12345678Z"
-						value={nifValue}
-					/>
+					<span class="hint">Escribe los dígitos: la letra se calcula sola</span>
+					<NifInput name="nif" bind:value={nif} required />
 				</label>
 				<PasswordInput name="password" autocomplete="new-password" minlength={8} />
 				<button type="submit" class="btn">Registrarme</button>
@@ -118,6 +113,11 @@
 		gap: 6px;
 		font-weight: 600;
 		font-size: 0.9rem;
+	}
+	.hint {
+		font-weight: 500;
+		font-size: 0.8rem;
+		color: #5a6b7d;
 	}
 	input {
 		width: 100%;

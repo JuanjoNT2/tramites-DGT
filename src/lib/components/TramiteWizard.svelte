@@ -4,6 +4,7 @@
 	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import DateInput from '$lib/components/ui/DateInput.svelte';
+	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
 	import {
 		duplicadoMotivos,
@@ -947,8 +948,13 @@
 					<FormField label="Correo electrónico" error={errors.email} required>
 						<input type="email" bind:value={email} />
 					</FormField>
-					<FormField label="NIF/NIE/CIF" error={errors.nif} required>
-						<input bind:value={nif} />
+					<FormField
+						label="NIF/NIE/CIF"
+						error={errors.nif}
+						hint="Escribe los dígitos: la letra se calcula sola"
+						required
+					>
+						<NifInput bind:value={nif} />
 					</FormField>
 					<div class="row-2">
 						<FormField label="Nombre" error={errors.nombre} required>
@@ -981,8 +987,13 @@
 					<FormField label="Correo electrónico" error={errors.email} required>
 						<input type="email" bind:value={email} />
 					</FormField>
-					<FormField label="NIF/NIE/CIF" error={errors.nif} required>
-						<input bind:value={nif} />
+					<FormField
+						label="NIF/NIE/CIF"
+						error={errors.nif}
+						hint="Escribe los dígitos: la letra se calcula sola"
+						required
+					>
+						<NifInput bind:value={nif} />
 					</FormField>
 					<div class="row-2">
 						<FormField label="Nombre" error={errors.nombre} required>
