@@ -8,8 +8,9 @@ export function canManageUsers(profile: Profile | null | undefined): boolean {
 	return profile?.role === 'admin';
 }
 
+/** Solo rol admin Auth (no gestor) puede cambiar el estado del trámite. */
 export function canChangeSolicitudStatus(profile: Profile | null | undefined): boolean {
-	return isStaffRole(profile?.role);
+	return profile?.role === 'admin';
 }
 
 export function canManageAllDocs(profile: Profile | null | undefined): boolean {
