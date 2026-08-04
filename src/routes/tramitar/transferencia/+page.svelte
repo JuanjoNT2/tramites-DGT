@@ -5,7 +5,10 @@
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import DateInput from '$lib/components/ui/DateInput.svelte';
 	import NifInput from '$lib/components/ui/NifInput.svelte';
+	import ExistingAccountNotice from '$lib/components/ExistingAccountNotice.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
+	import { mergeProfileIntoSolicitante } from '$lib/cuenta/profile-prefill';
+	import type { Profile } from '$lib/supabase/types';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
 	import VehicleModelPicker from '$lib/components/VehicleModelPicker.svelte';
@@ -86,6 +89,8 @@
 	let errors = $state<Record<string, string | null>>({});
 	let errorSteps = $state<number[]>([]);
 	let validationAttempted = $state(false);
+	let emailAccountExists = $state(false);
+	let profilePrefillDone = $state(false);
 	let submitting = $state(false);
 	let saving = $state(false);
 	let payError = $state<string | null>(null);
@@ -293,6 +298,40 @@
 		if (typeof data.cp === 'string') cp = data.cp;
 	}
 
+	function applyProfilePrefill() {
+		if (profilePrefillDone || showDraftRestore) return;
+		const user = page.data.user;
+		const profile = page.data.profile as Profile | null | undefined;
+		if (!user) return;
+		const patch = mergeProfileIntoSolicitante(
+			{
+				email,
+				nif,
+				nombre,
+				apellido1,
+				apellido2,
+				telefono,
+				provincia,
+				municipio,
+				localidad: municipio,
+				direccion,
+				cp
+			},
+			{ userEmail: user.email, profile }
+		);
+		if (patch.email != null) email = patch.email;
+		if (patch.nif != null) nif = patch.nif;
+		if (patch.nombre != null) nombre = patch.nombre;
+		if (patch.apellido1 != null) apellido1 = patch.apellido1;
+		if (patch.apellido2 != null) apellido2 = patch.apellido2;
+		if (patch.telefono != null) telefono = patch.telefono;
+		if (patch.provincia != null) provincia = normalizeProvince(patch.provincia);
+		if (patch.municipio != null) municipio = patch.municipio;
+		if (patch.direccion != null) direccion = patch.direccion;
+		if (patch.cp != null) cp = patch.cp;
+		profilePrefillDone = true;
+	}
+
 	async function continueDraft() {
 		if (pendingDraft) applyDraft(pendingDraft);
 		pendingDraft = null;
@@ -300,6 +339,8 @@
 		setDraftStorageAck();
 		draftReady = true;
 		docFiles = await loadDraftFiles(STORAGE_KEY);
+		profilePrefillDone = false;
+		applyProfilePrefill();
 	}
 
 	function startFreshDraft() {
@@ -309,6 +350,8 @@
 		pendingDraft = null;
 		showDraftRestore = false;
 		if (hasDraftStorageAck()) draftReady = true;
+		profilePrefillDone = false;
+		applyProfilePrefill();
 	}
 
 	function draftSnapshot(): Record<string, unknown> {
@@ -556,7 +599,16 @@
 		}
 		errors = merged;
 		errorSteps = bad;
-		return bad.length === 0;
+		const ok = bad.length === 0;
+		if (
+			ok &&
+			payError &&
+			(payError.startsWith('Revisa los datos del formulario') ||
+				payError.startsWith('Completa CCAA'))
+		) {
+			payError = null;
+		}
+		return ok;
 	}
 
 	function validateAllSteps(): boolean {
@@ -576,6 +628,13 @@
 		noteProgress(true);
 		save();
 	}
+
+	$effect(() => {
+		void page.data.user;
+		void page.data.profile;
+		void showDraftRestore;
+		applyProfilePrefill();
+	});
 
 	function next() {
 		funnel.stepCompleted({
@@ -920,6 +979,7 @@
 					<FormField label="Email" error={errors.email} required>
 						<input type="email" bind:value={email} autocomplete="email" />
 					</FormField>
+					<ExistingAccountNotice bind:exists={emailAccountExists} {email} />
 					<FormField
 						label="NIF/NIE"
 						error={errors.nif}
@@ -1005,6 +1065,7 @@
 							</li>
 							<li><span>Total</span><span>{breakdown ? formatEur(breakdown.total) : '—'}</span></li>
 						</ul>
+						<ExistingAccountNotice bind:exists={emailAccountExists} {email} mode="reminder" />
 						<PrivacyAcceptField bind:checked={acceptPrivacy} error={errors.privacy} />
 						{#if errors.total}<p class="err">{errors.total}</p>{/if}
 						{#if payError}<p class="err">{payError}</p>{/if}

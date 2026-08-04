@@ -1,0 +1,42 @@
+import { json, type RequestHandler } from '@sveltejs/kit';
+import { getServiceSupabase } from '$lib/supabase/admin';
+import { validateEmail } from '$lib/utils/validators';
+
+/** Comprueba si ya hay un perfil con ese email (para invitar a iniciar sesión en el wizard). */
+export const POST: RequestHandler = async ({ request, locals }) => {
+	let body: { email?: unknown };
+	try {
+		body = await request.json();
+	} catch {
+		return json({ error: 'JSON inválido' }, { status: 400 });
+	}
+
+	const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+	const emailErr = validateEmail(email);
+	if (emailErr) return json({ exists: false });
+
+	// Si ya hay sesión con ese mismo email, no hace falta pedir login
+	const sessionEmail = locals.user?.email?.trim().toLowerCase() || '';
+	if (sessionEmail && sessionEmail === email) {
+		return json({ exists: false, sameSession: true });
+	}
+
+	const sb = getServiceSupabase();
+	if (!sb) {
+		return json({ exists: false });
+	}
+
+	const { data, error } = await sb
+		.from('profiles')
+		.select('id')
+		.eq('email', email)
+		.limit(1)
+		.maybeSingle();
+
+	if (error) {
+		console.error('[email-exists]', error.message);
+		return json({ exists: false });
+	}
+
+	return json({ exists: Boolean(data?.id) });
+};

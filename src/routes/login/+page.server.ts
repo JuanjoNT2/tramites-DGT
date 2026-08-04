@@ -30,7 +30,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		);
 		throw redirect(303, dest);
 	}
-	return { next: url.searchParams.get('next') || '/' };
+	const emailParam = (url.searchParams.get('email') || '').trim().toLowerCase();
+	return {
+		next: url.searchParams.get('next') || '/',
+		email: emailParam
+	};
 };
 
 export const actions: Actions = {

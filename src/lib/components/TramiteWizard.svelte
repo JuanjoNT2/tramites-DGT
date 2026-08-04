@@ -5,7 +5,10 @@
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import DateInput from '$lib/components/ui/DateInput.svelte';
 	import NifInput from '$lib/components/ui/NifInput.svelte';
+	import ExistingAccountNotice from '$lib/components/ExistingAccountNotice.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
+	import { mergeProfileIntoSolicitante } from '$lib/cuenta/profile-prefill';
+	import type { Profile } from '$lib/supabase/types';
 	import {
 		duplicadoMotivos,
 		permisoClases,
@@ -87,6 +90,9 @@
 	let errorSteps = $state<number[]>([]);
 	/** Tras un intento de pago/envío, revalidar al editar para quitar el rojo al corregir */
 	let validationAttempted = $state(false);
+	/** Email del paso solicitante ya registrado → invitar a login (no bloquea) */
+	let emailAccountExists = $state(false);
+	let profilePrefillDone = $state(false);
 	let submitting = $state(false);
 	let saving = $state(false);
 	let payError = $state<string | null>(null);
@@ -284,6 +290,41 @@
 		if (typeof data.cartaFinalizacion === 'string') cartaFinalizacion = data.cartaFinalizacion;
 	}
 
+	function applyProfilePrefill() {
+		if (profilePrefillDone || showDraftRestore) return;
+		const user = page.data.user;
+		const profile = page.data.profile as Profile | null | undefined;
+		if (!user) return;
+		const patch = mergeProfileIntoSolicitante(
+			{
+				email,
+				nif,
+				nombre,
+				apellido1,
+				apellido2,
+				telefono,
+				provincia,
+				municipio,
+				localidad,
+				direccion,
+				cp
+			},
+			{ userEmail: user.email, profile }
+		);
+		if (patch.email != null) email = patch.email;
+		if (patch.nif != null) nif = patch.nif;
+		if (patch.nombre != null) nombre = patch.nombre;
+		if (patch.apellido1 != null) apellido1 = patch.apellido1;
+		if (patch.apellido2 != null) apellido2 = patch.apellido2;
+		if (patch.telefono != null) telefono = patch.telefono;
+		if (patch.provincia != null) provincia = patch.provincia;
+		if (patch.municipio != null) municipio = patch.municipio;
+		if (patch.localidad != null) localidad = patch.localidad;
+		if (patch.direccion != null) direccion = patch.direccion;
+		if (patch.cp != null) cp = patch.cp;
+		profilePrefillDone = true;
+	}
+
 	async function continueDraft() {
 		if (pendingDraft) applyDraft(pendingDraft);
 		pendingDraft = null;
@@ -291,6 +332,8 @@
 		setDraftStorageAck();
 		draftReady = true;
 		docFiles = await loadDraftFiles(storageKey);
+		profilePrefillDone = false;
+		applyProfilePrefill();
 	}
 
 	function startFreshDraft() {
@@ -300,6 +343,8 @@
 		pendingDraft = null;
 		showDraftRestore = false;
 		if (hasDraftStorageAck()) draftReady = true;
+		profilePrefillDone = false;
+		applyProfilePrefill();
 	}
 
 	function draftSnapshot(): Record<string, unknown> {
@@ -607,7 +652,12 @@
 		}
 		errors = merged;
 		errorSteps = bad;
-		return bad.length === 0;
+		const ok = bad.length === 0;
+		// Quitar el aviso global al corregir los campos
+		if (ok && payError?.startsWith('Revisa los datos del formulario')) {
+			payError = null;
+		}
+		return ok;
 	}
 
 	function validateAllSteps(): boolean {
@@ -627,6 +677,13 @@
 		noteProgress();
 		save();
 	}
+
+	$effect(() => {
+		void page.data.user;
+		void page.data.profile;
+		void showDraftRestore;
+		applyProfilePrefill();
+	});
 
 	function next() {
 		funnel.stepCompleted({
@@ -946,8 +1003,9 @@
 					</FormField>
 				{:else if step === 2 && variant !== 'cancelacion'}
 					<FormField label="Correo electrónico" error={errors.email} required>
-						<input type="email" bind:value={email} />
+						<input type="email" bind:value={email} autocomplete="email" />
 					</FormField>
+					<ExistingAccountNotice bind:exists={emailAccountExists} {email} />
 					<FormField
 						label="NIF/NIE/CIF"
 						error={errors.nif}
@@ -985,8 +1043,9 @@
 					</div>
 				{:else if variant === 'cancelacion' && step === 2}
 					<FormField label="Correo electrónico" error={errors.email} required>
-						<input type="email" bind:value={email} />
+						<input type="email" bind:value={email} autocomplete="email" />
 					</FormField>
+					<ExistingAccountNotice bind:exists={emailAccountExists} {email} />
 					<FormField
 						label="NIF/NIE/CIF"
 						error={errors.nif}
@@ -1173,6 +1232,11 @@
 							</li>
 						</ul>
 
+						<ExistingAccountNotice
+							bind:exists={emailAccountExists}
+							{email}
+							mode="reminder"
+						/>
 						<PrivacyAcceptField bind:checked={acceptPrivacy} error={errors.privacy} />
 						{#if payError}<p class="field-error">{payError}</p>{/if}
 

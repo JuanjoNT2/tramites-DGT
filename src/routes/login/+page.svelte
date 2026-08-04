@@ -5,7 +5,9 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const emailValue = $derived(
-		form && 'email' in form && typeof form.email === 'string' ? form.email : ''
+		form && 'email' in form && typeof form.email === 'string'
+			? form.email
+			: data.email || ''
 	);
 </script>
 
@@ -17,7 +19,13 @@
 <section class="section">
 	<div class="wrap auth card pad">
 		<h1>Iniciar sesión</h1>
-		<p class="lead">Accede a tu cuenta para asociar trámites y consultar el estado.</p>
+		<p class="lead">
+			{#if data.next && data.next !== '/' && data.next.startsWith('/tramitar')}
+				Accede a tu cuenta para continuar el trámite donde lo dejaste.
+			{:else}
+				Accede a tu cuenta para asociar trámites y consultar el estado.
+			{/if}
+		</p>
 
 		{#if form?.error}
 			<p class="err" role="alert">{form.error}</p>
