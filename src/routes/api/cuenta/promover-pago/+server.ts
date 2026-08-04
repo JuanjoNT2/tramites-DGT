@@ -1,4 +1,5 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
+import { isStaffRole } from '$lib/auth/roles';
 import { promoteSolicitudToPayment, requireUser, upsertVehiculoFromPayload } from '$lib/cuenta/data';
 import { validateSolicitudPayload } from '$lib/server/solicitud-validate';
 import { generatePagoAccessToken } from '$lib/pago/access';
@@ -6,6 +7,12 @@ import { sendOtraParteInviteEmail, sendSolicitudReceivedEmail } from '$lib/serve
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const user = requireUser(locals);
+	if (isStaffRole(locals.profile?.role)) {
+		return json(
+			{ error: 'Las cuentas de gestor no pueden iniciar trámites de ciudadano.' },
+			{ status: 403 }
+		);
+	}
 	let body: {
 		solicitudId?: string;
 		payload?: Record<string, unknown>;

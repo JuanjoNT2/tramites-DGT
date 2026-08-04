@@ -1,4 +1,5 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
+import { isStaffRole } from '$lib/auth/roles';
 import {
 	requireUser,
 	upsertDraftSolicitud,
@@ -43,6 +44,12 @@ function softFormatErrors(payload: Record<string, unknown>): string | null {
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const user = requireUser(locals);
+	if (isStaffRole(locals.profile?.role)) {
+		return json(
+			{ error: 'Las cuentas de gestor no pueden iniciar trámites de ciudadano.' },
+			{ status: 403 }
+		);
+	}
 	let body: {
 		tipo?: string;
 		payload?: Record<string, unknown>;

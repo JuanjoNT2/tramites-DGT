@@ -3,6 +3,7 @@ import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { env } from '$env/dynamic/private';
+import { isStaffRole } from '$lib/auth/roles';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { upsertVehiculoFromPayload } from '$lib/cuenta/data';
 import { validateSolicitudPayload } from '$lib/server/solicitud-validate';
@@ -29,6 +30,13 @@ async function saveLocalFallback(entry: LocalEntry) {
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
+	if (locals.user && isStaffRole(locals.profile?.role)) {
+		return json(
+			{ error: 'Las cuentas de gestor no pueden iniciar trámites de ciudadano.' },
+			{ status: 403 }
+		);
+	}
+
 	let body: Record<string, unknown>;
 	try {
 		body = await request.json();

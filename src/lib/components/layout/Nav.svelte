@@ -13,6 +13,8 @@
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
+	const staff = $derived(isStaffRole(profile?.role));
+	const brandHref = $derived(staff ? '/gestor' : '/');
 	const displayName = $derived.by(() => {
 		const name = profile?.full_name?.trim();
 		if (name) return name.split(/\s+/)[0] || name;
@@ -57,27 +59,37 @@
 
 <header class="nav">
 	<div class="wrap nav-in">
-		<a class="brand" href="/" onclick={closeMobile}>
+		<a class="brand" href={brandHref} onclick={closeMobile}>
 			<Logo variant="dark" height={58} />
 		</a>
 
 		<nav class="links" aria-label="Principal">
-			<div class="dropdown">
-				<button type="button" class="drop-btn">Trámites ▾</button>
-				<div class="drop-menu" role="menu">
-					{#each services as s (s.id)}
-						<a
-							href={s.tramitarPath}
-							role="menuitem"
-							data-analytics={CtaIds.NAV_TRAMITE}
-							onclick={() =>
-								trackClick(CtaIds.NAV_TRAMITE, { tramite: s.id, destination: s.tramitarPath })}
-						>
-							{s.title}
-						</a>
-					{/each}
+			{#if staff}
+				<a
+					href="/gestor"
+					data-analytics={CtaIds.NAV_LINK}
+					onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/gestor' })}
+				>
+					Panel gestor
+				</a>
+			{:else}
+				<div class="dropdown">
+					<button type="button" class="drop-btn">Trámites ▾</button>
+					<div class="drop-menu" role="menu">
+						{#each services as s (s.id)}
+							<a
+								href={s.tramitarPath}
+								role="menuitem"
+								data-analytics={CtaIds.NAV_TRAMITE}
+								onclick={() =>
+									trackClick(CtaIds.NAV_TRAMITE, { tramite: s.id, destination: s.tramitarPath })}
+							>
+								{s.title}
+							</a>
+						{/each}
+					</div>
 				</div>
-			</div>
+			{/if}
 			<div class="dropdown">
 				<button type="button" class="drop-btn">Calculadora ▾</button>
 				<div class="drop-menu" role="menu">
@@ -131,9 +143,12 @@
 				</button>
 				{#if openAccount}
 					<div class="drop-menu account-menu" role="menu">
-						{#if isStaffRole(profile?.role)}
+						{#if staff}
 							<a href="/gestor" role="menuitem" onclick={() => (openAccount = false)}
-								>Panel gestor</a
+								>Informe mensual</a
+							>
+							<a href="/gestor/usuarios" role="menuitem" onclick={() => (openAccount = false)}
+								>Usuarios</a
 							>
 							<a href="/gestor/seguridad" role="menuitem" onclick={() => (openAccount = false)}
 								>Cambiar contraseña</a
@@ -210,34 +225,44 @@
 			aria-label="Menú de navegación"
 		>
 			<nav class="mobile-nav" aria-label="Menú móvil">
-				<div class="mobile-group">
-					<button
-						type="button"
-						class="mobile-toggle"
-						aria-expanded={openTramites}
-						onclick={() => (openTramites = !openTramites)}
+				{#if staff}
+					<a
+						href="/gestor"
+						onclick={() => {
+							trackClick(CtaIds.NAV_LINK, { destination: '/gestor', nav: 'mobile' });
+							closeMobile();
+						}}>Panel gestor</a
 					>
-						Trámites
-						<span aria-hidden="true">{openTramites ? '▴' : '▾'}</span>
-					</button>
-					{#if openTramites}
-						<div class="mobile-sub">
-							{#each services as s (s.id)}
-								<a
-									href={s.tramitarPath}
-									onclick={() => {
-										trackClick(CtaIds.NAV_TRAMITE, {
-											tramite: s.id,
-											destination: s.tramitarPath,
-											nav: 'mobile'
-										});
-										closeMobile();
-									}}>{s.title}</a
-								>
-							{/each}
-						</div>
-					{/if}
-				</div>
+				{:else}
+					<div class="mobile-group">
+						<button
+							type="button"
+							class="mobile-toggle"
+							aria-expanded={openTramites}
+							onclick={() => (openTramites = !openTramites)}
+						>
+							Trámites
+							<span aria-hidden="true">{openTramites ? '▴' : '▾'}</span>
+						</button>
+						{#if openTramites}
+							<div class="mobile-sub">
+								{#each services as s (s.id)}
+									<a
+										href={s.tramitarPath}
+										onclick={() => {
+											trackClick(CtaIds.NAV_TRAMITE, {
+												tramite: s.id,
+												destination: s.tramitarPath,
+												nav: 'mobile'
+											});
+											closeMobile();
+										}}>{s.title}</a
+									>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
 
 				<div class="mobile-group">
 					<button
@@ -293,9 +318,10 @@
 					}}>Contacto</a
 				>
 				{#if user}
-					{#if isStaffRole(profile?.role)}
+					{#if staff}
 						<a href="/gestor" class="btn mobile-cta" onclick={closeMobile}>Panel gestor</a>
 						<div class="mobile-sub account-mobile">
+							<a href="/gestor/usuarios" onclick={closeMobile}>Usuarios</a>
 							<a href="/gestor/seguridad" onclick={closeMobile}>Cambiar contraseña</a>
 							<form method="POST" action="/gestor?/logout">
 								<button type="submit" class="mobile-logout">Cerrar sesión</button>

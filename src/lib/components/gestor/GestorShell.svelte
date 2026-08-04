@@ -2,7 +2,7 @@
 	let {
 		email,
 		role = null,
-		vista = 'todos',
+		vista = 'inicio',
 		children
 	}: {
 		email?: string | null;
@@ -12,6 +12,14 @@
 	} = $props();
 
 	const tramitesActive = $derived(typeof vista === 'string' && vista.startsWith('tramites'));
+	const usuariosActive = $derived(
+		vista === 'todos' ||
+			vista === 'en_curso' ||
+			vista === 'finalizados' ||
+			vista === 'sin_tramites' ||
+			vista === 'pendientes' ||
+			vista === 'usuarios'
+	);
 	let menuOpen = $state(false);
 
 	function closeMenu() {
@@ -24,7 +32,7 @@
 		<div class="top">
 			<div class="brand">
 				<span class="brand-title">Panel de gestores</span>
-				<span class="brand-sub">Usuarios y trámites</span>
+				<span class="brand-sub">Informe y seguimiento</span>
 			</div>
 			<button
 				type="button"
@@ -39,16 +47,8 @@
 
 		<div id="gestor-nav" class="drawer" class:open={menuOpen}>
 			<nav onclick={closeMenu}>
-				<a href="/gestor?vista=todos" class:active={vista === 'todos'}>Todos los usuarios</a>
-				<a
-					href="/gestor?vista=en_curso"
-					class:active={vista === 'en_curso' || vista === 'pendientes'}
-					>Con trámites en curso</a
-				>
-				<a href="/gestor?vista=finalizados" class:active={vista === 'finalizados'}
-					>Trámites finalizados</a
-				>
-				<a href="/gestor?vista=sin_tramites" class:active={vista === 'sin_tramites'}>Sin trámites</a>
+				<a href="/gestor" class:active={vista === 'inicio'}>Informe mensual</a>
+				<a href="/gestor/usuarios?vista=todos" class:active={usuariosActive}>Usuarios</a>
 				<a href="/gestor/tramites?vista=pendientes" class:active={tramitesActive}
 					>Cola de trámites</a
 				>
@@ -69,7 +69,6 @@
 				<form method="POST" action="/gestor?/logout" class="logout">
 					<button type="submit">Cerrar sesión</button>
 				</form>
-				<a class="home" href="/">← Sitio público</a>
 			</div>
 		</div>
 	</aside>
@@ -122,106 +121,90 @@
 		font-size: 1.05rem;
 	}
 	.brand-sub {
-		font-size: 0.75rem;
+		font-size: 0.78rem;
 		opacity: 0.75;
-		font-weight: 500;
 	}
 	.menu-btn {
 		display: none;
-		flex-shrink: 0;
 		border: 1px solid rgba(255, 255, 255, 0.35);
-		background: rgba(255, 255, 255, 0.08);
+		background: transparent;
 		color: #fff;
 		border-radius: 8px;
-		padding: 8px 12px;
+		padding: 6px 10px;
 		font: inherit;
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 		font-weight: 700;
 		cursor: pointer;
 	}
-	.drawer {
+	.drawer nav {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
-		flex: 1;
-		min-height: 0;
+		gap: 4px;
 	}
-	nav {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-	}
-	nav a {
-		color: #fff;
+	.drawer a {
+		color: rgba(255, 255, 255, 0.88);
 		text-decoration: none;
 		padding: 10px 12px;
 		border-radius: 8px;
+		font-size: 0.9rem;
 		font-weight: 600;
-		font-size: 0.88rem;
-		line-height: 1.3;
 	}
-	nav a:hover,
-	nav a.active {
-		background: rgba(255, 255, 255, 0.14);
+	.drawer a:hover {
+		background: rgba(255, 255, 255, 0.08);
 	}
-	nav a.active {
-		outline: 1px solid rgba(159, 216, 232, 0.45);
+	.drawer a.active {
+		background: #00c6d1;
+		color: #003050;
 	}
 	.foot {
 		margin-top: auto;
-		display: flex;
-		flex-direction: column;
+		padding-top: 16px;
+		border-top: 1px solid rgba(255, 255, 255, 0.15);
+		display: grid;
 		gap: 10px;
 	}
 	.who {
 		margin: 0;
-		font-size: 0.75rem;
+		font-size: 0.78rem;
 		opacity: 0.9;
-		word-break: break-all;
+		overflow-wrap: anywhere;
 	}
 	.who a {
-		color: #9fd8e8;
+		color: #00c6d1;
 	}
 	.role {
 		display: inline-block;
 		margin-left: 6px;
 		padding: 1px 6px;
 		border-radius: 999px;
-		background: rgba(159, 216, 232, 0.25);
+		background: rgba(255, 255, 255, 0.15);
 		font-size: 0.65rem;
 		text-transform: uppercase;
-		letter-spacing: 0.04em;
+		font-weight: 800;
 	}
 	.logout {
 		margin: 0;
 	}
 	.logout button {
-		background: transparent;
-		border: 1px solid rgba(255, 255, 255, 0.35);
-		color: #fff;
-		padding: 8px 10px;
-		border-radius: 8px;
-		font: inherit;
-		font-size: 0.85rem;
-		font-weight: 600;
-		cursor: pointer;
 		width: 100%;
-		text-align: left;
+		border: none;
+		border-radius: 8px;
+		padding: 9px 12px;
+		background: rgba(255, 255, 255, 0.12);
+		color: #fff;
+		font: inherit;
+		font-weight: 700;
+		font-size: 0.85rem;
+		cursor: pointer;
 	}
 	.logout button:hover {
-		background: rgba(255, 255, 255, 0.1);
-	}
-	.home {
-		color: #9fd8e8;
-		font-size: 0.85rem;
-		text-decoration: none;
+		background: rgba(255, 255, 255, 0.2);
 	}
 	.scrim {
 		display: none;
 	}
 	.main {
-		padding: 28px 32px;
-		overflow: auto;
+		padding: 24px 28px 48px;
 		min-width: 0;
 	}
 
@@ -231,42 +214,28 @@
 		}
 		.side {
 			position: sticky;
-			top: 0;
 			min-height: 0;
-			padding: 12px 14px;
-			gap: 0;
+			padding-bottom: 12px;
 		}
 		.menu-btn {
 			display: inline-flex;
-			align-items: center;
 		}
 		.drawer {
 			display: none;
-			margin-top: 12px;
-			padding-top: 4px;
-			border-top: 1px solid rgba(255, 255, 255, 0.12);
 		}
 		.drawer.open {
-			display: flex;
-		}
-		.foot {
-			margin-top: 8px;
+			display: block;
 		}
 		.scrim {
 			display: block;
 			position: fixed;
 			inset: 0;
-			z-index: 30;
 			border: none;
-			padding: 0;
-			background: rgba(0, 24, 40, 0.35);
-			cursor: pointer;
-		}
-		.side {
-			z-index: 40;
+			background: rgba(0, 0, 0, 0.35);
+			z-index: 30;
 		}
 		.main {
-			padding: 20px 16px;
+			padding: 16px;
 		}
 	}
 </style>

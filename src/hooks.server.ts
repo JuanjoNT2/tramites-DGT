@@ -97,6 +97,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 		throw redirect(303, dest);
 	}
 
+	// Gestores no deben iniciar trámites de ciudadano ni usar la home pública como funnel
+	const isStaff = Boolean(event.locals.user && isStaffRole(event.locals.profile?.role));
+	if (isStaff) {
+		const isHome = path === '/';
+		const isTramitar = path === '/tramitar' || path.startsWith('/tramitar/');
+		if (isHome || isTramitar) {
+			throw redirect(303, '/gestor');
+		}
+	}
+
 	return resolve(event, {
 		filterSerializedResponseHeaders(name) {
 			return name === 'content-range' || name === 'x-supabase-api-version';

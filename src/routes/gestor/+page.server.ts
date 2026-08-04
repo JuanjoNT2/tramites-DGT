@@ -1,36 +1,27 @@
-import type { Actions, PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { loadGestorClientes, type GestorVista } from '$lib/gestor/clients';
+import type { Actions, PageServerLoad } from './$types';
+import {
+	loadGestorMonthlyReport,
+	recentMonthOptions,
+	resolveReportMonth
+} from '$lib/gestor/stats';
 
 export const load: PageServerLoad = async ({ url }) => {
-	const raw = url.searchParams.get('vista') || 'todos';
-	const vista: GestorVista =
-		raw === 'en_curso' ||
-		raw === 'finalizados' ||
-		raw === 'sin_tramites' ||
-		raw === 'pendientes'
-			? raw === 'pendientes'
-				? 'en_curso'
-				: raw
-			: 'todos';
-	const q = (url.searchParams.get('q') || '').trim();
+	// Compat: antiguos filtros de usuarios vivían en /gestor?vista=
+	const vista = url.searchParams.get('vista');
+	if (vista) {
+		const q = url.searchParams.get('q');
+		const params = new URLSearchParams({ vista });
+		if (q) params.set('q', q);
+		throw redirect(303, `/gestor/usuarios?${params}`);
+	}
 
-	const { items, counts, error } = await loadGestorClientes(vista, q);
-
-	const titles: Record<GestorVista, string> = {
-		todos: 'Todos los usuarios',
-		en_curso: 'Usuarios con trámites en curso',
-		finalizados: 'Usuarios con trámites finalizados',
-		sin_tramites: 'Usuarios sin trámites'
-	};
+	const { year, month } = resolveReportMonth(url.searchParams.get('mes'));
+	const report = await loadGestorMonthlyReport(year, month);
 
 	return {
-		vista,
-		q,
-		items,
-		counts,
-		error,
-		title: titles[vista]
+		report,
+		monthOptions: recentMonthOptions()
 	};
 };
 
