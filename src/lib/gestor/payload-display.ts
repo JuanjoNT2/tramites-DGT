@@ -96,9 +96,8 @@ const LABELS: Record<string, string> = {
 	'breakdown.itpAmount': 'Cuota ITP',
 	'breakdown.facturaEmpresa': 'Factura empresa (sin ITP)',
 	'breakdown.sinValorBoe': 'Sin valor BOE del modelo',
-	'breakdown.tasaDgt': 'Tasa DGT',
 	'breakdown.informeDgt': 'Informe DGT',
-	'breakdown.tramitacion': 'Gestión / tramitación',
+	'breakdown.tramitacion': 'Gestión / tramitación (incl. tasas DGT)',
 	'breakdown.total': 'Total (desglose)',
 	'metaFiscal.valoracionReal': 'Valor venal (fiscal)',
 	'metaFiscal.baseImponible': 'Base imponible (fiscal)',
@@ -160,7 +159,6 @@ const MONEY_KEYS = new Set([
 	'breakdown.itpAmount',
 	'breakdown.informeDgt',
 	'breakdown.tramitacion',
-	'breakdown.tasaDgt',
 	'breakdown.total',
 	'metaFiscal.valoracionReal',
 	'metaFiscal.baseImponible',
@@ -283,6 +281,16 @@ export function payloadFieldsForDisplay(payload: Record<string, unknown> | null 
 				// No expandir objetos muy grandes/técnicos: mostrar resumen o hijos filtrados
 				if (k === 'modeloMeta') continue;
 				walk(v as Record<string, unknown>, path);
+				continue;
+			}
+
+			// Tasa DGT va a 0 en el breakdown: está incluida en tramitación.
+			if (path === 'breakdown.tasaDgt') continue;
+			// No mostrar importes a cero que solo ensucian (informe no contratado, etc.)
+			if (
+				(path === 'breakdown.informeDgt' || path === 'breakdown.tasaDgt') &&
+				(v === 0 || v === '0')
+			) {
 				continue;
 			}
 
