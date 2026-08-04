@@ -24,6 +24,7 @@
 	import {
 		validateEmail,
 		validateMatricula,
+		normalizeBastidor,
 		validateBastidor,
 		validateNifNie,
 		validatePhone,
@@ -245,7 +246,7 @@
 		if (data.tipoVehiculo === 'coche' || data.tipoVehiculo === 'moto')
 			tipoVehiculo = data.tipoVehiculo;
 		if (typeof data.matricula === 'string') matricula = data.matricula;
-		if (typeof data.bastidor === 'string') bastidor = data.bastidor;
+		if (typeof data.bastidor === 'string') bastidor = normalizeBastidor(data.bastidor).slice(0, 17);
 		if (typeof data.marcaId === 'string') marcaId = data.marcaId;
 		if (typeof data.marcaNombre === 'string') marcaNombre = data.marcaNombre;
 		if (typeof data.combustibleId === 'string') combustibleId = data.combustibleId;
@@ -733,14 +734,24 @@
 					<FormField
 						label="Bastidor (VIN)"
 						error={errors.bastidor}
-						hint="17 caracteres en la ficha técnica"
+						hint="17 caracteres de la ficha técnica (sin espacios ni guiones; sin I, O ni Q)"
 						required
 					>
 						<input
 							bind:value={bastidor}
-							placeholder="VF1XXXXXXXXXXXXXX"
-							maxlength="17"
-							oninput={() => noteProgress()}
+							placeholder="Ej. VF1ABCDEF12345678"
+							maxlength="20"
+							autocomplete="off"
+							spellcheck="false"
+							oninput={() => {
+								bastidor = normalizeBastidor(bastidor).slice(0, 17);
+								const err = validateBastidor(bastidor);
+								// Limpia al ser válido; si ya había error, actualiza el mensaje al escribir.
+								if (!err || errors.bastidor) {
+									errors = { ...errors, bastidor: err };
+								}
+								noteProgress();
+							}}
 						/>
 					</FormField>
 					{#if tipoVehiculo === 'coche'}

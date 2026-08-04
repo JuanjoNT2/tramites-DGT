@@ -80,11 +80,22 @@ function validateCif(v: string): string | null {
 	return null;
 }
 
+/** VIN: mayúsculas, sin espacios/guiones ni caracteres extra. */
+export function normalizeBastidor(value: string): string {
+	return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 export function validateBastidor(value: string): string | null {
-	const v = value.trim().toUpperCase();
+	const v = normalizeBastidor(value);
 	if (!v) return 'Introduce el bastidor (VIN)';
+	if (v.length !== 17) {
+		return `El bastidor debe tener exactamente 17 caracteres (ahora lleva ${v.length})`;
+	}
+	if (/[IOQ]/.test(v)) {
+		return 'El bastidor no puede incluir las letras I, O ni Q (confundibles con 1 y 0)';
+	}
 	if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(v)) {
-		return 'El bastidor debe tener 17 caracteres (sin I, O ni Q)';
+		return 'Bastidor no válido: solo letras y números (sin I, O ni Q)';
 	}
 	return null;
 }

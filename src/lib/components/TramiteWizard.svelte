@@ -22,6 +22,7 @@
 		validateRequired,
 		validateCodigoPostal,
 		validateDate,
+		normalizeBastidor,
 		validateBastidor,
 		todayIso
 	} from '$lib/utils/validators';
@@ -232,7 +233,7 @@
 			solicitudId = data.solicitudId;
 		}
 		if (typeof data.matricula === 'string') matricula = data.matricula;
-		if (typeof data.bastidor === 'string') bastidor = data.bastidor;
+		if (typeof data.bastidor === 'string') bastidor = normalizeBastidor(data.bastidor).slice(0, 17);
 		if (typeof data.tipoVehiculo === 'string')
 			tipoVehiculo = data.tipoVehiculo as 'coche' | 'moto';
 		if (typeof data.distintivoTipo === 'string') distintivoTipo = data.distintivoTipo;
@@ -802,7 +803,17 @@
 						<input
 							bind:value={bastidor}
 							placeholder="17 caracteres VIN"
-							oninput={noteProgress}
+							maxlength="20"
+							autocomplete="off"
+							spellcheck="false"
+							oninput={() => {
+								bastidor = normalizeBastidor(bastidor).slice(0, 17);
+								const err = bastidor ? validateBastidor(bastidor) : null;
+								if (!err || errors.bastidor) {
+									errors = { ...errors, bastidor: err };
+								}
+								noteProgress();
+							}}
 						/>
 					</FormField>
 				{:else if
