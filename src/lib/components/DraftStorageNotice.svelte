@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PrivacyPolicyModal from '$lib/components/legal/PrivacyPolicyModal.svelte';
+
 	let {
 		open = false,
 		onconfirm
@@ -6,6 +8,13 @@
 		open?: boolean;
 		onconfirm: () => void;
 	} = $props();
+
+	let privacyOpen = $state(false);
+
+	function openPrivacy(e: MouseEvent) {
+		e.preventDefault();
+		privacyOpen = true;
+	}
 </script>
 
 {#if open}
@@ -26,12 +35,14 @@
 			<p class="legal">
 				El borrador se guarda de forma local en tu navegador. Cuando completes el trámite, los datos
 				se envían a nuestros sistemas para gestionar la solicitud. Más información en la
-				<a href="/politica-de-privacidad">política de privacidad</a>.
+				<a href="/politica-de-privacidad" onclick={openPrivacy}>política de privacidad</a>.
 			</p>
 			<button type="button" class="ok" onclick={onconfirm}>Entendido</button>
 		</div>
 	</div>
 {/if}
+
+<PrivacyPolicyModal open={privacyOpen} onclose={() => (privacyOpen = false)} />
 
 <style>
 	.overlay {

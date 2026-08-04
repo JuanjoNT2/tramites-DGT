@@ -27,6 +27,7 @@
 	} from '$lib/utils/validators';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
 	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
+	import PrivacyAcceptField from '$lib/components/legal/PrivacyAcceptField.svelte';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
 	import VmpModelPicker from '$lib/components/VmpModelPicker.svelte';
 	import { createSolicitud } from '$lib/pago/client';
@@ -1058,11 +1059,7 @@
 							</li>
 						</ul>
 
-						<label class="check">
-							<input type="checkbox" bind:checked={acceptPrivacy} />
-							Acepto la <a href="/politica-de-privacidad" target="_blank">política de privacidad</a>
-						</label>
-						{#if errors.privacy}<p class="field-error">{errors.privacy}</p>{/if}
+						<PrivacyAcceptField bind:checked={acceptPrivacy} error={errors.privacy} />
 						{#if payError}<p class="field-error">{payError}</p>{/if}
 
 						<button

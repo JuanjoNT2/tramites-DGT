@@ -10,6 +10,7 @@
 	import VehicleModelPicker from '$lib/components/VehicleModelPicker.svelte';
 	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
 	import { ccaaList } from '$lib/data/vehicles';
+	import { provinces } from '$lib/data/provinces';
 	import type { PriceBreakdown } from '$lib/utils/pricing';
 	import { formatEur } from '$lib/utils/pricing';
 	import {
@@ -36,6 +37,7 @@
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
 	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
+	import PrivacyAcceptField from '$lib/components/legal/PrivacyAcceptField.svelte';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
 	import { getStaticSeo } from '$lib/seo/site';
 	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
@@ -54,6 +56,13 @@
 	const STORAGE_KEY = 'dgt-transfer-wizard';
 	const stepLabels = ['Vehículo', 'Intervinientes', 'Envío y documentos', 'Resumen'];
 	const TOTAL_STEPS = 4;
+	const provinceOptions = provinces.map((p) => ({ value: p, label: p }));
+
+	function normalizeProvince(raw: string): string {
+		const t = raw.trim();
+		if (!t) return '';
+		return provinces.find((p) => p.toLowerCase() === t.toLowerCase()) ?? '';
+	}
 
 	/** Si el borrador era de 9 pasos (step>4), remapea: 5–6→2, 7–8→3, 9→4. */
 	function clampLegacyStep(raw: number): number {
@@ -264,7 +273,7 @@
 		if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
 		if (typeof data.telefono === 'string') telefono = data.telefono;
 		if (typeof data.otraParteEmail === 'string') otraParteEmail = data.otraParteEmail;
-		if (typeof data.provincia === 'string') provincia = data.provincia;
+		if (typeof data.provincia === 'string') provincia = normalizeProvince(data.provincia);
 		if (typeof data.municipio === 'string') municipio = data.municipio;
 		if (typeof data.direccion === 'string') direccion = data.direccion;
 		if (typeof data.cp === 'string') cp = data.cp;
@@ -441,7 +450,10 @@
 		}
 		if (s === 3) {
 			// Antiguo paso 7 + documentos obligatorios
-			e.provincia = validateRequired(provincia, 'La provincia');
+			if (!provincia.trim()) e.provincia = 'La provincia es obligatoria';
+			else if (!provinces.includes(provincia as (typeof provinces)[number])) {
+				e.provincia = 'Selecciona una provincia de la lista';
+			}
 			e.municipio = validateRequired(municipio, 'El municipio');
 			e.direccion = validateRequired(direccion, 'La dirección');
 			e.cp = validateCodigoPostal(cp);
@@ -849,7 +861,16 @@
 					</FormField>
 				{:else if step === 3}
 					<FormField label="Provincia" error={errors.provincia} required>
-						<input bind:value={provincia} placeholder="Madrid" />
+						<SearchSelect
+							options={provinceOptions}
+							bind:value={provincia}
+							placeholder="Buscar provincia…"
+							maxResults={52}
+							minChars={0}
+							onChange={() => {
+								errors = { ...errors, provincia: null };
+							}}
+						/>
 					</FormField>
 					<FormField label="Municipio" error={errors.municipio} required>
 						<input bind:value={municipio} />
@@ -896,11 +917,7 @@
 							</li>
 							<li><span>Total</span><span>{breakdown ? formatEur(breakdown.total) : '—'}</span></li>
 						</ul>
-						<label class="check">
-							<input type="checkbox" bind:checked={acceptPrivacy} />
-							Acepto la <a href="/politica-de-privacidad" target="_blank">política de privacidad</a>
-						</label>
-						{#if errors.privacy}<p class="err">{errors.privacy}</p>{/if}
+						<PrivacyAcceptField bind:checked={acceptPrivacy} error={errors.privacy} />
 						{#if errors.total}<p class="err">{errors.total}</p>{/if}
 						{#if payError}<p class="err">{payError}</p>{/if}
 						<button
