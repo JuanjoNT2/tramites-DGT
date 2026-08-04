@@ -2,22 +2,7 @@ import PDFDocument from 'pdfkit';
 import type { Solicitud } from '$lib/supabase/types';
 import { SOLICITUD_STATUS_LABELS, SOLICITUD_TIPO_LABELS } from '$lib/supabase/types';
 import type { SolicitudStatus } from '$lib/supabase/types';
-
-function flattenPayload(payload: Record<string, unknown>, prefix = ''): [string, string][] {
-	const rows: [string, string][] = [];
-	for (const [k, v] of Object.entries(payload)) {
-		if (k === 'accessToken' || k === 'raw') continue;
-		const key = prefix ? `${prefix}.${k}` : k;
-		if (v != null && typeof v === 'object' && !Array.isArray(v)) {
-			rows.push(...flattenPayload(v as Record<string, unknown>, key));
-		} else if (Array.isArray(v)) {
-			rows.push([key, v.map((x) => (typeof x === 'object' ? JSON.stringify(x) : String(x))).join('; ')]);
-		} else {
-			rows.push([key, v == null ? '' : String(v)]);
-		}
-	}
-	return rows;
-}
+import { payloadFieldsForDisplay } from '$lib/gestor/payload-display';
 
 export function solicitudToExportRow(s: Solicitud): Record<string, unknown> {
 	const payload = (s.payload || {}) as Record<string, unknown>;
@@ -93,8 +78,8 @@ export async function buildSolicitudPdf(s: Solicitud): Promise<Buffer> {
 	doc.fontSize(13).fillColor('#003050').text('Datos');
 	doc.moveDown(0.3);
 	doc.fontSize(10).fillColor('#1a2b3c');
-	for (const [k, v] of flattenPayload((s.payload || {}) as Record<string, unknown>)) {
-		doc.text(`${k}: ${v}`);
+	for (const row of payloadFieldsForDisplay((s.payload || {}) as Record<string, unknown>)) {
+		doc.text(`${row.label}: ${row.value}`);
 	}
 	doc.end();
 	return done;

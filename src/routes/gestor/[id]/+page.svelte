@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { SolicitudStatus } from '$lib/supabase/types';
+	import { payloadFieldsForDisplay } from '$lib/gestor/payload-display';
 
 	let { data }: { data: PageData } = $props();
 	let s = $state(data.item);
@@ -16,22 +17,7 @@
 		status = String(data.item.status);
 	});
 
-	function entries(obj: Record<string, unknown>, prefix = ''): [string, string][] {
-		const out: [string, string][] = [];
-		for (const [k, v] of Object.entries(obj)) {
-			const key = prefix ? `${prefix}.${k}` : k;
-			if (v != null && typeof v === 'object' && !Array.isArray(v)) {
-				out.push(...entries(v as Record<string, unknown>, key));
-			} else if (Array.isArray(v)) {
-				out.push([key, JSON.stringify(v)]);
-			} else {
-				out.push([key, v == null ? '' : String(v)]);
-			}
-		}
-		return out;
-	}
-
-	const fields = $derived(entries(s.payload || {}));
+	const fields = $derived(payloadFieldsForDisplay((s.payload || {}) as Record<string, unknown>));
 
 	async function changeStatus() {
 		msg = null;
@@ -175,17 +161,21 @@
 </section>
 
 <section class="card">
-	<h2>Campos del formulario</h2>
-	<table>
-		<tbody>
-			{#each fields as [k, v]}
-				<tr>
-					<th>{k}</th>
-					<td>{v}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+	<h2>Datos del trámite</h2>
+	{#if fields.length}
+		<table>
+			<tbody>
+				{#each fields as row}
+					<tr>
+						<th>{row.label}</th>
+						<td>{row.value}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{:else}
+		<p class="empty">No hay datos de formulario en esta solicitud.</p>
+	{/if}
 </section>
 
 <section class="card">
