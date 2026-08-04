@@ -32,7 +32,7 @@
 		<div class="top">
 			<div class="brand">
 				<span class="brand-title">Panel de gestores</span>
-				<span class="brand-sub">Informe y seguimiento</span>
+				<span class="brand-sub">Dashboard y seguimiento</span>
 			</div>
 			<button
 				type="button"
@@ -47,7 +47,7 @@
 
 		<div id="gestor-nav" class="drawer" class:open={menuOpen}>
 			<nav onclick={closeMenu}>
-				<a href="/gestor" class:active={vista === 'inicio'}>Informe mensual</a>
+				<a href="/gestor" class:active={vista === 'inicio'}>Dashboard</a>
 				<a href="/gestor/usuarios?vista=todos" class:active={usuariosActive}>Usuarios</a>
 				<a href="/gestor/tramites?vista=pendientes" class:active={tramitesActive}
 					>Cola de trámites</a

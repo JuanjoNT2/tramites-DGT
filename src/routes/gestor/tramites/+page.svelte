@@ -26,7 +26,7 @@
 		<p class="sub">Cola de trabajo: todas las solicitudes del sistema.</p>
 	</div>
 	<div class="exports">
-		<a class="btn secondary" href="/gestor?vista=todos">Ver usuarios</a>
+		<a class="btn secondary" href="/gestor/usuarios?vista=todos">Ver usuarios</a>
 		<a class="btn" href="/gestor/api/export/csv?tipo=todos">CSV</a>
 		<a class="btn secondary" href="/gestor/api/export/excel?tipo=todos">Excel</a>
 	</div>

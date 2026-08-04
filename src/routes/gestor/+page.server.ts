@@ -1,10 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import {
-	loadGestorMonthlyReport,
-	recentMonthOptions,
-	resolveReportMonth
-} from '$lib/gestor/stats';
+import { loadGestorDashboard, parseDashboardFilters } from '$lib/gestor/stats';
 
 export const load: PageServerLoad = async ({ url }) => {
 	// Compat: antiguos filtros de usuarios vivían en /gestor?vista=
@@ -16,13 +12,10 @@ export const load: PageServerLoad = async ({ url }) => {
 		throw redirect(303, `/gestor/usuarios?${params}`);
 	}
 
-	const { year, month } = resolveReportMonth(url.searchParams.get('mes'));
-	const report = await loadGestorMonthlyReport(year, month);
+	const filters = parseDashboardFilters(url);
+	const dashboard = await loadGestorDashboard(filters);
 
-	return {
-		report,
-		monthOptions: recentMonthOptions()
-	};
+	return { dashboard };
 };
 
 export const actions: Actions = {

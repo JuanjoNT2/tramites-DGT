@@ -145,7 +145,7 @@
 					<div class="drop-menu account-menu" role="menu">
 						{#if staff}
 							<a href="/gestor" role="menuitem" onclick={() => (openAccount = false)}
-								>Informe mensual</a
+								>Dashboard</a
 							>
 							<a href="/gestor/usuarios" role="menuitem" onclick={() => (openAccount = false)}
 								>Usuarios</a

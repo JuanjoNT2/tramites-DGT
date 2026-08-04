@@ -15,7 +15,7 @@
 	}
 </script>
 
-<p class="back"><a href="/gestor?vista=todos">← Volver a usuarios</a></p>
+<p class="back"><a href="/gestor/usuarios?vista=todos">← Volver a usuarios</a></p>
 
 <header class="head">
 	<div>
