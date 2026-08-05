@@ -124,24 +124,30 @@
 	}
 	.form {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		gap: 12px;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px 14px;
 		align-items: end;
 	}
 	label {
 		display: grid;
 		gap: 4px;
+		min-width: 0;
 		font-weight: 600;
 		font-size: 0.85rem;
 	}
 	input,
 	select {
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		padding: 8px 10px;
 		border: 1px solid #c5d0da;
 		border-radius: 8px;
 		font: inherit;
 	}
 	.btn {
+		grid-column: 1 / -1;
+		justify-self: start;
 		padding: 10px 14px;
 		background: #00c6d1;
 		color: #003050;
@@ -149,6 +155,11 @@
 		border: none;
 		border-radius: 8px;
 		cursor: pointer;
+	}
+	@media (max-width: 520px) {
+		.form {
+			grid-template-columns: 1fr;
+		}
 	}
 	.table-wrap {
 		min-width: 0;

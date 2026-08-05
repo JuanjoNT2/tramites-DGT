@@ -1,35 +1,17 @@
 <script lang="ts">
-	import type { ActionData, PageData } from './$types';
+	import type { PageData } from './$types';
+	import { payloadFieldsForDisplay } from '$lib/gestor/payload-display';
 	import { SOLICITUD_TIPO_LABELS, SOLICITUD_STATUS_LABELS } from '$lib/supabase/types';
 	import type { SolicitudStatus } from '$lib/supabase/types';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 	const s = $derived(data.item);
-	let payloadText = $state(JSON.stringify(data.item.payload ?? {}, null, 2));
 	let uploading = $state(false);
 	let uploadMsg = $state<string | null>(null);
 
-	$effect(() => {
-		payloadText = JSON.stringify(data.item.payload ?? {}, null, 2);
-	});
-
-	const HIDDEN_KEYS = new Set(['accessToken', 'raw', 'acceptPrivacy']);
-
-	function entries(obj: Record<string, unknown>, prefix = ''): [string, string][] {
-		const out: [string, string][] = [];
-		for (const [k, v] of Object.entries(obj)) {
-			if (HIDDEN_KEYS.has(k)) continue;
-			const key = prefix ? `${prefix}.${k}` : k;
-			if (v != null && typeof v === 'object' && !Array.isArray(v)) {
-				out.push(...entries(v as Record<string, unknown>, key));
-			} else {
-				out.push([key, v == null ? '' : Array.isArray(v) ? JSON.stringify(v) : String(v)]);
-			}
-		}
-		return out;
-	}
-
-	const fields = $derived(entries(s.payload || {}));
+	const fields = $derived(
+		payloadFieldsForDisplay((s.payload || {}) as Record<string, unknown>)
+	);
 
 	async function uploadDoc(e: Event) {
 		const input = e.currentTarget as HTMLInputElement;
@@ -71,34 +53,21 @@
 	</div>
 </header>
 
-{#if form?.error}
-	<p class="err">{form.error}</p>
-{/if}
-{#if form?.ok}
-	<p class="ok">Cambios guardados.</p>
-{/if}
-
 <section class="card">
-	<h2>Datos del formulario</h2>
-	{#if data.canEdit}
-		<form method="POST" action="?/save" class="edit">
-			<label>
-				Payload (JSON editable mientras el estado es «nueva»)
-				<textarea name="payload_json" rows="14" bind:value={payloadText}></textarea>
-			</label>
-			<button type="submit" class="btn">Guardar cambios</button>
-		</form>
-	{:else}
+	<h2>Datos del trámite</h2>
+	{#if fields.length}
 		<table>
 			<tbody>
-				{#each fields as [k, v]}
+				{#each fields as row}
 					<tr>
-						<th>{k}</th>
-						<td>{v}</td>
+						<th>{row.label}</th>
+						<td>{row.value}</td>
 					</tr>
 				{/each}
 			</tbody>
 		</table>
+	{:else}
+		<p class="empty">No hay datos del formulario para mostrar.</p>
 	{/if}
 </section>
 
@@ -177,32 +146,12 @@
 		padding: 8px 6px;
 		border-bottom: 1px solid #e8eef3;
 		vertical-align: top;
+		overflow-wrap: anywhere;
 	}
 	th {
-		width: 30%;
+		width: 36%;
 		color: #5a6b7d;
-	}
-	.edit {
-		display: grid;
-		gap: 12px;
-	}
-	textarea {
-		width: 100%;
-		font-family: ui-monospace, monospace;
-		font-size: 0.8rem;
-		padding: 10px;
-		border: 1px solid #c5d0da;
-		border-radius: 8px;
-	}
-	.btn {
-		justify-self: start;
-		padding: 10px 16px;
-		background: #00c6d1;
-		color: #003050;
-		font-weight: 700;
-		border: none;
-		border-radius: 8px;
-		cursor: pointer;
+		font-weight: 600;
 	}
 	.docs {
 		list-style: none;
@@ -218,6 +167,7 @@
 	}
 	.empty {
 		color: #5a6b7d;
+		margin: 0;
 	}
 	.upload {
 		display: grid;
@@ -225,13 +175,6 @@
 		font-weight: 600;
 		font-size: 0.9rem;
 	}
-	.err {
-		background: #fde8e8;
-		color: #9b1c1c;
-		padding: 10px;
-		border-radius: 8px;
-	}
-	.ok,
 	.msg {
 		background: #e8f5ee;
 		color: #0f5132;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -17,14 +18,24 @@
 {/if}
 
 <form method="POST" class="form card">
-	<label>
-		Nueva contraseña
-		<input type="password" name="password" required minlength="8" autocomplete="new-password" />
-	</label>
-	<label>
-		Repetir contraseña
-		<input type="password" name="password2" required minlength="8" autocomplete="new-password" />
-	</label>
+	<PasswordInput
+		name="currentPassword"
+		label="Contraseña actual"
+		autocomplete="current-password"
+		minlength={6}
+	/>
+	<PasswordInput
+		name="password"
+		label="Nueva contraseña"
+		autocomplete="new-password"
+		minlength={8}
+	/>
+	<PasswordInput
+		name="password2"
+		label="Repetir nueva contraseña"
+		autocomplete="new-password"
+		minlength={8}
+	/>
 	<button type="submit" class="btn">Guardar contraseña</button>
 </form>
 
@@ -50,18 +61,6 @@
 		background: #fff;
 		border: 1px solid #d8e0e8;
 		border-radius: 12px;
-	}
-	label {
-		display: grid;
-		gap: 6px;
-		font-weight: 600;
-		font-size: 0.9rem;
-	}
-	input {
-		padding: 10px 12px;
-		border: 1px solid #c5d0da;
-		border-radius: 8px;
-		font: inherit;
 	}
 	.btn {
 		justify-self: start;
