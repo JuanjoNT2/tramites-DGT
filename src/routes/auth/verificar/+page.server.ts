@@ -79,14 +79,30 @@ export const actions: Actions = {
 			return fail(400, { error: 'Enlace incompleto. Solicita uno nuevo.' });
 		}
 
-		const { error } = await locals.supabase.auth.verifyOtp({
-			token_hash,
-			type: type as 'signup' | 'email' | 'recovery' | 'invite' | 'magiclink'
-		});
-		if (error) {
-			console.error('[auth/verificar] verifyOtp', type, error.message);
-			throw redirect(303, `/login?error=${failKind(type, next)}`);
+		// Confirm signup usa type=email en las plantillas oficiales de Supabase;
+		// type=signup sigue existiendo en algunos flujos → probar ambos.
+		const tryTypes =
+			type === 'signup' || type === 'email'
+				? (['email', 'signup'] as const)
+				: ([type] as const);
+
+		let lastError: string | null = null;
+		for (const t of tryTypes) {
+			const { error } = await locals.supabase.auth.verifyOtp({
+				token_hash,
+				type: t as 'signup' | 'email' | 'recovery' | 'invite' | 'magiclink'
+			});
+			if (!error) {
+				throw redirect(303, successDest(type || t, next));
+			}
+			lastError = error.message;
+			console.error('[auth/verificar] verifyOtp', t, error.message);
 		}
-		throw redirect(303, successDest(type, next));
+
+		return fail(400, {
+			error:
+				lastError ||
+				'No se pudo verificar el enlace. Solicita uno nuevo desde el registro o recuperar contraseña.'
+		});
 	}
 };
