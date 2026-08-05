@@ -7,12 +7,14 @@ import {
 	requireService,
 	requireUser
 } from '$lib/cuenta/data';
+import { upsertProfileNifDocument } from '$lib/cuenta/profile-docs';
+import { shouldSaveDocTypeToProfile } from '$lib/cuenta/profile-prefill';
 import { canManageAllDocs, isStaffRole } from '$lib/auth/roles';
 import { fetchSolicitudById } from '$lib/gestor/access';
 import { canAccessPagoSolicitud } from '$lib/pago/access';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { verifyDocumentUpload } from '$lib/server/doc-verify';
-import type { Solicitud } from '$lib/supabase/types';
+import type { Profile, Solicitud } from '$lib/supabase/types';
 
 const BUCKET = 'tramite-docs';
 
@@ -65,6 +67,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		.replace(/[^\w\-]+/g, '_')
 		.slice(0, 64);
 	const accessToken = String(form.get('accessToken') || '').trim() || null;
+	const rolHint = String(form.get('rol') || '').trim() || null;
+	const saveProfileFlag = String(form.get('save_to_profile') || '').trim();
 
 	if (!solicitudId || !(file instanceof File)) {
 		return json({ error: 'solicitud_id y file obligatorios' }, { status: 400 });
@@ -164,9 +168,27 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				.select('*')
 				.maybeSingle();
 			if (retry.error) return json({ error: retry.error.message }, { status: 500 });
+			await maybeSyncProfileNif();
 			return json({ ok: true, item: retry.data, verify });
 		}
 		return json({ error: insErr.message }, { status: 500 });
 	}
+
+	await maybeSyncProfileNif();
 	return json({ ok: true, item: data, verify });
+
+	async function maybeSyncProfileNif() {
+		const uid = user?.id || ownerId;
+		if (!uid || uploaded_by !== 'user' || saveProfileFlag === '0') return;
+		const profileKey = shouldSaveDocTypeToProfile(docType, { rol: rolHint });
+		if (!profileKey || !(file instanceof File)) return;
+		await upsertProfileNifDocument({
+			userId: uid,
+			key: profileKey,
+			bytes: buffer,
+			mime: file.type || null,
+			nombre: file.name,
+			existing: locals.profile as Profile | null
+		}).catch((e) => console.error('[docs] profile nif sync', e));
+	}
 };

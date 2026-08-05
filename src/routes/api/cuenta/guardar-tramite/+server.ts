@@ -88,7 +88,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	const vehiculo = await upsertVehiculoFromPayload(user.id, payload).catch(() => null);
 
-	const profilePatch = profilePatchFromSolicitantePayload(payload);
+	const profilePatch = profilePatchFromSolicitantePayload(payload, locals.profile);
 	if (Object.keys(profilePatch).length) {
 		await updateProfileFields(user.id, profilePatch).catch((e) =>
 			console.error('[guardar-tramite] profile sync', e)

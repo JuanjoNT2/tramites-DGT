@@ -1,4 +1,10 @@
-import type { Profile, ProfileDireccion } from '$lib/supabase/types';
+import type {
+	Profile,
+	ProfileDireccion,
+	ProfileDocumentos,
+	ProfileDocumentoRef
+} from '$lib/supabase/types';
+import type { DocGroup } from '$lib/tramite/documentos';
 
 export function joinPersonName(
 	nombre: string,
@@ -68,7 +74,14 @@ export type SolicitanteFields = {
 	provincia: string;
 	municipio: string;
 	localidad: string;
+	pueblo?: string;
+	tipoVia?: string;
 	direccion: string;
+	numero?: string;
+	piso?: string;
+	puerta?: string;
+	bloque?: string;
+	escalera?: string;
 	cp: string;
 	fechaNacimiento?: string;
 	sexo?: string;
@@ -96,11 +109,67 @@ export function normalizeFechaNacimiento(value: unknown): string {
 	return m ? m[1] : raw;
 }
 
+export function normalizeProfileDireccion(
+	raw: ProfileDireccion | Record<string, unknown> | string | null | undefined
+): ProfileDireccion {
+	if (!raw) return {};
+	if (typeof raw === 'string') {
+		const calle = raw.trim();
+		return calle ? { calle } : {};
+	}
+	const d = raw as Record<string, unknown>;
+	const out: ProfileDireccion = {};
+	const tipoVia = str(d.tipoVia ?? d.tipo_via);
+	const calle = str(d.calle ?? d.direccion);
+	const numero = str(d.numero);
+	const piso = str(d.piso);
+	const puerta = str(d.puerta);
+	const bloque = str(d.bloque);
+	const escalera = str(d.escalera);
+	const cp = str(d.cp);
+	const municipio = str(d.municipio);
+	const pueblo = str(d.pueblo);
+	const localidad = str(d.localidad);
+	const ciudad = str(d.ciudad) || municipio || localidad;
+	const provincia = str(d.provincia);
+	if (tipoVia) out.tipoVia = tipoVia;
+	if (calle) out.calle = calle;
+	if (numero) out.numero = numero;
+	if (piso) out.piso = piso;
+	if (puerta) out.puerta = puerta;
+	if (bloque) out.bloque = bloque;
+	if (escalera) out.escalera = escalera;
+	if (cp) out.cp = cp;
+	if (municipio) out.municipio = municipio;
+	if (pueblo) out.pueblo = pueblo;
+	if (localidad) out.localidad = localidad;
+	if (ciudad) out.ciudad = ciudad;
+	if (provincia) out.provincia = provincia;
+	return out;
+}
+
+function mergeDireccion(
+	base: ProfileDireccion,
+	patch: ProfileDireccion
+): ProfileDireccion {
+	const merged: ProfileDireccion = { ...base };
+	for (const [k, v] of Object.entries(patch) as [keyof ProfileDireccion, string | undefined][]) {
+		if (v != null && String(v).trim()) merged[k] = String(v).trim();
+	}
+	if (merged.municipio && !merged.ciudad) merged.ciudad = merged.municipio;
+	if (merged.ciudad && !merged.municipio) merged.municipio = merged.ciudad;
+	if (merged.ciudad && !merged.localidad) merged.localidad = merged.ciudad;
+	return merged;
+}
+
 /**
  * Campos de perfil a partir del payload del wizard (solo no vacíos).
- * Dirección siempre como objeto estructurado.
+ * Dirección siempre como objeto estructurado (fusiona con la existente).
  */
-export function profilePatchFromSolicitantePayload(payload: Record<string, unknown>): Partial<
+export function profilePatchFromSolicitantePayload(
+	payload: Record<string, unknown>,
+	existing?: Profile | null
+): Partial<
 	Pick<
 		Profile,
 		| 'full_name'
@@ -144,17 +213,25 @@ export function profilePatchFromSolicitantePayload(payload: Record<string, unkno
 	const nif = str(payload.nif).toUpperCase().replace(/[\s-]/g, '');
 	if (nif) patch.nif = nif;
 
-	const calle = str(payload.direccion);
-	const cp = str(payload.cp);
-	const ciudad = str(payload.municipio) || str(payload.localidad) || str(payload.ciudad);
-	const provincia = str(payload.provincia);
-	if (calle || cp || ciudad || provincia) {
-		const direccion: ProfileDireccion = {};
-		if (calle) direccion.calle = calle;
-		if (cp) direccion.cp = cp;
-		if (ciudad) direccion.ciudad = ciudad;
-		if (provincia) direccion.provincia = provincia;
-		patch.direccion = direccion;
+	const fromPayload = normalizeProfileDireccion({
+		tipoVia: payload.tipoVia ?? payload.tipo_via,
+		calle: payload.direccion ?? payload.calle,
+		numero: payload.numero,
+		piso: payload.piso,
+		puerta: payload.puerta,
+		bloque: payload.bloque,
+		escalera: payload.escalera,
+		cp: payload.cp,
+		municipio: payload.municipio,
+		pueblo: payload.pueblo,
+		localidad: payload.localidad,
+		ciudad: payload.ciudad ?? payload.municipio ?? payload.localidad,
+		provincia: payload.provincia
+	});
+
+	if (Object.keys(fromPayload).length) {
+		const base = normalizeProfileDireccion(existing?.direccion ?? null);
+		patch.direccion = mergeDireccion(base, fromPayload);
 	}
 
 	const fnac = normalizeFechaNacimiento(payload.fechaNacimiento ?? payload.fecha_nacimiento);
@@ -194,16 +271,23 @@ export function mergeProfileIntoSolicitante(
 	if (!fields.apellido1.trim() && names.apellido1) patch.apellido1 = names.apellido1;
 	if (!fields.apellido2.trim() && names.apellido2) patch.apellido2 = names.apellido2;
 
-	const dir = (profile?.direccion || null) as ProfileDireccion | string | null;
-	if (dir && typeof dir === 'object') {
-		if (!fields.direccion.trim() && dir.calle?.trim()) patch.direccion = dir.calle.trim();
-		if (!fields.cp.trim() && dir.cp?.trim()) patch.cp = dir.cp.trim();
-		if (!fields.municipio.trim() && dir.ciudad?.trim()) patch.municipio = dir.ciudad.trim();
-		if (!fields.localidad.trim() && dir.ciudad?.trim()) patch.localidad = dir.ciudad.trim();
-		if (!fields.provincia.trim() && dir.provincia?.trim()) patch.provincia = dir.provincia.trim();
-	} else if (typeof dir === 'string' && dir.trim() && !fields.direccion.trim()) {
-		// Perfiles antiguos con dirección en un único string
-		patch.direccion = dir.trim();
+	const dir = normalizeProfileDireccion(profile?.direccion ?? null);
+	if (Object.keys(dir).length) {
+		if (!(fields.tipoVia || '').trim() && dir.tipoVia) patch.tipoVia = dir.tipoVia;
+		if (!fields.direccion.trim() && dir.calle) patch.direccion = dir.calle;
+		if (!(fields.numero || '').trim() && dir.numero) patch.numero = dir.numero;
+		if (!(fields.piso || '').trim() && dir.piso) patch.piso = dir.piso;
+		if (!(fields.puerta || '').trim() && dir.puerta) patch.puerta = dir.puerta;
+		if (!(fields.bloque || '').trim() && dir.bloque) patch.bloque = dir.bloque;
+		if (!(fields.escalera || '').trim() && dir.escalera) patch.escalera = dir.escalera;
+		if (!fields.cp.trim() && dir.cp) patch.cp = dir.cp;
+		const ciudad = dir.municipio || dir.ciudad || dir.localidad || '';
+		if (!fields.municipio.trim() && ciudad) patch.municipio = ciudad;
+		if (!fields.localidad.trim() && (dir.localidad || ciudad)) {
+			patch.localidad = dir.localidad || ciudad;
+		}
+		if (!(fields.pueblo || '').trim() && dir.pueblo) patch.pueblo = dir.pueblo;
+		if (!fields.provincia.trim() && dir.provincia) patch.provincia = dir.provincia;
 	}
 
 	const fnac = normalizeFechaNacimiento(profile?.fecha_nacimiento);
@@ -213,4 +297,58 @@ export function mergeProfileIntoSolicitante(
 	if (sexo && !(fields.sexo || '').trim()) patch.sexo = sexo;
 
 	return patch;
+}
+
+const OWN_NIF_PREFIXES = new Set(['titular', 'solicitante', 'propietario']);
+
+/** Prefijos de slots NIF que representan al usuario logueado. */
+export function ownNifPrefixes(opts?: { rol?: string | null }): string[] {
+	const prefixes = [...OWN_NIF_PREFIXES];
+	if (opts?.rol === 'comprador' || opts?.rol === 'vendedor') {
+		prefixes.push(opts.rol);
+	}
+	return prefixes;
+}
+
+/** Ids de slots NIF del titular/solicitante a precargar desde el perfil. */
+export function ownNifSlotIds(
+	groups: DocGroup[],
+	opts?: { rol?: string | null }
+): string[] {
+	const prefixes = ownNifPrefixes(opts);
+	const ids: string[] = [];
+	for (const g of groups) {
+		for (const slot of g.slots) {
+			const m = slot.id.match(/^(.*)_(nif_frontal|nif_trasero)$/);
+			if (m && prefixes.includes(m[1])) ids.push(slot.id);
+		}
+	}
+	return ids;
+}
+
+export function profileDocKeyFromSlotId(slotId: string): 'nif_frontal' | 'nif_trasero' | null {
+	if (slotId.endsWith('_nif_frontal') || slotId === 'nif_frontal') return 'nif_frontal';
+	if (slotId.endsWith('_nif_trasero') || slotId === 'nif_trasero') return 'nif_trasero';
+	return null;
+}
+
+export function shouldSaveDocTypeToProfile(
+	docType: string,
+	opts?: { rol?: string | null }
+): 'nif_frontal' | 'nif_trasero' | null {
+	const key = profileDocKeyFromSlotId(docType);
+	if (!key) return null;
+	const prefix = docType.replace(/_nif_(frontal|trasero)$/, '');
+	if (ownNifPrefixes(opts).includes(prefix) || prefix === key) return key;
+	return null;
+}
+
+export function getProfileDocumento(
+	profile: Profile | null | undefined,
+	key: 'nif_frontal' | 'nif_trasero'
+): ProfileDocumentoRef | null {
+	const docs = (profile?.documentos || null) as ProfileDocumentos | null;
+	const ref = docs?.[key];
+	if (!ref?.path) return null;
+	return ref;
 }

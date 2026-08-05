@@ -5,6 +5,7 @@
 	import DateInput from '$lib/components/ui/DateInput.svelte';
 	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import { namePartsFromProfile } from '$lib/cuenta/profile-prefill';
+	import { provinces, streetTypes } from '$lib/data/provinces';
 	import { sexoOptions } from '$lib/data/tramite-options';
 	import {
 		parseDateInput,
@@ -25,7 +26,11 @@
 		nif: string;
 		sexo: string;
 		fechaNacimiento: string;
+		tipoVia: string;
 		calle: string;
+		numero: string;
+		piso: string;
+		puerta: string;
 		cp: string;
 		ciudad: string;
 		provincia: string;
@@ -41,9 +46,13 @@
 			nif: data.profile?.nif || '',
 			sexo: data.sexo || '',
 			fechaNacimiento: data.fechaNacimiento || '',
+			tipoVia: data.direccion.tipoVia || 'Calle',
 			calle: data.direccion.calle,
+			numero: data.direccion.numero,
+			piso: data.direccion.piso,
+			puerta: data.direccion.puerta,
 			cp: data.direccion.cp,
-			ciudad: data.direccion.ciudad,
+			ciudad: data.direccion.ciudad || data.direccion.municipio,
 			provincia: data.direccion.provincia
 		};
 	}
@@ -56,10 +65,17 @@
 	let nif = $state(saved.nif);
 	let sexo = $state(saved.sexo);
 	let fechaNacimiento = $state(saved.fechaNacimiento);
+	let tipoVia = $state(saved.tipoVia);
 	let calle = $state(saved.calle);
+	let numero = $state(saved.numero);
+	let piso = $state(saved.piso);
+	let puerta = $state(saved.puerta);
 	let cp = $state(saved.cp);
 	let ciudad = $state(saved.ciudad);
 	let provincia = $state(saved.provincia);
+	let nifFrontalOk = $state(data.nifDocs.frontal);
+	let nifTraseroOk = $state(data.nifDocs.trasero);
+	let nifUploading = $state<'nif_frontal' | 'nif_trasero' | null>(null);
 
 	const incomplete = $derived(!saved.telefono.trim() || !saved.nif.trim());
 	let editing = $state(incomplete);
@@ -75,7 +91,11 @@
 		nif,
 		sexo,
 		fechaNacimiento,
+		tipoVia,
 		calle,
+		numero,
+		piso,
+		puerta,
 		cp,
 		ciudad,
 		provincia
@@ -87,6 +107,12 @@
 		sexoOptions.find((s) => s.value === saved.sexo)?.label || saved.sexo || '—'
 	);
 
+	const viaLabel = $derived(
+		[saved.tipoVia, saved.calle, saved.numero && `nº ${saved.numero}`, saved.piso, saved.puerta]
+			.filter(Boolean)
+			.join(' ') || '—'
+	);
+
 	function formatFecha(iso: string): string {
 		if (!iso.trim()) return '—';
 		const d = parseDateInput(iso);
@@ -94,36 +120,34 @@
 		return d.toLocaleDateString('es-ES');
 	}
 
+	function applyDraft(d: Draft) {
+		nombre = d.nombre;
+		apellido1 = d.apellido1;
+		apellido2 = d.apellido2;
+		telefono = d.telefono;
+		nif = d.nif;
+		sexo = d.sexo;
+		fechaNacimiento = d.fechaNacimiento;
+		tipoVia = d.tipoVia;
+		calle = d.calle;
+		numero = d.numero;
+		piso = d.piso;
+		puerta = d.puerta;
+		cp = d.cp;
+		ciudad = d.ciudad;
+		provincia = d.provincia;
+	}
+
 	function startEdit() {
 		msg = null;
 		err = null;
-		nombre = saved.nombre;
-		apellido1 = saved.apellido1;
-		apellido2 = saved.apellido2;
-		telefono = saved.telefono;
-		nif = saved.nif;
-		sexo = saved.sexo;
-		fechaNacimiento = saved.fechaNacimiento;
-		calle = saved.calle;
-		cp = saved.cp;
-		ciudad = saved.ciudad;
-		provincia = saved.provincia;
+		applyDraft(saved);
 		editing = true;
 	}
 
 	function cancelEdit() {
 		if (dirty && !confirm('Tienes cambios sin guardar. ¿Descartarlos?')) return;
-		nombre = saved.nombre;
-		apellido1 = saved.apellido1;
-		apellido2 = saved.apellido2;
-		telefono = saved.telefono;
-		nif = saved.nif;
-		sexo = saved.sexo;
-		fechaNacimiento = saved.fechaNacimiento;
-		calle = saved.calle;
-		cp = saved.cp;
-		ciudad = saved.ciudad;
-		provincia = saved.provincia;
+		applyDraft(saved);
 		editing = incomplete;
 		err = null;
 		msg = null;
@@ -162,7 +186,18 @@
 					nif,
 					sexo: sexo.trim() || null,
 					fecha_nacimiento: fechaNacimiento.trim() || null,
-					direccion: { calle, cp, ciudad, provincia }
+					direccion: {
+						tipoVia,
+						calle,
+						numero,
+						piso,
+						puerta,
+						cp,
+						ciudad,
+						municipio: ciudad,
+						localidad: ciudad,
+						provincia
+					}
 				})
 			});
 			const body = await res.json();
@@ -174,6 +209,29 @@
 			err = e instanceof Error ? e.message : 'Error';
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function uploadNif(key: 'nif_frontal' | 'nif_trasero', fileList: FileList | null) {
+		const file = fileList?.[0];
+		if (!file) return;
+		nifUploading = key;
+		msg = null;
+		err = null;
+		try {
+			const fd = new FormData();
+			fd.set('file', file, file.name);
+			fd.set('tipo', key);
+			const res = await fetch('/api/cuenta/perfil/documentos', { method: 'POST', body: fd });
+			const body = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(body.error || 'No se pudo subir');
+			if (key === 'nif_frontal') nifFrontalOk = true;
+			else nifTraseroOk = true;
+			msg = 'Imagen del NIF guardada. Se usará por defecto en tus trámites.';
+		} catch (e) {
+			err = e instanceof Error ? e.message : 'Error al subir';
+		} finally {
+			nifUploading = null;
 		}
 	}
 
@@ -263,10 +321,49 @@
 			<span class="hint">Se reutiliza en trámites que la pidan</span>
 			<DateInput bind:value={fechaNacimiento} max={todayIso()} />
 		</label>
-		<label>Calle<input bind:value={calle} autocomplete="street-address" /></label>
-		<label>Código postal<input bind:value={cp} autocomplete="postal-code" /></label>
-		<label>Ciudad<input bind:value={ciudad} autocomplete="address-level2" /></label>
-		<label>Provincia<input bind:value={provincia} autocomplete="address-level1" /></label>
+		<label>
+			Tipo de vía
+			<select bind:value={tipoVia}>
+				{#each streetTypes as t}
+					<option value={t}>{t}</option>
+				{/each}
+			</select>
+		</label>
+		<label>
+			Nombre de la vía
+			<input bind:value={calle} autocomplete="address-line1" />
+		</label>
+		<div class="row-3">
+			<label>
+				Nº
+				<input bind:value={numero} />
+			</label>
+			<label>
+				Piso
+				<input bind:value={piso} />
+			</label>
+			<label>
+				Puerta
+				<input bind:value={puerta} />
+			</label>
+		</div>
+		<label>
+			Código postal
+			<input bind:value={cp} autocomplete="postal-code" maxlength="5" inputmode="numeric" />
+		</label>
+		<label>
+			Municipio / Ciudad
+			<input bind:value={ciudad} autocomplete="address-level2" />
+		</label>
+		<label>
+			Provincia
+			<select bind:value={provincia} autocomplete="address-level1">
+				<option value="">—</option>
+				{#each provinces as p}
+					<option value={p}>{p}</option>
+				{/each}
+			</select>
+		</label>
 		<div class="actions">
 			<button type="submit" class="btn" disabled={saving || !dirty}>
 				{saving ? 'Guardando…' : 'Guardar'}
@@ -289,13 +386,44 @@
 			<div><dt>NIF / NIE</dt><dd>{saved.nif || '—'}</dd></div>
 			<div><dt>Sexo</dt><dd>{sexoLabel}</dd></div>
 			<div><dt>Fecha de nacimiento</dt><dd>{formatFecha(saved.fechaNacimiento)}</dd></div>
-			<div><dt>Calle</dt><dd>{saved.calle || '—'}</dd></div>
+			<div><dt>Dirección</dt><dd>{viaLabel}</dd></div>
 			<div><dt>Código postal</dt><dd>{saved.cp || '—'}</dd></div>
-			<div><dt>Ciudad</dt><dd>{saved.ciudad || '—'}</dd></div>
+			<div><dt>Municipio</dt><dd>{saved.ciudad || '—'}</dd></div>
 			<div><dt>Provincia</dt><dd>{saved.provincia || '—'}</dd></div>
 		</dl>
 	</section>
 {/if}
+
+<section class="card docs">
+	<h2>Documento de identidad</h2>
+	<p class="docs-sub">
+		Se carga por defecto en los trámites como NIF del titular / solicitante.
+	</p>
+	<div class="doc-grid">
+		<label class="doc-slot">
+			<span>NIF frontal {nifFrontalOk ? '✓' : ''}</span>
+			<input
+				type="file"
+				accept="image/*,application/pdf"
+				disabled={nifUploading !== null}
+				onchange={(e) =>
+					uploadNif('nif_frontal', (e.currentTarget as HTMLInputElement).files)}
+			/>
+			{#if nifUploading === 'nif_frontal'}<small>Subiendo…</small>{/if}
+		</label>
+		<label class="doc-slot">
+			<span>NIF trasero {nifTraseroOk ? '✓' : ''}</span>
+			<input
+				type="file"
+				accept="image/*,application/pdf"
+				disabled={nifUploading !== null}
+				onchange={(e) =>
+					uploadNif('nif_trasero', (e.currentTarget as HTMLInputElement).files)}
+			/>
+			{#if nifUploading === 'nif_trasero'}<small>Subiendo…</small>{/if}
+		</label>
+	</div>
+</section>
 
 <style>
 	.head {
@@ -322,9 +450,44 @@
 		padding: 16px;
 		max-width: 520px;
 	}
+	.docs {
+		margin-top: 16px;
+	}
+	.docs h2 {
+		margin: 0 0 6px;
+		font-size: 1.05rem;
+		color: #003050;
+	}
+	.docs-sub {
+		margin: 0 0 12px;
+		font-size: 0.85rem;
+		color: #5a6b7d;
+	}
+	.doc-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 12px;
+	}
+	.doc-slot {
+		display: grid;
+		gap: 6px;
+		font-weight: 600;
+		font-size: 0.85rem;
+		padding: 10px;
+		border: 1px dashed #c5d0da;
+		border-radius: 8px;
+	}
+	.doc-slot input {
+		font-size: 0.8rem;
+	}
 	.form {
 		display: grid;
 		gap: 12px;
+	}
+	.row-3 {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		gap: 10px;
 	}
 	label {
 		display: grid;
@@ -418,5 +581,11 @@
 		color: #9b1c1c;
 		padding: 8px 10px;
 		border-radius: 8px;
+	}
+	@media (max-width: 520px) {
+		.row-3,
+		.doc-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

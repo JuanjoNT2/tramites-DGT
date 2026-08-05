@@ -8,11 +8,36 @@ export type SolicitudStatus =
 	| 'pendiente_pago'
 	| 'pagada';
 
+/** Dirección estructurada (misma granularidad que los wizards de trámite). */
 export type ProfileDireccion = {
+	tipoVia?: string;
+	/** Nombre de la vía (sin tipo ni número) */
 	calle?: string;
+	numero?: string;
+	piso?: string;
+	puerta?: string;
+	bloque?: string;
+	escalera?: string;
 	cp?: string;
+	/** Alias legacy / display; preferir municipio */
 	ciudad?: string;
+	municipio?: string;
+	pueblo?: string;
+	localidad?: string;
 	provincia?: string;
+};
+
+export type ProfileDocumentoRef = {
+	path: string;
+	mime?: string | null;
+	nombre?: string;
+	updated_at?: string;
+};
+
+/** Documentos del titular reutilizables entre trámites. */
+export type ProfileDocumentos = {
+	nif_frontal?: ProfileDocumentoRef;
+	nif_trasero?: ProfileDocumentoRef;
 };
 
 export type Profile = {
@@ -26,6 +51,7 @@ export type Profile = {
 	telefono?: string | null;
 	nif?: string | null;
 	direccion?: ProfileDireccion | Record<string, unknown> | null;
+	documentos?: ProfileDocumentos | Record<string, unknown> | null;
 	/** ISO date YYYY-MM-DD */
 	fecha_nacimiento?: string | null;
 	/** HOMBRE | MUJER */

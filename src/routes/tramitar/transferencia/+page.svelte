@@ -8,14 +8,18 @@
 	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import ExistingAccountNotice from '$lib/components/ExistingAccountNotice.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
-	import { mergeProfileIntoSolicitante } from '$lib/cuenta/profile-prefill';
+	import {
+		getProfileDocumento,
+		mergeProfileIntoSolicitante,
+		ownNifSlotIds
+	} from '$lib/cuenta/profile-prefill';
 	import type { Profile } from '$lib/supabase/types';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
 	import VehicleModelPicker from '$lib/components/VehicleModelPicker.svelte';
 	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
 	import { ccaaList } from '$lib/data/vehicles';
-	import { provinces } from '$lib/data/provinces';
+	import { provinces, streetTypes } from '$lib/data/provinces';
 	import type { PriceBreakdown } from '$lib/utils/pricing';
 	import { formatEur } from '$lib/utils/pricing';
 	import {
@@ -47,7 +51,7 @@
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
 	import { getStaticSeo } from '$lib/seo/site';
 	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
-	import { uploadTramiteDocuments } from '$lib/tramite/upload-docs';
+	import { loadProfileNifIntoSlots, uploadTramiteDocuments } from '$lib/tramite/upload-docs';
 	import {
 		clearDraft,
 		draftLooksMeaningful,
@@ -93,6 +97,7 @@
 	let validationAttempted = $state(false);
 	let emailAccountExists = $state(false);
 	let profilePrefillDone = $state(false);
+	let profileNifPrefillDone = $state(false);
 	let submitting = $state(false);
 	let saving = $state(false);
 	let payError = $state<string | null>(null);
@@ -145,7 +150,11 @@
 	let otraParteEmail = $state('');
 	let provincia = $state('');
 	let municipio = $state('');
+	let tipoVia = $state('Calle');
 	let direccion = $state('');
+	let numero = $state('');
+	let piso = $state('');
+	let puerta = $state('');
 	let cp = $state('');
 	let docFiles = $state<Record<string, File | null>>({});
 	let acceptPrivacy = $state(false);
@@ -296,7 +305,11 @@
 		if (typeof data.otraParteEmail === 'string') otraParteEmail = data.otraParteEmail;
 		if (typeof data.provincia === 'string') provincia = normalizeProvince(data.provincia);
 		if (typeof data.municipio === 'string') municipio = data.municipio;
+		if (typeof data.tipoVia === 'string') tipoVia = data.tipoVia;
 		if (typeof data.direccion === 'string') direccion = data.direccion;
+		if (typeof data.numero === 'string') numero = data.numero;
+		if (typeof data.piso === 'string') piso = data.piso;
+		if (typeof data.puerta === 'string') puerta = data.puerta;
 		if (typeof data.cp === 'string') cp = data.cp;
 	}
 
@@ -316,7 +329,11 @@
 				provincia,
 				municipio,
 				localidad: municipio,
+				tipoVia,
 				direccion,
+				numero,
+				piso,
+				puerta,
 				cp
 			},
 			{ userEmail: user.email, profile }
@@ -329,9 +346,42 @@
 		if (patch.telefono != null) telefono = patch.telefono;
 		if (patch.provincia != null) provincia = normalizeProvince(patch.provincia);
 		if (patch.municipio != null) municipio = patch.municipio;
+		if (patch.tipoVia != null) tipoVia = patch.tipoVia;
 		if (patch.direccion != null) direccion = patch.direccion;
+		if (patch.numero != null) numero = patch.numero;
+		if (patch.piso != null) piso = patch.piso;
+		if (patch.puerta != null) puerta = patch.puerta;
 		if (patch.cp != null) cp = patch.cp;
 		profilePrefillDone = true;
+		void applyProfileNifPrefill();
+	}
+
+	async function applyProfileNifPrefill() {
+		if (profileNifPrefillDone || showDraftRestore) return;
+		const user = page.data.user;
+		const profile = page.data.profile as Profile | null | undefined;
+		if (!user) return;
+		const hasAny =
+			getProfileDocumento(profile, 'nif_frontal') || getProfileDocumento(profile, 'nif_trasero');
+		if (!hasAny) {
+			profileNifPrefillDone = true;
+			return;
+		}
+		const slots = ownNifSlotIds(docGroups, { rol });
+		if (!slots.length) {
+			profileNifPrefillDone = true;
+			return;
+		}
+		profileNifPrefillDone = true;
+		await loadProfileNifIntoSlots({
+			slotIds: slots,
+			current: docFiles,
+			onfile: (id, file) => {
+				docFiles = { ...docFiles, [id]: file };
+				void saveDraftFile(STORAGE_KEY, id, file);
+			}
+		});
+		noteProgress(true);
 	}
 
 	async function continueDraft() {
@@ -342,6 +392,7 @@
 		draftReady = true;
 		docFiles = await loadDraftFiles(STORAGE_KEY);
 		profilePrefillDone = false;
+		profileNifPrefillDone = false;
 		applyProfilePrefill();
 	}
 
@@ -353,6 +404,7 @@
 		showDraftRestore = false;
 		if (hasDraftStorageAck()) draftReady = true;
 		profilePrefillDone = false;
+		profileNifPrefillDone = false;
 		applyProfilePrefill();
 	}
 
@@ -392,7 +444,11 @@
 			otraParteEmail,
 			provincia,
 			municipio,
+			tipoVia,
 			direccion,
+			numero,
+			piso,
+			puerta,
 			cp
 		};
 	}
@@ -464,7 +520,11 @@
 		void otraParteEmail;
 		void provincia;
 		void municipio;
+		void tipoVia;
 		void direccion;
+		void numero;
+		void piso;
+		void puerta;
 		void cp;
 		void acceptPrivacy;
 		void docFiles;
@@ -502,7 +562,11 @@
 		void otraParteEmail;
 		void provincia;
 		void municipio;
+		void tipoVia;
 		void direccion;
+		void numero;
+		void piso;
+		void puerta;
 		void cp;
 		void acceptPrivacy;
 		void docFiles;
@@ -561,7 +625,8 @@
 				e.provincia = 'Selecciona una provincia de la lista';
 			}
 			e.municipio = validateRequired(municipio, 'El municipio');
-			e.direccion = validateRequired(direccion, 'La dirección');
+			e.direccion = validateRequired(direccion, 'El nombre de la vía');
+			e.numero = validateRequired(numero, 'El número');
 			e.cp = validateCodigoPostal(cp);
 			const missing = missingRequiredDocs(docGroups, docFiles);
 			if (missing.length) {
@@ -639,6 +704,23 @@
 		applyProfilePrefill();
 	});
 
+	/** Si cambia el rol, rellena el NIF del perfil en los slots de esa parte. */
+	$effect(() => {
+		void rol;
+		if (!profilePrefillDone || showDraftRestore || !page.data.user) return;
+		const slots = ownNifSlotIds(docGroups, { rol });
+		const missing = slots.filter((id) => !docFiles[id]);
+		if (!missing.length) return;
+		void loadProfileNifIntoSlots({
+			slotIds: missing,
+			current: docFiles,
+			onfile: (id, file) => {
+				docFiles = { ...docFiles, [id]: file };
+				void saveDraftFile(STORAGE_KEY, id, file);
+			}
+		});
+	});
+
 	function next() {
 		funnel.stepCompleted({
 			tramite: 'transferencia',
@@ -714,7 +796,11 @@
 			otraParteEmail,
 			provincia,
 			municipio,
+			tipoVia,
 			direccion,
+			numero,
+			piso,
+			puerta,
 			cp,
 			docsAttached: Object.keys(docFiles).filter((k) => docFiles[k]),
 			acceptPrivacy,
@@ -749,7 +835,8 @@
 		const result = await uploadTramiteDocuments({
 			solicitudId: id,
 			files: docFiles,
-			accessToken
+			accessToken,
+			rol
 		});
 		if (!result.ok) {
 			payError = result.error;
@@ -1032,11 +1119,31 @@
 					<FormField label="Municipio" error={errors.municipio} required>
 						<input bind:value={municipio} />
 					</FormField>
-					<FormField label="Dirección" error={errors.direccion} required>
-						<input bind:value={direccion} />
-					</FormField>
+					<div class="row-2">
+						<FormField label="Tipo de vía" required>
+							<select bind:value={tipoVia}>
+								{#each streetTypes as t}
+									<option value={t}>{t}</option>
+								{/each}
+							</select>
+						</FormField>
+						<FormField label="Nombre de la vía" error={errors.direccion} required>
+							<input bind:value={direccion} autocomplete="address-line1" />
+						</FormField>
+					</div>
+					<div class="row-3">
+						<FormField label="Nº" error={errors.numero} required>
+							<input bind:value={numero} />
+						</FormField>
+						<FormField label="Piso">
+							<input bind:value={piso} />
+						</FormField>
+						<FormField label="Puerta">
+							<input bind:value={puerta} />
+						</FormField>
+					</div>
 					<FormField label="Código postal" error={errors.cp} required>
-						<input bind:value={cp} maxlength="5" inputmode="numeric" />
+						<input bind:value={cp} maxlength="5" inputmode="numeric" autocomplete="postal-code" />
 					</FormField>
 					{#if errors.docs}<p class="err">{errors.docs}</p>{/if}
 					<TramiteDocumentosStep
@@ -1070,7 +1177,11 @@
 							<li><span>Teléfono</span><span>{telefono || '—'}</span></li>
 							<li>
 								<span>Dirección</span>
-								<span>{[direccion, cp, municipio, provincia].filter(Boolean).join(', ') || '—'}</span>
+								<span
+									>{[tipoVia, direccion, numero, cp, municipio, provincia]
+										.filter(Boolean)
+										.join(', ') || '—'}</span
+								>
 							</li>
 							<li><span>Total</span><span>{breakdown ? formatEur(breakdown.total) : '—'}</span></li>
 						</ul>
@@ -1187,6 +1298,16 @@
 		color: var(--accent);
 		font-weight: 600;
 	}
+	.row-2 {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 16px;
+	}
+	.row-3 {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		gap: 16px;
+	}
 	.err {
 		color: var(--error);
 		font-size: 13px;
@@ -1224,6 +1345,10 @@
 	}
 	@media (max-width: 900px) {
 		.layout {
+			grid-template-columns: 1fr;
+		}
+		.row-2,
+		.row-3 {
 			grid-template-columns: 1fr;
 		}
 	}

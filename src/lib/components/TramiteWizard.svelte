@@ -8,7 +8,11 @@
 	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import ExistingAccountNotice from '$lib/components/ExistingAccountNotice.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
-	import { mergeProfileIntoSolicitante } from '$lib/cuenta/profile-prefill';
+	import {
+		getProfileDocumento,
+		mergeProfileIntoSolicitante,
+		ownNifSlotIds
+	} from '$lib/cuenta/profile-prefill';
 	import type { Profile } from '$lib/supabase/types';
 	import {
 		duplicadoMotivos,
@@ -39,7 +43,7 @@
 	import { createSolicitud } from '$lib/pago/client';
 	import { handleWizardSave } from '$lib/tramite/save';
 	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
-	import { uploadTramiteDocuments } from '$lib/tramite/upload-docs';
+	import { loadProfileNifIntoSlots, uploadTramiteDocuments } from '$lib/tramite/upload-docs';
 	import { funnel, initAnalytics } from '$lib/analytics';
 	import { goto } from '$app/navigation';
 	import {
@@ -95,6 +99,7 @@
 	/** Email del paso solicitante ya registrado → invitar a login (no bloquea) */
 	let emailAccountExists = $state(false);
 	let profilePrefillDone = $state(false);
+	let profileNifPrefillDone = $state(false);
 	let submitting = $state(false);
 	let saving = $state(false);
 	let payError = $state<string | null>(null);
@@ -308,7 +313,14 @@
 				provincia,
 				municipio,
 				localidad,
+				pueblo,
+				tipoVia,
 				direccion,
+				numero,
+				piso,
+				puerta,
+				bloque,
+				escalera,
 				cp,
 				fechaNacimiento,
 				sexo
@@ -324,11 +336,47 @@
 		if (patch.provincia != null) provincia = patch.provincia;
 		if (patch.municipio != null) municipio = patch.municipio;
 		if (patch.localidad != null) localidad = patch.localidad;
+		if (patch.pueblo != null) pueblo = patch.pueblo;
+		if (patch.tipoVia != null) tipoVia = patch.tipoVia;
 		if (patch.direccion != null) direccion = patch.direccion;
+		if (patch.numero != null) numero = patch.numero;
+		if (patch.piso != null) piso = patch.piso;
+		if (patch.puerta != null) puerta = patch.puerta;
+		if (patch.bloque != null) bloque = patch.bloque;
+		if (patch.escalera != null) escalera = patch.escalera;
 		if (patch.cp != null) cp = patch.cp;
 		if (patch.fechaNacimiento != null) fechaNacimiento = patch.fechaNacimiento;
 		if (patch.sexo != null) sexo = patch.sexo;
 		profilePrefillDone = true;
+		void applyProfileNifPrefill();
+	}
+
+	async function applyProfileNifPrefill() {
+		if (profileNifPrefillDone || showDraftRestore) return;
+		const user = page.data.user;
+		const profile = page.data.profile as Profile | null | undefined;
+		if (!user) return;
+		const hasAny =
+			getProfileDocumento(profile, 'nif_frontal') || getProfileDocumento(profile, 'nif_trasero');
+		if (!hasAny) {
+			profileNifPrefillDone = true;
+			return;
+		}
+		const slots = ownNifSlotIds(docGroups);
+		if (!slots.length) {
+			profileNifPrefillDone = true;
+			return;
+		}
+		profileNifPrefillDone = true;
+		await loadProfileNifIntoSlots({
+			slotIds: slots,
+			current: docFiles,
+			onfile: (id, file) => {
+				docFiles = { ...docFiles, [id]: file };
+				void saveDraftFile(storageKey, id, file);
+			}
+		});
+		noteProgress();
 	}
 
 	async function continueDraft() {
@@ -339,6 +387,7 @@
 		draftReady = true;
 		docFiles = await loadDraftFiles(storageKey);
 		profilePrefillDone = false;
+		profileNifPrefillDone = false;
 		applyProfilePrefill();
 	}
 
@@ -350,6 +399,7 @@
 		showDraftRestore = false;
 		if (hasDraftStorageAck()) draftReady = true;
 		profilePrefillDone = false;
+		profileNifPrefillDone = false;
 		applyProfilePrefill();
 	}
 
@@ -598,9 +648,12 @@
 			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
 			e.apellido2 = validateRequired(apellido2, 'El segundo apellido');
 			e.telefono = validatePhone(telefono);
-			e.direccion = validateRequired(direccion, 'La dirección');
-			e.cp = validateCodigoPostal(cp);
+			if (!provincia) e.provincia = 'Selecciona la provincia';
+			e.municipio = validateRequired(municipio, 'El municipio');
 			e.localidad = validateRequired(localidad, 'La localidad');
+			e.direccion = validateRequired(direccion, 'El nombre de la vía');
+			e.numero = validateRequired(numero, 'El número');
+			e.cp = validateCodigoPostal(cp);
 		}
 
 		if (
@@ -615,7 +668,7 @@
 		) {
 			if (!provincia) e.provincia = 'Selecciona la provincia';
 			e.municipio = validateRequired(municipio, 'El municipio');
-			e.direccion = validateRequired(direccion, 'La dirección');
+			e.direccion = validateRequired(direccion, 'El nombre de la vía');
 			e.numero = validateRequired(numero, 'El número');
 			e.cp = validateCodigoPostal(cp);
 		}
@@ -1083,17 +1136,48 @@
 					<FormField label="Teléfono" error={errors.telefono} required>
 						<input type="tel" bind:value={telefono} inputmode="tel" placeholder="612345678" />
 					</FormField>
-					<FormField label="Dirección" error={errors.direccion} required>
-						<input bind:value={direccion} />
+					<FormField label="Provincia" error={errors.provincia} required>
+						<select bind:value={provincia}>
+							<option value="">Selecciona provincia</option>
+							{#each provinces as p}
+								<option value={p}>{p}</option>
+							{/each}
+						</select>
 					</FormField>
 					<div class="row-2">
-						<FormField label="Código postal" error={errors.cp} required>
-							<input bind:value={cp} />
+						<FormField label="Municipio" error={errors.municipio} required>
+							<input bind:value={municipio} />
 						</FormField>
 						<FormField label="Localidad / Ciudad" error={errors.localidad} required>
 							<input bind:value={localidad} />
 						</FormField>
 					</div>
+					<div class="row-2">
+						<FormField label="Tipo de vía" required>
+							<select bind:value={tipoVia}>
+								{#each streetTypes as t}
+									<option value={t}>{t}</option>
+								{/each}
+							</select>
+						</FormField>
+						<FormField label="Nombre de la vía" error={errors.direccion} required>
+							<input bind:value={direccion} autocomplete="address-line1" />
+						</FormField>
+					</div>
+					<div class="row-3">
+						<FormField label="Nº" error={errors.numero} required>
+							<input bind:value={numero} />
+						</FormField>
+						<FormField label="Piso">
+							<input bind:value={piso} />
+						</FormField>
+						<FormField label="Puerta">
+							<input bind:value={puerta} />
+						</FormField>
+					</div>
+					<FormField label="Código postal" error={errors.cp} required>
+						<input bind:value={cp} maxlength="5" inputmode="numeric" autocomplete="postal-code" />
+					</FormField>
 				{:else if step === 3 && variant !== 'cancelacion'}
 					<FormField label="Provincia" error={errors.provincia} required>
 						<select bind:value={provincia}>
@@ -1119,8 +1203,8 @@
 								{/each}
 							</select>
 						</FormField>
-						<FormField label="Dirección" error={errors.direccion} required>
-							<input bind:value={direccion} />
+						<FormField label="Nombre de la vía" error={errors.direccion} required>
+							<input bind:value={direccion} autocomplete="address-line1" />
 						</FormField>
 					</div>
 					<div class="row-3">
@@ -1135,7 +1219,7 @@
 						</FormField>
 					</div>
 					<FormField label="Código postal" error={errors.cp} required>
-						<input bind:value={cp} />
+						<input bind:value={cp} maxlength="5" inputmode="numeric" autocomplete="postal-code" />
 					</FormField>
 					{#if isEtiquetaShip}
 						<FormField label="Tipo de envío" required>

@@ -3,9 +3,9 @@ import { requireUser, updateProfileFields } from '$lib/cuenta/data';
 import {
 	joinPersonName,
 	normalizeFechaNacimiento,
+	normalizeProfileDireccion,
 	normalizeSexo
 } from '$lib/cuenta/profile-prefill';
-import type { ProfileDireccion } from '$lib/supabase/types';
 import {
 	normalizePhone,
 	validateDate,
@@ -92,7 +92,9 @@ export const PATCH: RequestHandler = async ({ request, locals }) => {
 		nif: nifRaw
 	};
 	if (body.direccion && typeof body.direccion === 'object') {
-		fields.direccion = body.direccion as ProfileDireccion;
+		fields.direccion = normalizeProfileDireccion(
+			body.direccion as Record<string, unknown>
+		);
 	}
 	if (fecha_nacimiento !== undefined) {
 		fields.fecha_nacimiento = fecha_nacimiento;

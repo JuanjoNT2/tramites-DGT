@@ -95,7 +95,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		if (userId) {
 			await upsertVehiculoFromPayload(userId, body).catch(() => null);
-			const profilePatch = profilePatchFromSolicitantePayload(body);
+			const profilePatch = profilePatchFromSolicitantePayload(body, locals.profile);
 			if (Object.keys(profilePatch).length) {
 				await updateProfileFields(userId, profilePatch).catch((e) =>
 					console.error('[solicitud] profile sync', e)
