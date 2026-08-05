@@ -13,5 +13,5 @@
 	title="Duplicado permiso de circulación"
 	tipo="duplicado-carnet"
 	variant="duplicado"
-	steps={['Motivo', 'Solicitante', 'Dirección y documentos', 'Resumen']}
+	steps={['Vehículo y motivo', 'Solicitante', 'Dirección y documentos', 'Resumen']}
 />

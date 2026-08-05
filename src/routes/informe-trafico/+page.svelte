@@ -24,9 +24,9 @@
 	description="Solicita el informe de tráfico emitido por la DGT. Conoce cargas, reservas de dominio e historial."
 	tramitarPath="/tramitar/informe-dgt"
 	steps={[
-		'Introduce matrícula o bastidor',
-		'Confirma datos del solicitante',
-		'Pago online',
+		'Introduce la matrícula del vehículo',
+		'Confirma tus datos de contacto',
+		'Adjunta NIF y paga online',
 		'Recibe el informe por email'
 	]}
 />

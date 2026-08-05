@@ -13,12 +13,18 @@ export type DocGroup = {
 export type DocCatalogContext = {
 	motivoDuplicado?: string;
 	otraParteEmail?: string;
+	/** comprador | vendedor — para priorizar hints */
+	rol?: string;
+	tipoSolicitudVmp?: string;
+	facturaEmpresa?: string;
+	/** cancelación: el usuario declara tener carta de fin de pago */
+	cartaFinalizacion?: string;
 };
 
 const nifFrontal = (prefix: string, who: string): DocSlot => ({
 	id: `${prefix}_nif_frontal`,
 	label: `NIF ${who} (frontal)`,
-	hint: 'Anverso del DNI/NIE/CIF, legible y completo.',
+	hint: 'Anverso del DNI/NIE/CIF, legible y completo. Si el NIE no tiene firma, adjunta pasaporte o permiso de conducir.',
 	required: true
 });
 
@@ -27,6 +33,13 @@ const nifTrasero = (prefix: string, who: string): DocSlot => ({
 	label: `NIF ${who} (trasero)`,
 	hint: 'Reverso del DNI/NIE/CIF.',
 	required: true
+});
+
+const cifEmpresa = (prefix: string, who: string): DocSlot => ({
+	id: `${prefix}_cif_empresa`,
+	label: `CIF / escritura ${who}`,
+	hint: 'Solo si es empresa o autónomo con factura.',
+	required: false
 });
 
 /** Catálogo de documentos a escanear/subir según el tipo de trámite. */
@@ -41,11 +54,19 @@ export function getDocumentGroups(
 			return [
 				{
 					title: 'Documentación del comprador',
-					slots: [nifFrontal('comprador', 'del comprador'), nifTrasero('comprador', 'del comprador')]
+					slots: [
+						nifFrontal('comprador', 'del comprador'),
+						nifTrasero('comprador', 'del comprador'),
+						cifEmpresa('comprador', 'de la empresa compradora')
+					]
 				},
 				{
 					title: 'Documentación del vendedor',
-					slots: [nifFrontal('vendedor', 'del vendedor'), nifTrasero('vendedor', 'del vendedor')]
+					slots: [
+						nifFrontal('vendedor', 'del vendedor'),
+						nifTrasero('vendedor', 'del vendedor'),
+						cifEmpresa('vendedor', 'de la empresa vendedora')
+					]
 				},
 				{
 					title: 'Documentación del vehículo',
@@ -76,6 +97,12 @@ export function getDocumentGroups(
 							label: 'Contrato de compraventa',
 							hint: 'Opcional si ya lo tienes firmado.',
 							required: false
+						},
+						{
+							id: 'factura_venta',
+							label: 'Factura de venta',
+							hint: 'Obligatoria si el vendedor es empresa/autónomo con factura.',
+							required: ctx.facturaEmpresa === 'si'
 						}
 					]
 				}
@@ -83,8 +110,20 @@ export function getDocumentGroups(
 		case 'notificacion-venta':
 			return [
 				{
-					title: 'Documentación del titular',
-					slots: [nifFrontal('titular', 'del titular'), nifTrasero('titular', 'del titular')]
+					title: 'Documentación del vendedor',
+					slots: [
+						nifFrontal('vendedor', 'del vendedor'),
+						nifTrasero('vendedor', 'del vendedor'),
+						cifEmpresa('vendedor', 'de la empresa vendedora')
+					]
+				},
+				{
+					title: 'Documentación del comprador',
+					slots: [
+						nifFrontal('comprador', 'del comprador'),
+						nifTrasero('comprador', 'del comprador'),
+						cifEmpresa('comprador', 'de la empresa compradora')
+					]
 				},
 				{
 					title: 'Documentación del vehículo',
@@ -95,9 +134,13 @@ export function getDocumentGroups(
 							required: true
 						},
 						{
-							id: 'ficha_tecnica',
-							label: 'Ficha técnica',
-							hint: 'Ficha técnica (verde o electrónica).',
+							id: 'ficha_tecnica_frontal',
+							label: 'Ficha técnica (frontal)',
+							required: true
+						},
+						{
+							id: 'ficha_tecnica_trasera',
+							label: 'Ficha técnica (trasera)',
 							required: true
 						}
 					]
@@ -110,6 +153,12 @@ export function getDocumentGroups(
 							label: 'Contrato de compraventa',
 							hint: 'Contrato firmado entre las partes.',
 							required: true
+						},
+						{
+							id: 'factura_venta',
+							label: 'Factura de venta del vehículo',
+							hint: 'Si la venta es con factura de empresa.',
+							required: false
 						}
 					]
 				}
@@ -118,14 +167,21 @@ export function getDocumentGroups(
 			return [
 				{
 					title: 'Documentación del solicitante',
-					slots: [nifFrontal('solicitante', 'del solicitante'), nifTrasero('solicitante', 'del solicitante')]
+					slots: [
+						nifFrontal('solicitante', 'del solicitante'),
+						nifTrasero('solicitante', 'del solicitante')
+					]
 				}
 			];
 		case 'baja-temporal':
 			return [
 				{
 					title: 'Documentación del titular',
-					slots: [nifFrontal('titular', 'del titular'), nifTrasero('titular', 'del titular')]
+					slots: [
+						nifFrontal('titular', 'del titular'),
+						nifTrasero('titular', 'del titular'),
+						cifEmpresa('titular', 'de la empresa')
+					]
 				},
 				{
 					title: 'Documentación del vehículo',
@@ -133,6 +189,16 @@ export function getDocumentGroups(
 						{
 							id: 'permiso_circulacion',
 							label: 'Permiso de circulación',
+							required: true
+						},
+						{
+							id: 'ficha_tecnica_frontal',
+							label: 'Tarjeta ITV / ficha técnica (frontal)',
+							required: true
+						},
+						{
+							id: 'ficha_tecnica_trasera',
+							label: 'Tarjeta ITV / ficha técnica (trasera)',
 							required: true
 						}
 					]
@@ -145,7 +211,8 @@ export function getDocumentGroups(
 					title: 'Documentación del propietario',
 					slots: [
 						nifFrontal('propietario', 'del propietario'),
-						nifTrasero('propietario', 'del propietario')
+						nifTrasero('propietario', 'del propietario'),
+						cifEmpresa('propietario', 'de la empresa')
 					]
 				},
 				{
@@ -173,9 +240,12 @@ export function getDocumentGroups(
 					slots: [
 						{
 							id: 'carta_cancelacion',
-							label: 'Carta de cancelación de reserva de dominio',
-							hint: 'Documento de finalización de pago / cancelación de la entidad (opcional).',
-							required: false
+							label: 'Carta de finalización de pago / cancelación',
+							hint:
+								ctx.cartaFinalizacion === 'si'
+									? 'Adjunta la carta de la entidad financiera.'
+									: 'Opcional si aún no la tienes; el gestor podrá solicitarla.',
+							required: ctx.cartaFinalizacion === 'si'
 						}
 					]
 				}
@@ -184,7 +254,10 @@ export function getDocumentGroups(
 			return [
 				{
 					title: 'Documentación del solicitante',
-					slots: [nifFrontal('solicitante', 'del solicitante'), nifTrasero('solicitante', 'del solicitante')]
+					slots: [
+						nifFrontal('solicitante', 'del solicitante'),
+						nifTrasero('solicitante', 'del solicitante')
+					]
 				},
 				{
 					title: 'Documentación del vehículo',
@@ -203,7 +276,8 @@ export function getDocumentGroups(
 					title: 'Documentación del propietario',
 					slots: [
 						nifFrontal('propietario', 'del propietario'),
-						nifTrasero('propietario', 'del propietario')
+						nifTrasero('propietario', 'del propietario'),
+						cifEmpresa('propietario', 'de la empresa propietaria')
 					]
 				},
 				{
@@ -220,6 +294,12 @@ export function getDocumentGroups(
 							label: 'Foto del vehículo',
 							hint: 'Foto clara del patinete completo.',
 							required: true
+						},
+						{
+							id: 'permiso_circulacion',
+							label: 'Permiso / certificado de circulación del VMP',
+							hint: 'Si ya dispone de inscripción previa.',
+							required: false
 						}
 					]
 				}
@@ -229,42 +309,71 @@ export function getDocumentGroups(
 			return [
 				{
 					title: 'Documentación del solicitante',
-					slots: [nifFrontal('solicitante', 'del solicitante'), nifTrasero('solicitante', 'del solicitante')]
+					slots: [
+						nifFrontal('solicitante', 'del solicitante'),
+						nifTrasero('solicitante', 'del solicitante')
+					]
 				}
 			];
 		case 'duplicado':
 		case 'duplicado-carnet': {
 			const motivo = (ctx.motivoDuplicado || '').toLowerCase();
-			const extra: DocSlot =
-				motivo.includes('extrav') || motivo.includes('sustra') || motivo.includes('robo')
-					? {
-							id: 'denuncia_justificante',
-							label: 'Denuncia o justificante de extravío',
-							hint: 'Documento de denuncia o constancia de extravío/sustracción.',
-							required: true
-						}
-					: {
-							id: 'foto_permiso',
-							label: 'Foto del permiso de circulación',
-							hint: 'Foto del permiso actual (aunque esté deteriorado).',
-							required: true
-						};
-			return [
-				{
-					title: 'Documentación del solicitante',
-					slots: [
-						nifFrontal('solicitante', 'del solicitante'),
-						nifTrasero('solicitante', 'del solicitante'),
-						extra
-					]
-				}
+			const isRobo = motivo.includes('sustra') || motivo.includes('robo');
+			const needsFicha =
+				motivo.includes('servicio') ||
+				motivo.includes('ficha') ||
+				motivo.includes('itv') ||
+				motivo.includes('datos');
+			const slots: DocSlot[] = [
+				nifFrontal('solicitante', 'del titular'),
+				nifTrasero('solicitante', 'del titular'),
+				cifEmpresa('solicitante', 'de la empresa')
 			];
+			if (isRobo) {
+				slots.push({
+					id: 'denuncia_justificante',
+					label: 'Denuncia o justificante de sustracción',
+					hint: 'Documento de denuncia ante autoridades.',
+					required: true
+				});
+			} else if (!needsFicha) {
+				slots.push({
+					id: 'foto_permiso',
+					label: 'Foto del permiso de circulación',
+					hint: 'Si lo tienes (aunque esté deteriorado).',
+					required: motivo.includes('deterior')
+				});
+			}
+			if (needsFicha) {
+				slots.push(
+					{
+						id: 'ficha_tecnica_frontal',
+						label: 'Ficha técnica (frontal)',
+						hint: 'Obligatoria en cambios de servicio o datos técnicos.',
+						required: true
+					},
+					{
+						id: 'ficha_tecnica_trasera',
+						label: 'Ficha técnica (trasera)',
+						required: true
+					},
+					{
+						id: 'permiso_circulacion',
+						label: 'Permiso de circulación actual',
+						required: true
+					}
+				);
+			}
+			return [{ title: 'Documentación', slots }];
 		}
 		default:
 			return [
 				{
 					title: 'Documentación',
-					slots: [nifFrontal('solicitante', 'del solicitante'), nifTrasero('solicitante', 'del solicitante')]
+					slots: [
+						nifFrontal('solicitante', 'del solicitante'),
+						nifTrasero('solicitante', 'del solicitante')
+					]
 				}
 			];
 	}

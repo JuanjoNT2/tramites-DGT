@@ -131,7 +131,11 @@ const DOC_LABELS: Record<string, string> = {
 };
 
 const VALUE_LABELS: Record<string, Record<string, string>> = {
-	tipoVehiculo: { coche: 'Coche', moto: 'Moto' },
+	tipoVehiculo: {
+		coche: 'Coche / Autocaravana',
+		moto: 'Moto / Quad / Coche sin carnet',
+		caravana: 'Caravana / Remolque'
+	},
 	rol: { comprador: 'Comprador', vendedor: 'Vendedor' },
 	motivoTransferencia: { compraventa: 'Compraventa', donacion: 'Donación' },
 	facturaEmpresa: { si: 'Sí', no: 'No', true: 'Sí', false: 'No' },

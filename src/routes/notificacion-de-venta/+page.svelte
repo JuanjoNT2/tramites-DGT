@@ -24,9 +24,10 @@
 	description="Notifica la venta de tu vehículo ante la DGT 100% online y evita responsabilidades posteriores."
 	tramitarPath="/tramitar/notificacion-venta"
 	steps={[
-		'Indica matrícula y tipo de vehículo',
-		'Introduce tus datos de contacto',
-		'Sube NIF, permiso, ficha y contrato',
-		'Pago y confirmación del trámite'
+		'Indica los datos del vehículo',
+		'Datos del comprador',
+		'Datos del vendedor',
+		'Sube la documentación',
+		'Pago y confirmación'
 	]}
 />

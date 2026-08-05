@@ -24,9 +24,9 @@
 	description="Gestiona la inscripción de tu patinete eléctrico y recibe la etiqueta identificativa DGT. Paso previo al seguro obligatorio."
 	tramitarPath="/tramitar/etiqueta-vmp"
 	steps={[
-		'Indica si tu VMP está certificado y sus datos (serie / certificado)',
-		'Introduce tus datos como titular o tutor legal',
-		'Elige dirección y tipo de envío de la etiqueta',
-		'Confirma, paga y recibe la etiqueta en casa'
+		'Elige inscripción y/o adhesivo y datos del VMP',
+		'Introduce tus datos como titular',
+		'Elige dirección y tipo de envío',
+		'Confirma, paga y recibe la etiqueta'
 	]}
 />

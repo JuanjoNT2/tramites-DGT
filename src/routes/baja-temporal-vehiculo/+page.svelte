@@ -26,7 +26,7 @@
 	steps={[
 		'Indica matrícula y tipo de vehículo',
 		'Introduce tus datos de contacto',
-		'Sube NIF y permiso de circulación',
+		'Sube NIF, permiso y ficha técnica ITV',
 		'Pago y confirmación del trámite'
 	]}
 />

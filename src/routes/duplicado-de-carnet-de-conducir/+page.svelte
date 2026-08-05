@@ -24,9 +24,9 @@
 	description="Solicita el duplicado del permiso de circulación de tu vehículo por pérdida, robo o deterioro."
 	tramitarPath="/tramitar/duplicado-carnet"
 	steps={[
-		'Indica el motivo del duplicado',
-		'Introduce tus datos personales',
-		'Sube foto de tu DNI',
+		'Indica motivo y matrícula del vehículo',
+		'Introduce tus datos como titular',
+		'Sube NIF y documentación del permiso',
 		'Pago y envío a domicilio'
 	]}
 />

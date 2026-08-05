@@ -5,21 +5,33 @@
 	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import DateInput from '$lib/components/ui/DateInput.svelte';
-	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import ExistingAccountNotice from '$lib/components/ExistingAccountNotice.svelte';
 	import RadioCards from '$lib/components/ui/RadioCards.svelte';
+	import PartyFields from '$lib/components/tramite/PartyFields.svelte';
+	import {
+		emptyParty,
+		mergeProfileIntoParty,
+		flattenParty,
+		partyFromFlat,
+		type PartyData
+	} from '$lib/cuenta/party-prefill';
 	import {
 		getProfileDocumento,
-		mergeProfileIntoSolicitante,
 		ownNifSlotIds
 	} from '$lib/cuenta/profile-prefill';
 	import type { Profile } from '$lib/supabase/types';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
+	import {
+		vehicleTypeOptions,
+		vehicleTypeLabel,
+		DEFAULT_VEHICLE_SERVICE,
+		vehicleServiceOptions,
+		type VehicleType
+	} from '$lib/data/vehicle-types';
 	import PriceSidebar from '$lib/components/ui/PriceSidebar.svelte';
 	import VehicleModelPicker from '$lib/components/VehicleModelPicker.svelte';
 	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
 	import { ccaaList } from '$lib/data/vehicles';
-	import { provinces, streetTypes } from '$lib/data/provinces';
 	import type { PriceBreakdown } from '$lib/utils/pricing';
 	import { formatEur } from '$lib/utils/pricing';
 	import {
@@ -71,23 +83,26 @@
 
 	const seo = getStaticSeo('/tramitar/transferencia')!;
 	const STORAGE_KEY = 'dgt-transfer-wizard';
-	const stepLabels = ['Vehículo', 'Intervinientes', 'Envío y documentos', 'Resumen'];
-	const TOTAL_STEPS = 4;
-	const provinceOptions = provinces.map((p) => ({ value: p, label: p }));
+	const stepLabels = ['Vehículo', 'Comprador', 'Vendedor', 'Documentos', 'Resumen'];
+	const TOTAL_STEPS = 5;
 
-	function normalizeProvince(raw: string): string {
-		const t = raw.trim();
-		if (!t) return '';
-		return provinces.find((p) => p.toLowerCase() === t.toLowerCase()) ?? '';
-	}
-
-	/** Si el borrador era de 9 pasos (step>4), remapea: 5–6→2, 7–8→3, 9→4. */
-	function clampLegacyStep(raw: number): number {
+	/** Remapea borradores del wizard antiguo (4 o 9 pasos) al flujo de 5 pasos. */
+	function clampLegacyStep(raw: number, data: Record<string, unknown>): number {
 		if (raw < 1) return 1;
+		const legacy4 =
+			!data.compradorEmail && typeof data.email === 'string' && data.email.trim() !== '';
+		if (legacy4) {
+			if (raw === 1) return 1;
+			if (raw === 2) return 2;
+			if (raw === 3) return 4;
+			return 5;
+		}
 		if (raw <= TOTAL_STEPS) return raw;
+		if (raw <= 5) return 1;
 		if (raw <= 6) return 2;
-		if (raw <= 8) return 3;
-		return 4;
+		if (raw <= 7) return 3;
+		if (raw <= 8) return 4;
+		return 5;
 	}
 
 	let step = $state(1);
@@ -106,7 +121,9 @@
 	let solicitudId = $state<string | null>(null);
 
 	// Form state
-	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
+	let tipoVehiculo = $state<VehicleType>('coche');
+	let servicioVehiculo = $state(DEFAULT_VEHICLE_SERVICE);
+	let kilometros = $state<string | number>('');
 	let matricula = $state('');
 	let bastidor = $state('');
 	let marcaId = $state('');
@@ -141,21 +158,8 @@
 	let motivoTransferencia = $state<'compraventa' | 'donacion'>('compraventa');
 	let liquidarItp = $state('si');
 	let rol = $state<'comprador' | 'vendedor'>('comprador');
-	let email = $state('');
-	let nif = $state('');
-	let nombre = $state('');
-	let apellido1 = $state('');
-	let apellido2 = $state('');
-	let telefono = $state('');
-	let otraParteEmail = $state('');
-	let provincia = $state('');
-	let municipio = $state('');
-	let tipoVia = $state('Calle');
-	let direccion = $state('');
-	let numero = $state('');
-	let piso = $state('');
-	let puerta = $state('');
-	let cp = $state('');
+	let comprador = $state<PartyData>(emptyParty());
+	let vendedor = $state<PartyData>(emptyParty());
 	let docFiles = $state<Record<string, File | null>>({});
 	let acceptPrivacy = $state(false);
 	let showDraftNotice = $state(false);
@@ -164,7 +168,83 @@
 	let draftReady = $state(false);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-	const docGroups = $derived(getDocumentGroups('transferencia', { otraParteEmail }));
+	const docGroups = $derived(getDocumentGroups('transferencia', { facturaEmpresa, rol }));
+	const activeParty = $derived(rol === 'comprador' ? comprador : vendedor);
+
+	function partyFieldErrors(prefix: 'comprador' | 'vendedor'): Record<string, string | null> {
+		const map: Record<string, string> = {
+			email: `${prefix}Email`,
+			nif: `${prefix}Nif`,
+			nombre: `${prefix}Nombre`,
+			apellido1: `${prefix}Apellido1`,
+			apellido2: `${prefix}Apellido2`,
+			telefono: `${prefix}Telefono`,
+			provincia: `${prefix}Provincia`,
+			municipio: `${prefix}Municipio`,
+			direccion: `${prefix}Direccion`,
+			numero: `${prefix}Numero`,
+			cp: `${prefix}Cp`
+		};
+		const out: Record<string, string | null> = {};
+		for (const [field, key] of Object.entries(map)) {
+			if (errors[key]) out[field] = errors[key];
+		}
+		return out;
+	}
+
+	function validateParty(party: PartyData, prefix: 'comprador' | 'vendedor') {
+		const cap = (k: string) => prefix + k.charAt(0).toUpperCase() + k.slice(1);
+		const e: Record<string, string | null> = {};
+		e[`${prefix}Email`] = validateEmail(party.email);
+		e[`${prefix}Nif`] = validateNifNie(party.nif);
+		e[cap('nombre')] = validateRequired(party.nombre, 'El nombre');
+		e[`${prefix}Apellido1`] = validateRequired(party.apellido1, 'El primer apellido');
+		e[`${prefix}Apellido2`] = validateRequired(party.apellido2, 'El segundo apellido');
+		e[`${prefix}Telefono`] = validatePhone(party.telefono);
+		e[`${prefix}Provincia`] = validateRequired(party.provincia, 'La provincia');
+		e[`${prefix}Municipio`] = validateRequired(party.municipio, 'El municipio');
+		e[`${prefix}Direccion`] = validateRequired(party.direccion, 'El nombre de la vía');
+		e[`${prefix}Numero`] = validateRequired(party.numero, 'El número');
+		e[`${prefix}Cp`] = validateCodigoPostal(party.cp);
+		return e;
+	}
+
+	function vehicleLabel(): string {
+		if (tipoVehiculo === 'coche') {
+			return [marcaNombre, modeloNombre].filter(Boolean).join(' ') || '—';
+		}
+		if (tipoVehiculo === 'moto') {
+			return [marcaMotoNombre, modeloMotoNombre, cilindradaMoto ? `${cilindradaMoto} cc` : '']
+				.filter(Boolean)
+				.join(' ') || '—';
+		}
+		return [marcaNombre, modeloNombre].filter(Boolean).join(' ') || '—';
+	}
+
+	function autofillParty(target: 'comprador' | 'vendedor') {
+		const user = page.data.user;
+		const profile = page.data.profile as Profile | null | undefined;
+		if (!user) return;
+		const merged = mergeProfileIntoParty(target === 'comprador' ? comprador : vendedor, {
+			userEmail: user.email,
+			profile
+		});
+		if (target === 'comprador') comprador = merged;
+		else vendedor = merged;
+		noteProgress(true);
+	}
+
+	function prefillActivePartyFromProfile() {
+		if (showDraftRestore) return;
+		const user = page.data.user;
+		const profile = page.data.profile as Profile | null | undefined;
+		if (!user) return;
+		if (rol === 'comprador') {
+			comprador = mergeProfileIntoParty(comprador, { userEmail: user.email, profile });
+		} else {
+			vendedor = mergeProfileIntoParty(vendedor, { userEmail: user.email, profile });
+		}
+	}
 
 	let factorCorreccion = $state<number | null>(null);
 	let fuenteDepreciacion = $state<string | null>(null);
@@ -181,7 +261,7 @@
 		return buildTransferBreakdown({
 			precioVenta,
 			ccaaId,
-			tipoVehiculo,
+			tipoVehiculo: tipoVehiculo === 'caravana' ? 'coche' : tipoVehiculo,
 			incluirInforme: incluirInforme === 'si',
 			precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
 			factorCorreccion: needsFactor ? factorCorreccion : null,
@@ -267,12 +347,21 @@
 	});
 
 	function applyDraft(data: Record<string, unknown>) {
-		if (typeof data.step === 'number') step = clampLegacyStep(data.step);
+		if (typeof data.step === 'number') step = clampLegacyStep(data.step, data);
 		if (typeof data.solicitudId === 'string' && data.solicitudId) {
 			solicitudId = data.solicitudId;
 		}
-		if (data.tipoVehiculo === 'coche' || data.tipoVehiculo === 'moto')
+		if (
+			data.tipoVehiculo === 'coche' ||
+			data.tipoVehiculo === 'moto' ||
+			data.tipoVehiculo === 'caravana'
+		) {
 			tipoVehiculo = data.tipoVehiculo;
+		}
+		if (typeof data.servicioVehiculo === 'string') servicioVehiculo = data.servicioVehiculo;
+		if (typeof data.kilometros === 'number' || typeof data.kilometros === 'string') {
+			kilometros = data.kilometros;
+		}
 		if (typeof data.matricula === 'string') matricula = data.matricula;
 		if (typeof data.bastidor === 'string') bastidor = normalizeBastidor(data.bastidor).slice(0, 17);
 		if (typeof data.marcaId === 'string') marcaId = data.marcaId;
@@ -292,66 +381,30 @@
 		if (typeof data.fechaVenta === 'string') fechaVenta = data.fechaVenta;
 		if (typeof data.facturaEmpresa === 'string') facturaEmpresa = data.facturaEmpresa;
 		if (typeof data.incluirInforme === 'string') incluirInforme = data.incluirInforme;
-		if (data.motivoTransferencia === 'compraventa' || data.motivoTransferencia === 'donacion')
+		if (data.motivoTransferencia === 'compraventa' || data.motivoTransferencia === 'donacion') {
 			motivoTransferencia = data.motivoTransferencia;
+		}
 		if (typeof data.liquidarItp === 'string') liquidarItp = data.liquidarItp;
 		if (data.rol === 'comprador' || data.rol === 'vendedor') rol = data.rol;
-		if (typeof data.email === 'string') email = data.email;
-		if (typeof data.nif === 'string') nif = data.nif;
-		if (typeof data.nombre === 'string') nombre = data.nombre;
-		if (typeof data.apellido1 === 'string') apellido1 = data.apellido1;
-		if (typeof data.apellido2 === 'string') apellido2 = data.apellido2;
-		if (typeof data.telefono === 'string') telefono = data.telefono;
-		if (typeof data.otraParteEmail === 'string') otraParteEmail = data.otraParteEmail;
-		if (typeof data.provincia === 'string') provincia = normalizeProvince(data.provincia);
-		if (typeof data.municipio === 'string') municipio = data.municipio;
-		if (typeof data.tipoVia === 'string') tipoVia = data.tipoVia;
-		if (typeof data.direccion === 'string') direccion = data.direccion;
-		if (typeof data.numero === 'string') numero = data.numero;
-		if (typeof data.piso === 'string') piso = data.piso;
-		if (typeof data.puerta === 'string') puerta = data.puerta;
-		if (typeof data.cp === 'string') cp = data.cp;
+		comprador = partyFromFlat('comprador', data);
+		vendedor = partyFromFlat('vendedor', data);
+		const hasLegacy =
+			typeof data.email === 'string' &&
+			data.email.trim() !== '' &&
+			!data.compradorEmail &&
+			!data.vendedorEmail;
+		if (hasLegacy) {
+			const legacy = partyFromFlat('', data);
+			if (rol === 'comprador' && !comprador.email) comprador = legacy;
+			else if (rol === 'vendedor' && !vendedor.email) vendedor = legacy;
+		}
 	}
 
 	function applyProfilePrefill() {
 		if (profilePrefillDone || showDraftRestore) return;
 		const user = page.data.user;
-		const profile = page.data.profile as Profile | null | undefined;
 		if (!user) return;
-		const patch = mergeProfileIntoSolicitante(
-			{
-				email,
-				nif,
-				nombre,
-				apellido1,
-				apellido2,
-				telefono,
-				provincia,
-				municipio,
-				localidad: municipio,
-				tipoVia,
-				direccion,
-				numero,
-				piso,
-				puerta,
-				cp
-			},
-			{ userEmail: user.email, profile }
-		);
-		if (patch.email != null) email = patch.email;
-		if (patch.nif != null) nif = patch.nif;
-		if (patch.nombre != null) nombre = patch.nombre;
-		if (patch.apellido1 != null) apellido1 = patch.apellido1;
-		if (patch.apellido2 != null) apellido2 = patch.apellido2;
-		if (patch.telefono != null) telefono = patch.telefono;
-		if (patch.provincia != null) provincia = normalizeProvince(patch.provincia);
-		if (patch.municipio != null) municipio = patch.municipio;
-		if (patch.tipoVia != null) tipoVia = patch.tipoVia;
-		if (patch.direccion != null) direccion = patch.direccion;
-		if (patch.numero != null) numero = patch.numero;
-		if (patch.piso != null) piso = patch.piso;
-		if (patch.puerta != null) puerta = patch.puerta;
-		if (patch.cp != null) cp = patch.cp;
+		prefillActivePartyFromProfile();
 		profilePrefillDone = true;
 		void applyProfileNifPrefill();
 	}
@@ -413,6 +466,8 @@
 			step,
 			solicitudId,
 			tipoVehiculo,
+			servicioVehiculo,
+			kilometros,
 			matricula,
 			bastidor,
 			marcaId,
@@ -435,21 +490,8 @@
 			motivoTransferencia,
 			liquidarItp,
 			rol,
-			email,
-			nif,
-			nombre,
-			apellido1,
-			apellido2,
-			telefono,
-			otraParteEmail,
-			provincia,
-			municipio,
-			tipoVia,
-			direccion,
-			numero,
-			piso,
-			puerta,
-			cp
+			...flattenParty('comprador', comprador),
+			...flattenParty('vendedor', vendedor)
 		};
 	}
 
@@ -469,8 +511,8 @@
 			force ||
 			looksLikeStartedDraft(matricula) ||
 			looksLikeStartedDraft(bastidor) ||
-			looksLikeStartedDraft(email) ||
-			looksLikeStartedDraft(nombre) ||
+			looksLikeStartedDraft(comprador.email) ||
+			looksLikeStartedDraft(vendedor.email) ||
 			step > 1;
 		if (!started) return;
 		if (!hasDraftStorageAck()) {
@@ -493,6 +535,8 @@
 		void step;
 		void solicitudId;
 		void tipoVehiculo;
+		void servicioVehiculo;
+		void kilometros;
 		void matricula;
 		void bastidor;
 		void marcaId;
@@ -510,22 +554,11 @@
 		void fechaVenta;
 		void facturaEmpresa;
 		void incluirInforme;
+		void motivoTransferencia;
+		void liquidarItp;
 		void rol;
-		void email;
-		void nif;
-		void nombre;
-		void apellido1;
-		void apellido2;
-		void telefono;
-		void otraParteEmail;
-		void provincia;
-		void municipio;
-		void tipoVia;
-		void direccion;
-		void numero;
-		void piso;
-		void puerta;
-		void cp;
+		void comprador;
+		void vendedor;
 		void acceptPrivacy;
 		void docFiles;
 		scheduleSave();
@@ -535,6 +568,8 @@
 		if (!validationAttempted) return;
 		void step;
 		void tipoVehiculo;
+		void servicioVehiculo;
+		void kilometros;
 		void matricula;
 		void bastidor;
 		void marcaId;
@@ -553,21 +588,8 @@
 		void facturaEmpresa;
 		void incluirInforme;
 		void rol;
-		void email;
-		void nif;
-		void nombre;
-		void apellido1;
-		void apellido2;
-		void telefono;
-		void otraParteEmail;
-		void provincia;
-		void municipio;
-		void tipoVia;
-		void direccion;
-		void numero;
-		void piso;
-		void puerta;
-		void cp;
+		void comprador;
+		void vendedor;
 		void acceptPrivacy;
 		void docFiles;
 		void breakdown;
@@ -577,17 +599,20 @@
 	function validateStepAt(s: number): Record<string, string | null> {
 		const e: Record<string, string | null> = {};
 		if (s === 1) {
-			// Antiguos pasos 2–4: matrícula, bastidor, técnicos, operación
 			e.matricula = validateMatricula(matricula);
 			e.bastidor = validateBastidor(bastidor);
+			e.servicioVehiculo = validateRequired(servicioVehiculo, 'El servicio del vehículo');
 			if (tipoVehiculo === 'coche') {
 				e.marca = validateRequired(marcaId, 'La marca');
 				e.combustible = validateRequired(combustibleId, 'El combustible');
 				e.modelo = validateRequired(modeloId, 'El modelo');
-			} else {
+			} else if (tipoVehiculo === 'moto') {
 				e.marca = validateRequired(marcaMotoId, 'La marca');
 				e.modelo = validateRequired(modeloMotoNombre || modeloMotoId, 'El modelo');
 				e.cilindrada = validateRequired(String(cilindradaMoto ?? ''), 'La cilindrada');
+			} else {
+				e.marca = validateRequired(marcaNombre, 'La marca');
+				e.modelo = validateRequired(modeloNombre, 'El modelo');
 			}
 			e.fechaMatricula = validateDate(fechaMatricula, {
 				label: 'La fecha de primera matrícula',
@@ -607,27 +632,12 @@
 			if (order) e.fechaVenta = order;
 		}
 		if (s === 2) {
-			// Antiguo paso 5 (sin privacidad) + email otra parte opcional
-			e.email = validateEmail(email);
-			e.nif = validateNifNie(nif);
-			e.nombre = validateRequired(nombre, 'El nombre');
-			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
-			e.apellido2 = validateRequired(apellido2, 'El segundo apellido');
-			e.telefono = validatePhone(telefono);
-			if (otraParteEmail.trim()) {
-				e.otraParteEmail = validateEmail(otraParteEmail);
-			}
+			Object.assign(e, validateParty(comprador, 'comprador'));
 		}
 		if (s === 3) {
-			// Antiguo paso 7 + documentos obligatorios
-			if (!provincia.trim()) e.provincia = 'La provincia es obligatoria';
-			else if (!provinces.includes(provincia as (typeof provinces)[number])) {
-				e.provincia = 'Selecciona una provincia de la lista';
-			}
-			e.municipio = validateRequired(municipio, 'El municipio');
-			e.direccion = validateRequired(direccion, 'El nombre de la vía');
-			e.numero = validateRequired(numero, 'El número');
-			e.cp = validateCodigoPostal(cp);
+			Object.assign(e, validateParty(vendedor, 'vendedor'));
+		}
+		if (s === 4) {
 			const missing = missingRequiredDocs(docGroups, docFiles);
 			if (missing.length) {
 				e.docs = 'Sube todos los documentos obligatorios (foto o archivo).';
@@ -636,7 +646,7 @@
 				}
 			}
 		}
-		if (s === 4) {
+		if (s === 5) {
 			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
 			if (!breakdown || !(breakdown.total > 0)) {
 				e.total = 'Completa CCAA, fechas y modelo para calcular el importe.';
@@ -704,10 +714,11 @@
 		applyProfilePrefill();
 	});
 
-	/** Si cambia el rol, rellena el NIF del perfil en los slots de esa parte. */
+	/** Si cambia el rol, rellena perfil y NIF en los slots de esa parte. */
 	$effect(() => {
 		void rol;
 		if (!profilePrefillDone || showDraftRestore || !page.data.user) return;
+		prefillActivePartyFromProfile();
 		const slots = ownNifSlotIds(docGroups, { rol });
 		const missing = slots.filter((id) => !docFiles[id]);
 		if (!missing.length) return;
@@ -751,8 +762,19 @@
 	}
 
 	function buildPayload(): Record<string, unknown> {
-		const marcaLabel = tipoVehiculo === 'coche' ? marcaNombre : marcaMotoNombre;
-		const modeloLabel = tipoVehiculo === 'coche' ? modeloNombre : modeloMotoNombre;
+		const marcaLabel =
+			tipoVehiculo === 'coche'
+				? marcaNombre
+				: tipoVehiculo === 'moto'
+					? marcaMotoNombre
+					: marcaNombre;
+		const modeloLabel =
+			tipoVehiculo === 'coche'
+				? modeloNombre
+				: tipoVehiculo === 'moto'
+					? modeloMotoNombre
+					: modeloNombre;
+		const solicitante = activeParty;
 		const priceLines = breakdown
 			? [
 					{ label: 'ITP', amount: breakdown.itpAmount },
@@ -766,14 +788,22 @@
 			tipo: 'transferencia',
 			wizardStep: step,
 			tipoVehiculo,
+			servicioVehiculo,
+			kilometros: kilometros === '' ? undefined : kilometros,
 			matricula,
 			bastidor,
 			marca: marcaLabel,
 			modelo: modeloLabel,
 			marcaNombre: marcaLabel,
 			modeloNombre: modeloLabel,
-			marcaId: tipoVehiculo === 'coche' ? marcaId : marcaMotoId,
-			modeloId: tipoVehiculo === 'coche' ? modeloId : modeloMotoId || undefined,
+			marcaId:
+				tipoVehiculo === 'coche' ? marcaId : tipoVehiculo === 'moto' ? marcaMotoId : undefined,
+			modeloId:
+				tipoVehiculo === 'coche'
+					? modeloId
+					: tipoVehiculo === 'moto'
+						? modeloMotoId || undefined
+						: undefined,
 			combustible: tipoVehiculo === 'coche' ? combustibleNombre : undefined,
 			combustibleId: tipoVehiculo === 'coche' ? combustibleId : undefined,
 			modeloMeta: tipoVehiculo === 'coche' ? modeloMeta : undefined,
@@ -786,22 +816,23 @@
 			incluirInforme,
 			motivoTransferencia,
 			liquidarItp,
-			email,
-			nif,
-			nombre,
-			apellido1,
-			apellido2,
-			telefono,
 			rol,
-			otraParteEmail,
-			provincia,
-			municipio,
-			tipoVia,
-			direccion,
-			numero,
-			piso,
-			puerta,
-			cp,
+			email: solicitante.email,
+			nif: solicitante.nif,
+			nombre: solicitante.nombre,
+			apellido1: solicitante.apellido1,
+			apellido2: solicitante.apellido2,
+			telefono: solicitante.telefono,
+			cp: solicitante.cp,
+			direccion: solicitante.direccion,
+			provincia: solicitante.provincia,
+			municipio: solicitante.municipio,
+			tipoVia: solicitante.tipoVia,
+			numero: solicitante.numero,
+			piso: solicitante.piso,
+			puerta: solicitante.puerta,
+			...flattenParty('comprador', comprador),
+			...flattenParty('vendedor', vendedor),
 			docsAttached: Object.keys(docFiles).filter((k) => docFiles[k]),
 			acceptPrivacy,
 			breakdown,
@@ -940,10 +971,7 @@
 						<RadioCards
 							name="tipo"
 							bind:value={tipoVehiculo}
-							options={[
-								{ value: 'coche', label: 'Coche' },
-								{ value: 'moto', label: 'Moto / sin carnet' }
-							]}
+							options={[...vehicleTypeOptions]}
 						/>
 					</FormField>
 					<FormField label="Matrícula" error={errors.matricula} hint="Ej: 3990 WDS" required>
@@ -953,28 +981,12 @@
 							oninput={() => noteProgress()}
 						/>
 					</FormField>
-					<FormField
-						label="Bastidor (VIN)"
-						error={errors.bastidor}
-						hint="17 caracteres de la ficha técnica (sin espacios ni guiones; sin I, O ni Q)"
-						required
-					>
-						<input
-							bind:value={bastidor}
-							placeholder="Ej. VF1ABCDEF12345678"
-							maxlength="20"
-							autocomplete="off"
-							spellcheck="false"
-							oninput={() => {
-								bastidor = normalizeBastidor(bastidor).slice(0, 17);
-								const err = validateBastidor(bastidor);
-								// Limpia al ser válido; si ya había error, actualiza el mensaje al escribir.
-								if (!err || errors.bastidor) {
-									errors = { ...errors, bastidor: err };
-								}
-								noteProgress();
-							}}
-						/>
+					<FormField label="Servicio del vehículo" error={errors.servicioVehiculo} required>
+						<select bind:value={servicioVehiculo}>
+							{#each vehicleServiceOptions as opt}
+								<option value={opt.value}>{opt.label}</option>
+							{/each}
+						</select>
 					</FormField>
 					{#if tipoVehiculo === 'coche'}
 						<VehicleModelPicker
@@ -991,7 +1003,7 @@
 								modelo: errors.modelo
 							}}
 						/>
-					{:else}
+					{:else if tipoVehiculo === 'moto'}
 						<MotoModelPicker
 							bind:marcaId={marcaMotoId}
 							bind:marcaNombre={marcaMotoNombre}
@@ -1004,7 +1016,47 @@
 								cilindrada: errors.cilindrada
 							}}
 						/>
+					{:else}
+						<div class="row-2">
+							<FormField label="Marca" error={errors.marca} required>
+								<input bind:value={marcaNombre} placeholder="Ej. Knaus, Tabbert…" />
+							</FormField>
+							<FormField label="Modelo" error={errors.modelo} required>
+								<input bind:value={modeloNombre} placeholder="Ej. Sport 500 QDK" />
+							</FormField>
+						</div>
 					{/if}
+					<FormField
+						label="Bastidor (VIN)"
+						error={errors.bastidor}
+						hint="17 caracteres de la ficha técnica (sin espacios ni guiones; sin I, O ni Q)"
+						required
+					>
+						<input
+							bind:value={bastidor}
+							placeholder="Ej. VF1ABCDEF12345678"
+							maxlength="20"
+							autocomplete="off"
+							spellcheck="false"
+							oninput={() => {
+								bastidor = normalizeBastidor(bastidor).slice(0, 17);
+								const err = validateBastidor(bastidor);
+								if (!err || errors.bastidor) {
+									errors = { ...errors, bastidor: err };
+								}
+								noteProgress();
+							}}
+						/>
+					</FormField>
+					<FormField label="Kilómetros" hint="Opcional. Kilometraje actual del vehículo">
+						<input
+							type="number"
+							bind:value={kilometros}
+							min="0"
+							placeholder="Ej. 85000"
+							oninput={() => noteProgress()}
+						/>
+					</FormField>
 					<FormField label="Fecha primera matrícula" error={errors.fechaMatricula} required>
 						<DateInput bind:value={fechaMatricula} max={todayIso()} />
 					</FormField>
@@ -1070,81 +1122,25 @@
 							]}
 						/>
 					</FormField>
-					<FormField label="Email" error={errors.email} required>
-						<input type="email" bind:value={email} autocomplete="email" />
-					</FormField>
-					{#if email.trim() && !validateEmail(email) && !page.data.user}
-						<ExistingAccountNotice bind:exists={emailAccountExists} email={email.trim()} />
+					<PartyFields
+						title="Datos del comprador"
+						bind:party={comprador}
+						errors={partyFieldErrors('comprador')}
+						showAutofill={rol === 'comprador' || !!page.data.user}
+						onautofill={() => autofillParty('comprador')}
+					/>
+					{#if comprador.email.trim() && !validateEmail(comprador.email) && !page.data.user}
+						<ExistingAccountNotice bind:exists={emailAccountExists} email={comprador.email.trim()} />
 					{/if}
-					<FormField
-						label="NIF/NIE"
-						error={errors.nif}
-						hint="Escribe los dígitos: la letra se calcula sola"
-						required
-					>
-						<NifInput bind:value={nif} />
-					</FormField>
-					<FormField label="Nombre" error={errors.nombre} required>
-						<input bind:value={nombre} />
-					</FormField>
-					<FormField label="Primer apellido" error={errors.apellido1} required>
-						<input bind:value={apellido1} />
-					</FormField>
-					<FormField label="Segundo apellido" error={errors.apellido2} required>
-						<input bind:value={apellido2} />
-					</FormField>
-					<FormField label="Teléfono" error={errors.telefono} required>
-						<input type="tel" bind:value={telefono} inputmode="tel" placeholder="612345678" />
-					</FormField>
-					<p class="info">
-						Puedes invitar a la otra parte por email para que complete sus datos, o continuar y
-						añadirlos después.
-					</p>
-					<FormField label="Email de la otra parte (opcional)" error={errors.otraParteEmail}>
-						<input type="email" bind:value={otraParteEmail} placeholder="vendedor@email.com" />
-					</FormField>
 				{:else if step === 3}
-					<FormField label="Provincia" error={errors.provincia} required>
-						<SearchSelect
-							options={provinceOptions}
-							bind:value={provincia}
-							placeholder="Buscar provincia…"
-							maxResults={52}
-							minChars={0}
-							onChange={() => {
-								errors = { ...errors, provincia: null };
-							}}
-						/>
-					</FormField>
-					<FormField label="Municipio" error={errors.municipio} required>
-						<input bind:value={municipio} />
-					</FormField>
-					<div class="row-2">
-						<FormField label="Tipo de vía" required>
-							<select bind:value={tipoVia}>
-								{#each streetTypes as t}
-									<option value={t}>{t}</option>
-								{/each}
-							</select>
-						</FormField>
-						<FormField label="Nombre de la vía" error={errors.direccion} required>
-							<input bind:value={direccion} autocomplete="address-line1" />
-						</FormField>
-					</div>
-					<div class="row-3">
-						<FormField label="Nº" error={errors.numero} required>
-							<input bind:value={numero} />
-						</FormField>
-						<FormField label="Piso">
-							<input bind:value={piso} />
-						</FormField>
-						<FormField label="Puerta">
-							<input bind:value={puerta} />
-						</FormField>
-					</div>
-					<FormField label="Código postal" error={errors.cp} required>
-						<input bind:value={cp} maxlength="5" inputmode="numeric" autocomplete="postal-code" />
-					</FormField>
+					<PartyFields
+						title="Datos del vendedor"
+						bind:party={vendedor}
+						errors={partyFieldErrors('vendedor')}
+						showAutofill={rol === 'vendedor' || !!page.data.user}
+						onautofill={() => autofillParty('vendedor')}
+					/>
+				{:else if step === 4}
 					{#if errors.docs}<p class="err">{errors.docs}</p>{/if}
 					<TramiteDocumentosStep
 						groups={docGroups}
@@ -1162,30 +1158,36 @@
 							<li>
 								<span>Vehículo</span>
 								<span
-									>{matricula || '—'} · {tipoVehiculo === 'coche'
-										? [marcaNombre, modeloNombre].filter(Boolean).join(' ') || '—'
-										: [marcaMotoNombre, modeloMotoNombre, cilindradaMoto ? `${cilindradaMoto} cc` : '']
-												.filter(Boolean)
-												.join(' ') || '—'}</span
+									>{matricula || '—'} · {vehicleTypeLabel(tipoVehiculo)} · {vehicleLabel()}</span
 								>
 							</li>
 							<li><span>Bastidor</span><span>{bastidor || '—'}</span></li>
-							<li><span>Rol</span><span>{rol}</span></li>
-							<li><span>Solicitante</span><span>{nombre} {apellido1} {apellido2}</span></li>
-							<li><span>NIF/NIE</span><span>{nif || '—'}</span></li>
-							<li><span>Email</span><span>{email}</span></li>
-							<li><span>Teléfono</span><span>{telefono || '—'}</span></li>
+							<li><span>Servicio</span><span>{servicioVehiculo || '—'}</span></li>
+							{#if kilometros !== ''}
+								<li><span>Kilómetros</span><span>{kilometros}</span></li>
+							{/if}
 							<li>
-								<span>Dirección</span>
-								<span
-									>{[tipoVia, direccion, numero, cp, municipio, provincia]
-										.filter(Boolean)
-										.join(', ') || '—'}</span
-								>
+								<span>Tu rol</span><span>{rol === 'comprador' ? 'Comprador' : 'Vendedor'}</span>
 							</li>
+							<li>
+								<span>Comprador</span>
+								<span>{comprador.nombre} {comprador.apellido1} {comprador.apellido2}</span>
+							</li>
+							<li><span>NIF comprador</span><span>{comprador.nif || '—'}</span></li>
+							<li>
+								<span>Vendedor</span>
+								<span>{vendedor.nombre} {vendedor.apellido1} {vendedor.apellido2}</span>
+							</li>
+							<li><span>NIF vendedor</span><span>{vendedor.nif || '—'}</span></li>
+							<li><span>Email contacto</span><span>{activeParty.email}</span></li>
+							<li><span>Teléfono contacto</span><span>{activeParty.telefono || '—'}</span></li>
 							<li><span>Total</span><span>{breakdown ? formatEur(breakdown.total) : '—'}</span></li>
 						</ul>
-						<ExistingAccountNotice bind:exists={emailAccountExists} {email} mode="reminder" />
+						<ExistingAccountNotice
+							bind:exists={emailAccountExists}
+							email={activeParty.email}
+							mode="reminder"
+						/>
 						<PrivacyAcceptField bind:checked={acceptPrivacy} error={errors.privacy} />
 						{#if errors.total}<p class="err">{errors.total}</p>{/if}
 						{#if payError}<p class="err">{payError}</p>{/if}
@@ -1277,35 +1279,9 @@
 		font-size: 14px;
 		margin-bottom: 16px;
 	}
-	.info {
-		font-size: 15px;
-		color: var(--text2);
-		line-height: 1.55;
-		margin-bottom: 20px;
-		padding: 14px;
-		background: var(--primary-dim);
-		border-radius: var(--radius);
-	}
-	.check {
-		display: flex;
-		align-items: flex-start;
-		gap: 10px;
-		font-size: 14px;
-		color: var(--text2);
-		margin-top: 12px;
-	}
-	.check a {
-		color: var(--accent);
-		font-weight: 600;
-	}
 	.row-2 {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 16px;
-	}
-	.row-3 {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
 		gap: 16px;
 	}
 	.err {
@@ -1347,8 +1323,7 @@
 		.layout {
 			grid-template-columns: 1fr;
 		}
-		.row-2,
-		.row-3 {
+		.row-2 {
 			grid-template-columns: 1fr;
 		}
 	}

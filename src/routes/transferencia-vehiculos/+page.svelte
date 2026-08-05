@@ -25,9 +25,10 @@
 	tramitarPath="/tramitar/transferencia"
 	calcPath="/calcular/precio-transferencia"
 	steps={[
-		'Calcula tu presupuesto con los datos del vehículo',
-		'Introduce tus datos y los de la otra parte',
-		'Verifica tu identidad con fotos de documentos',
-		'Recibe el permiso de circulación en tu domicilio'
+		'Datos del vehículo y presupuesto',
+		'Datos del comprador',
+		'Datos del vendedor',
+		'Sube la documentación',
+		'Revisa y paga online'
 	]}
 />

@@ -69,13 +69,24 @@ export function validateSolicitudPayload(
 			),
 			validateRequired(str(body.ccaaId), 'La comunidad autónoma'),
 			!(num(body.precioVenta) > 0) ? 'Indica un precio de venta mayor que 0' : null,
-			validateEmail(str(body.email)),
-			validateNifNie(str(body.nif)),
-			validateRequired(str(body.nombre), 'El nombre'),
-			validateRequired(str(body.apellido1), 'El primer apellido'),
-			validateRequired(str(body.apellido2), 'El segundo apellido'),
-			validatePhone(str(body.telefono)),
-			validateCodigoPostal(str(body.cp)),
+			validateEmail(str(body.email || body.compradorEmail || body.vendedorEmail)),
+			validateNifNie(str(body.nif || body.compradorNif || body.vendedorNif)),
+			validateRequired(
+				str(body.nombre || body.compradorNombre || body.vendedorNombre),
+				'El nombre'
+			),
+			validateRequired(
+				str(body.apellido1 || body.compradorApellido1 || body.vendedorApellido1),
+				'El primer apellido'
+			),
+			validateRequired(
+				str(body.apellido2 || body.compradorApellido2 || body.vendedorApellido2),
+				'El segundo apellido'
+			),
+			validatePhone(str(body.telefono || body.compradorTelefono || body.vendedorTelefono)),
+			validateNifNie(str(body.compradorNif)),
+			validateNifNie(str(body.vendedorNif)),
+			validateCodigoPostal(str(body.cp || body.compradorCp || body.vendedorCp)),
 			amount == null ? 'Importe no válido' : null
 		);
 		if (err) return { ok: false, error: err };
@@ -105,6 +116,7 @@ export function validateSolicitudPayload(
 	if (tipo === 'duplicado-carnet' || tipo === 'duplicado') {
 		const err = firstError(
 			validateRequired(str(body.motivoDuplicado), 'El motivo'),
+			validateMatricula(str(body.matricula)),
 			validateEmail(str(body.email)),
 			validateNifNie(str(body.nif)),
 			validateRequired(str(body.nombre), 'El nombre'),
@@ -123,16 +135,46 @@ export function validateSolicitudPayload(
 		return { ok: true, email, amount };
 	}
 
-	// etiqueta, informe-dgt, cancelacion-reserva y genéricos con matrícula
+	if (tipo === 'notificacion-venta') {
+		const err = firstError(
+			validateMatricula(str(body.matricula)),
+			validateEmail(str(body.email || body.vendedorEmail || body.compradorEmail)),
+			validateNifNie(str(body.nif || body.vendedorNif || body.compradorNif)),
+			validateRequired(str(body.nombre || body.vendedorNombre || body.compradorNombre), 'El nombre'),
+			validateRequired(
+				str(body.apellido1 || body.vendedorApellido1 || body.compradorApellido1),
+				'El primer apellido'
+			),
+			validateRequired(
+				str(body.apellido2 || body.vendedorApellido2 || body.compradorApellido2),
+				'El segundo apellido'
+			),
+			validatePhone(str(body.telefono || body.vendedorTelefono || body.compradorTelefono)),
+			validateNifNie(str(body.compradorNif)),
+			validateNifNie(str(body.vendedorNif)),
+			amount == null ? 'Importe no válido' : null
+		);
+		if (err) return { ok: false, error: err };
+		return {
+			ok: true,
+			email: email || str(body.vendedorEmail || body.compradorEmail).trim().toLowerCase() || null,
+			amount
+		};
+	}
+
+	// etiqueta, informe-dgt, nota-simple, baja, cancelacion-reserva y genéricos con matrícula
 	if (
 		tipo === 'etiqueta' ||
 		tipo === 'informe-dgt' ||
 		tipo === 'informe' ||
+		tipo === 'nota-simple' ||
+		tipo === 'baja-temporal' ||
 		tipo === 'cancelacion-reserva' ||
 		tipo === 'cancelacion'
 	) {
 		const err = firstError(
 			validateMatricula(str(body.matricula)),
+			body.bastidor ? validateBastidor(str(body.bastidor)) : null,
 			validateEmail(str(body.email)),
 			validateNifNie(str(body.nif)),
 			validateRequired(str(body.nombre), 'El nombre'),

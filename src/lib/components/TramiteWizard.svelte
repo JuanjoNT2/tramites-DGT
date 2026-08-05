@@ -16,12 +16,17 @@
 	import type { Profile } from '$lib/supabase/types';
 	import {
 		duplicadoMotivos,
-		permisoClases,
 		sexoOptions,
 		shippingOptions,
 		tramitePricing
 	} from '$lib/data/tramite-options';
 	import { provinces, streetTypes } from '$lib/data/provinces';
+	import {
+		DEFAULT_VEHICLE_SERVICE,
+		vehicleServiceOptions,
+		vehicleTypeLabel,
+		vehicleTypeOptions
+	} from '$lib/data/vehicle-types';
 	import { formatEur } from '$lib/utils/pricing';
 	import {
 		validateEmail,
@@ -69,7 +74,6 @@
 		| 'informe'
 		| 'duplicado'
 		| 'cancelacion'
-		| 'notificacion-venta'
 		| 'nota-simple'
 		| 'baja-temporal';
 
@@ -109,9 +113,13 @@
 
 	let matricula = $state('');
 	let bastidor = $state('');
-	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
+	let tipoVehiculo = $state<'coche' | 'moto' | 'caravana'>('coche');
+	let servicioVehiculo = $state(DEFAULT_VEHICLE_SERVICE);
 	let distintivoTipo = $state('');
 	let vmpCertificado = $state<'si' | 'no'>('si');
+	let vmpTipoSolicitud = $state<'inscripcion_adhesivo' | 'inscripcion' | 'adhesivo'>(
+		'inscripcion_adhesivo'
+	);
 	let vmpNumCertificado = $state('');
 	let vmpNumSerie = $state('');
 	let vmpMarca = $state('');
@@ -119,8 +127,7 @@
 	let vmpMarcaId = $state('');
 	let vmpModeloId = $state('');
 	let motivoDuplicado = $state('');
-	let clasePermiso = $state('');
-	let fechaCaducidad = $state('');
+	let entidadFinanciera = $state('');
 	let email = $state('');
 	let nif = $state('');
 	let nombre = $state('');
@@ -152,7 +159,11 @@
 	let docFiles = $state<Record<string, File | null>>({});
 
 	const docGroups = $derived(
-		getDocumentGroups(variant, { motivoDuplicado })
+		getDocumentGroups(variant, {
+			motivoDuplicado,
+			cartaFinalizacion,
+			tipoSolicitudVmp: vmpTipoSolicitud
+		})
 	);
 
 	const shippingPrice = $derived(
@@ -195,10 +206,6 @@
 				lines: [{ label: tramitePricing.duplicado.label, amount: tramitePricing.duplicado.total }],
 				total: tramitePricing.duplicado.total
 			};
-		}
-		if (variant === 'notificacion-venta') {
-			const p = tramitePricing.notificacionVenta;
-			return { lines: [{ label: p.label, amount: p.total }], total: p.total };
 		}
 		if (variant === 'nota-simple') {
 			const p = tramitePricing.notaSimple;
@@ -259,11 +266,18 @@
 		}
 		if (typeof data.matricula === 'string') matricula = data.matricula;
 		if (typeof data.bastidor === 'string') bastidor = normalizeBastidor(data.bastidor).slice(0, 17);
-		if (typeof data.tipoVehiculo === 'string')
-			tipoVehiculo = data.tipoVehiculo as 'coche' | 'moto';
+		if (data.tipoVehiculo === 'coche' || data.tipoVehiculo === 'moto' || data.tipoVehiculo === 'caravana')
+			tipoVehiculo = data.tipoVehiculo;
+		if (typeof data.servicioVehiculo === 'string') servicioVehiculo = data.servicioVehiculo;
 		if (typeof data.distintivoTipo === 'string') distintivoTipo = data.distintivoTipo;
 		if (typeof data.vmpCertificado === 'string')
 			vmpCertificado = data.vmpCertificado as 'si' | 'no';
+		if (
+			data.vmpTipoSolicitud === 'inscripcion_adhesivo' ||
+			data.vmpTipoSolicitud === 'inscripcion' ||
+			data.vmpTipoSolicitud === 'adhesivo'
+		)
+			vmpTipoSolicitud = data.vmpTipoSolicitud;
 		if (typeof data.vmpNumCertificado === 'string') vmpNumCertificado = data.vmpNumCertificado;
 		if (typeof data.vmpNumSerie === 'string') vmpNumSerie = data.vmpNumSerie;
 		if (typeof data.vmpMarca === 'string') vmpMarca = data.vmpMarca;
@@ -271,8 +285,7 @@
 		if (typeof data.vmpMarcaId === 'string') vmpMarcaId = data.vmpMarcaId;
 		if (typeof data.vmpModeloId === 'string') vmpModeloId = data.vmpModeloId;
 		if (typeof data.motivoDuplicado === 'string') motivoDuplicado = data.motivoDuplicado;
-		if (typeof data.clasePermiso === 'string') clasePermiso = data.clasePermiso;
-		if (typeof data.fechaCaducidad === 'string') fechaCaducidad = data.fechaCaducidad;
+		if (typeof data.entidadFinanciera === 'string') entidadFinanciera = data.entidadFinanciera;
 		if (typeof data.email === 'string') email = data.email;
 		if (typeof data.nif === 'string') nif = data.nif;
 		if (typeof data.nombre === 'string') nombre = data.nombre;
@@ -410,8 +423,10 @@
 			matricula,
 			bastidor,
 			tipoVehiculo,
+			servicioVehiculo,
 			distintivoTipo,
 			vmpCertificado,
+			vmpTipoSolicitud,
 			vmpNumCertificado,
 			vmpNumSerie,
 			vmpMarca,
@@ -419,8 +434,7 @@
 			vmpMarcaId,
 			vmpModeloId,
 			motivoDuplicado,
-			clasePermiso,
-			fechaCaducidad,
+			entidadFinanciera,
 			email,
 			nif,
 			nombre,
@@ -496,8 +510,9 @@
 		void vmpMarcaId;
 		void vmpModeloId;
 		void motivoDuplicado;
-		void clasePermiso;
-		void fechaCaducidad;
+		void entidadFinanciera;
+		void servicioVehiculo;
+		void vmpTipoSolicitud;
 		void email;
 		void nif;
 		void nombre;
@@ -540,8 +555,9 @@
 		void vmpMarcaId;
 		void vmpModeloId;
 		void motivoDuplicado;
-		void clasePermiso;
-		void fechaCaducidad;
+		void entidadFinanciera;
+		void servicioVehiculo;
+		void vmpTipoSolicitud;
 		void email;
 		void nif;
 		void nombre;
@@ -599,6 +615,7 @@
 
 		if (variant === 'informe' && s === 1) {
 			e.matricula = validateMatricula(matricula);
+			if (bastidor.trim()) e.bastidor = validateBastidor(bastidor);
 		}
 
 		if (variant === 'nota-simple' && s === 1) {
@@ -606,24 +623,13 @@
 			if (bastidor.trim()) e.bastidor = validateBastidor(bastidor);
 		}
 
-		if (
-			(variant === 'cancelacion' ||
-				variant === 'notificacion-venta' ||
-				variant === 'baja-temporal') &&
-			s === 1
-		) {
+		if ((variant === 'cancelacion' || variant === 'baja-temporal') && s === 1) {
 			e.matricula = validateMatricula(matricula);
 		}
 
 		if (variant === 'duplicado' && s === 1) {
-			if (!motivoDuplicado) e.motivoDuplicado = 'Selecciona el tipo de duplicado';
-			if (!clasePermiso) e.clasePermiso = 'Selecciona la clase de permiso';
-			// Caducidad puede ser pasada (motivo pérdida/caducado); no exigir futuro
-			e.fechaCaducidad = validateDate(fechaCaducidad, {
-				label: 'La fecha de caducidad',
-				notFuture: false,
-				required: true
-			});
+			if (!motivoDuplicado) e.motivoDuplicado = 'Selecciona el motivo del duplicado';
+			e.matricula = validateMatricula(matricula);
 		}
 
 		if (s === 2 && variant !== 'cancelacion') {
@@ -662,7 +668,6 @@
 				variant === 'etiqueta-vmp' ||
 				variant === 'informe' ||
 				variant === 'duplicado' ||
-				variant === 'notificacion-venta' ||
 				variant === 'nota-simple' ||
 				variant === 'baja-temporal')
 		) {
@@ -782,8 +787,10 @@
 			matricula,
 			bastidor,
 			tipoVehiculo,
+			servicioVehiculo,
 			distintivoTipo,
 			vmpCertificado,
+			vmpTipoSolicitud,
 			vmpNumCertificado,
 			vmpNumSerie,
 			vmpMarca,
@@ -791,8 +798,7 @@
 			vmpMarcaId,
 			vmpModeloId,
 			motivoDuplicado,
-			clasePermiso,
-			fechaCaducidad,
+			entidadFinanciera,
 			email,
 			nif,
 			nombre,
@@ -961,6 +967,24 @@
 						modelo del listado oficial DGT. Si no lo está, puedes solicitar inscripción temporal
 						hasta el 22/01/2027.
 					</p>
+					<FormField label="Qué solicitas" required>
+						<RadioCards
+							name="vmpTipoSolicitud"
+							bind:value={vmpTipoSolicitud}
+							options={[
+								{ value: 'inscripcion_adhesivo', label: 'Inscripción VMP + adhesivo matrícula' },
+								{ value: 'inscripcion', label: 'Solo inscripción VMP' },
+								{ value: 'adhesivo', label: 'Solo adhesivo matrícula VMP' }
+							]}
+						/>
+					</FormField>
+					<FormField label="Servicio del vehículo" required>
+						<select bind:value={servicioVehiculo}>
+							{#each vehicleServiceOptions as s}
+								<option value={s.value}>{s.label}</option>
+							{/each}
+						</select>
+					</FormField>
 					<FormField label="¿El patinete tiene certificado de circulación DGT?" required>
 						<RadioCards
 							name="vmpCertificado"
@@ -1002,15 +1026,15 @@
 						/>
 					</FormField>
 				{:else if variant === 'informe' && step === 1}
-					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
+					<FormField
+						label="Matrícula del vehículo"
+						error={errors.matricula}
+						hint="Dato principal para generar el informe oficial DGT"
+						required
+					>
 						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />
 					</FormField>
-					<p class="info">Informe completo emitido por la DGT con autentificación adicional.</p>
-				{:else if variant === 'nota-simple' && step === 1}
-					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
-						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />
-					</FormField>
-					<FormField label="Bastidor (opcional)" error={errors.bastidor}>
+					<FormField label="Bastidor (opcional)" error={errors.bastidor} hint="Ayuda a confirmar el vehículo">
 						<input
 							bind:value={bastidor}
 							placeholder="17 caracteres VIN"
@@ -1027,26 +1051,58 @@
 							}}
 						/>
 					</FormField>
-				{:else if
-					(variant === 'cancelacion' ||
-						variant === 'notificacion-venta' ||
-						variant === 'baja-temporal') &&
-					step === 1}
+					<p class="info">Informe completo emitido por la DGT con autentificación adicional.</p>
+				{:else if variant === 'nota-simple' && step === 1}
+					<FormField
+						label="Matrícula del vehículo"
+						error={errors.matricula}
+						hint="Dato principal para la nota del Registro de Bienes Muebles"
+						required
+					>
+						<input bind:value={matricula} placeholder="3990WDS" oninput={noteProgress} />
+					</FormField>
+					<FormField
+						label="Bastidor (opcional)"
+						error={errors.bastidor}
+						hint="Recomendado si lo tienes: mejora la identificación registral"
+					>
+						<input
+							bind:value={bastidor}
+							placeholder="17 caracteres VIN"
+							maxlength="20"
+							autocomplete="off"
+							spellcheck="false"
+							oninput={() => {
+								bastidor = normalizeBastidor(bastidor).slice(0, 17);
+								const err = bastidor ? validateBastidor(bastidor) : null;
+								if (!err || errors.bastidor) {
+									errors = { ...errors, bastidor: err };
+								}
+								noteProgress();
+							}}
+						/>
+					</FormField>
+				{:else if (variant === 'cancelacion' || variant === 'baja-temporal') && step === 1}
 					<FormField label="Tipo de vehículo" required>
 						<RadioCards
 							name="tipoVehiculo"
 							bind:value={tipoVehiculo}
-							options={[
-								{ value: 'coche', label: 'Coche' },
-								{ value: 'moto', label: 'Moto o coche sin carnet' }
-							]}
+							options={[...vehicleTypeOptions]}
 						/>
 					</FormField>
 					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
 						<input bind:value={matricula} oninput={noteProgress} />
 					</FormField>
+					{#if variant === 'cancelacion'}
+						<FormField label="Entidad financiera (si la conoces)">
+							<input
+								bind:value={entidadFinanciera}
+								placeholder="Nombre del banco o financiera"
+							/>
+						</FormField>
+					{/if}
 				{:else if variant === 'duplicado' && step === 1}
-					<FormField label="Tipo de duplicado" error={errors.motivoDuplicado} required>
+					<FormField label="Motivo" error={errors.motivoDuplicado} required>
 						<select bind:value={motivoDuplicado}>
 							<option value="">Selecciona un motivo</option>
 							{#each duplicadoMotivos as m}
@@ -1054,16 +1110,15 @@
 							{/each}
 						</select>
 					</FormField>
-					<FormField label="Clase de permiso" error={errors.clasePermiso} required>
-						<select bind:value={clasePermiso}>
-							<option value="">Selecciona la clase</option>
-							{#each permisoClases as c}
-								<option value={c}>{c}</option>
-							{/each}
-						</select>
+					<FormField label="Tipo de vehículo" required>
+						<RadioCards
+							name="tipoVehiculoDup"
+							bind:value={tipoVehiculo}
+							options={[...vehicleTypeOptions]}
+						/>
 					</FormField>
-					<FormField label="Fecha de caducidad" error={errors.fechaCaducidad} required>
-						<DateInput bind:value={fechaCaducidad} />
+					<FormField label="Matrícula del vehículo" error={errors.matricula} required>
+						<input bind:value={matricula} oninput={noteProgress} />
 					</FormField>
 				{:else if step === 2 && variant !== 'cancelacion'}
 					<FormField label="Correo electrónico" error={errors.email} required>
@@ -1282,20 +1337,16 @@
 								{/if}
 							{:else if variant === 'duplicado'}
 								<li><span>Motivo</span><strong>{motivoDuplicado || '—'}</strong></li>
-								<li><span>Clase permiso</span><strong>{clasePermiso || '—'}</strong></li>
+								<li><span>Matrícula</span><strong>{matricula || '—'}</strong></li>
+								<li><span>Tipo</span><strong>{vehicleTypeLabel(tipoVehiculo)}</strong></li>
 							{:else}
 								<li><span>Matrícula</span><strong>{matricula || '—'}</strong></li>
-								{#if bastidor && variant === 'nota-simple'}
+								{#if bastidor && (variant === 'nota-simple' || variant === 'informe')}
 									<li><span>Bastidor</span><strong>{bastidor}</strong></li>
 								{/if}
-								{#if (variant === 'cancelacion' ||
-										variant === 'notificacion-venta' ||
-										variant === 'baja-temporal') &&
-									tipoVehiculo}
+								{#if (variant === 'cancelacion' || variant === 'baja-temporal') && tipoVehiculo}
 									<li>
-										<span>Tipo</span><strong
-											>{tipoVehiculo === 'moto' ? 'Moto' : 'Coche'}</strong
-										>
+										<span>Tipo</span><strong>{vehicleTypeLabel(tipoVehiculo)}</strong>
 									</li>
 								{/if}
 								{#if distintivoTipo}

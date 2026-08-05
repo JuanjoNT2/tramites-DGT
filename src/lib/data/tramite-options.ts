@@ -13,34 +13,14 @@ export const shippingOptions = [
 	}
 ] as const;
 
+/** Motivos de duplicado / renovación del permiso de circulación del vehículo (no del carnet de conducir). */
 export const duplicadoMotivos = [
-	{ value: 'perdida', label: 'Pérdida permiso conducir' },
-	{ value: 'deterioro', label: 'Deterioro permiso conducir' },
-	{ value: 'sustraccion', label: 'Sustracción permiso conducir' },
-	{ value: 'cambio-domicilio', label: 'Cambio domicilio conductor' },
-	{ value: 'internacional', label: 'Permiso internacional' },
-	{ value: 'circulacion-extravio', label: 'Extravío permiso circulación' },
-	{ value: 'circulacion-deterioro', label: 'Deterioro permiso circulación' },
-	{ value: 'circulacion-sustraccion', label: 'Sustracción permiso circulación' }
-] as const;
-
-export const permisoClases = [
-	'AM',
-	'A1',
-	'A2',
-	'A',
-	'B',
-	'EB',
-	'BTP',
-	'C1',
-	'C',
-	'D1',
-	'D',
-	'BE',
-	'C1E',
-	'CE',
-	'D1E',
-	'DE'
+	{ value: 'extravio', label: 'Pérdida / extravío del permiso de circulación' },
+	{ value: 'deterioro', label: 'Deterioro del permiso de circulación' },
+	{ value: 'sustraccion', label: 'Sustracción / robo del permiso de circulación' },
+	{ value: 'cambio-servicio', label: 'Cambio de servicio del vehículo' },
+	{ value: 'cambio-ficha', label: 'Cambios en ficha técnica ITV' },
+	{ value: 'cambio-datos-titular', label: 'Cambio de datos del titular (mismo NIF/CIF)' }
 ] as const;
 
 export const sexoOptions = [
