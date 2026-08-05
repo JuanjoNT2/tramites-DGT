@@ -11,10 +11,10 @@ export function requestOrigin(url: URL): string {
 
 export function authCallbackUrl(url: URL, next = '/'): string {
 	const n = next.startsWith('/') ? next : '/';
-	// Preferir dominio canónico en emails (evita localhost/preview en el enlace)
-	const origin = siteOrigin() || requestOrigin(url);
-	const base = `${origin}/auth/callback`;
-	return `${base}?next=${encodeURIComponent(n)}`;
+	// Misma origen desde la que se pide el email (dev/preview/prod),
+	// con fallback al dominio canónico.
+	const origin = requestOrigin(url) || siteOrigin();
+	return `${origin}/auth/callback?next=${encodeURIComponent(n)}`;
 }
 
 export function passwordRecoveryRedirect(url: URL): string {

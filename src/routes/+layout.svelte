@@ -92,6 +92,40 @@
 			const gtmId = env.PUBLIC_GTM_ID;
 			if (gtmId) injectGtm(gtmId);
 		}
+
+		// Enlaces de Auth que aterrizan en / (Site URL) con #access_token=…&type=recovery
+		void (async () => {
+			const hash = window.location.hash.replace(/^#/, '');
+			if (!hash.includes('access_token')) return;
+			const params = new URLSearchParams(hash);
+			const access_token = params.get('access_token');
+			const refresh_token = params.get('refresh_token');
+			const type = params.get('type');
+			if (!access_token || !refresh_token) return;
+
+			const sb = getSupabaseBrowser();
+			if (!sb) return;
+			const { error } = await sb.auth.setSession({ access_token, refresh_token });
+			history.replaceState(null, '', window.location.pathname + window.location.search);
+			if (error) {
+				console.error('[layout] auth hash setSession', error.message);
+				await goto(
+					`/login?error=${type === 'recovery' ? 'recovery' : type === 'invite' ? 'invite' : 'confirm'}`,
+					{ replaceState: true }
+				);
+				return;
+			}
+			const dest =
+				type === 'recovery'
+					? '/auth/actualizar-password'
+					: type === 'invite'
+						? '/registro?invite=1'
+						: type === 'signup' || type === 'email'
+							? '/cuenta'
+							: '/cuenta';
+			await goto(dest, { replaceState: true, invalidateAll: true });
+		})();
+
 		return () => {
 			idleCtrl?.stop();
 			idleCtrl = null;
