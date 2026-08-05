@@ -21,7 +21,8 @@
 	const brandHref = $derived(staff ? '/gestor' : '/');
 	const displayName = $derived(displayFirstName(profile, user?.email));
 	const accountLabel = $derived(`Hola, ${displayName}`);
-	const loginHref = $derived(loginUrl(page.url.pathname + page.url.search));
+	// Solo pathname: en prerender no se puede leer url.search
+	const loginHref = $derived(loginUrl(page.url.pathname));
 
 	function closeMobile() {
 		open = false;

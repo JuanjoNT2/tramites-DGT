@@ -41,7 +41,7 @@
 		} catch {
 			/* ignore */
 		}
-		const href = loginUrl(page.url.pathname + page.url.search);
+		const href = loginUrl(page.url.pathname);
 		const sep = href.includes('?') ? '&' : '?';
 		await goto(`${href}${sep}reason=idle`, { invalidateAll: true });
 		loggingOut = false;
