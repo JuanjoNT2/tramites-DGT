@@ -25,11 +25,13 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		const { error } = await locals.supabase.auth.verifyOtp({ token_hash, type });
 		if (!error) {
 			const dest =
-				type === 'recovery' || type === 'invite'
+				type === 'recovery'
 					? '/auth/actualizar-password'
-					: next.startsWith('/')
-						? next
-						: '/';
+					: type === 'invite'
+						? '/registro?invite=1'
+						: next.startsWith('/')
+							? next
+							: '/';
 			throw redirect(303, dest);
 		}
 	}

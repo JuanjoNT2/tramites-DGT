@@ -1,38 +1,62 @@
 <script lang="ts">
 	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
 	import NifInput from '$lib/components/ui/NifInput.svelte';
-	import type { ActionData } from './$types';
+	import type { ActionData, PageData } from './$types';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	const inviteMode = $derived(Boolean(data.inviteMode));
 
 	const nombreValue = $derived(
-		form && 'nombre' in form && typeof form.nombre === 'string' ? form.nombre : ''
+		form && 'nombre' in form && typeof form.nombre === 'string'
+			? form.nombre
+			: data.nombre || ''
 	);
 	const apellido1Value = $derived(
-		form && 'apellido1' in form && typeof form.apellido1 === 'string' ? form.apellido1 : ''
+		form && 'apellido1' in form && typeof form.apellido1 === 'string'
+			? form.apellido1
+			: data.apellido1 || ''
 	);
 	const apellido2Value = $derived(
-		form && 'apellido2' in form && typeof form.apellido2 === 'string' ? form.apellido2 : ''
+		form && 'apellido2' in form && typeof form.apellido2 === 'string'
+			? form.apellido2
+			: data.apellido2 || ''
 	);
 	const emailValue = $derived(
-		form && 'email' in form && typeof form.email === 'string' ? form.email : ''
+		inviteMode
+			? data.email
+			: form && 'email' in form && typeof form.email === 'string'
+				? form.email
+				: ''
 	);
 	const telefonoValue = $derived(
-		form && 'telefono' in form && typeof form.telefono === 'string' ? form.telefono : ''
+		form && 'telefono' in form && typeof form.telefono === 'string'
+			? form.telefono
+			: data.telefono || ''
 	);
-	let nif = $state(form && 'nif' in form && typeof form.nif === 'string' ? form.nif : '');
+	let nif = $state('');
+	$effect(() => {
+		const fromForm = form && 'nif' in form && typeof form.nif === 'string' ? form.nif : null;
+		nif = fromForm ?? data.nif ?? '';
+	});
 </script>
 
 <svelte:head>
-	<title>Registro | Trámites DGT Online</title>
+	<title>{inviteMode ? 'Completar registro' : 'Registro'} | Trámites DGT Online</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
 <section class="section">
 	<div class="wrap auth card pad">
-		<h1>Crear cuenta</h1>
+		<h1>{inviteMode ? 'Completa tu registro' : 'Crear cuenta'}</h1>
 		<p class="lead">
-			Regístrate para asociar tus trámites a tu email. Email, móvil y NIF/NIE son obligatorios.
+			{#if inviteMode}
+				Has aceptado la invitación. Rellena tus datos y elige una contraseña para activar tu
+				cuenta en Trámites DGT Online.
+			{:else}
+				Regístrate para asociar tus trámites a tu email. Email, móvil y NIF/NIE son
+				obligatorios.
+			{/if}
 		</p>
 
 		{#if form?.ok}
@@ -84,7 +108,12 @@
 						required
 						autocomplete="email"
 						value={emailValue}
+						readonly={inviteMode}
+						class:readonly={inviteMode}
 					/>
+					{#if inviteMode}
+						<span class="hint">Este email es el de la invitación y no se puede cambiar.</span>
+					{/if}
 				</label>
 				<label>
 					Móvil
@@ -116,12 +145,16 @@
 					autocomplete="new-password"
 					minlength={8}
 				/>
-				<button type="submit" class="btn">Registrarme</button>
+				<button type="submit" class="btn"
+					>{inviteMode ? 'Activar cuenta' : 'Registrarme'}</button
+				>
 			</form>
 
-			<p class="alt">
-				¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
-			</p>
+			{#if !inviteMode}
+				<p class="alt">
+					¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
+				</p>
+			{/if}
 		{/if}
 	</div>
 </section>
@@ -168,6 +201,10 @@
 		border: 1px solid #c5d0da;
 		border-radius: 8px;
 		font: inherit;
+	}
+	input.readonly {
+		background: #f4f7fa;
+		color: #5a6b7d;
 	}
 	.err {
 		background: #fde8e8;

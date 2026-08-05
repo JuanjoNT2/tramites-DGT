@@ -25,8 +25,8 @@
 	<section class="invite card" aria-label="Invitar usuario">
 		<h2>Invitar usuario</h2>
 		<p class="invite-lead">
-			Envía un correo de invitación de Supabase Auth. La persona podrá crear su contraseña y
-			activar la cuenta.
+			Envía un correo de invitación. Si el email ya tiene cuenta o invitación pendiente, no se
+			reenvía. Al aceptar el enlace, la persona completa el registro (datos + contraseña).
 		</p>
 		{#if form && 'inviteOk' in form && form.inviteOk}
 			<p class="ok" role="status">{form.inviteMessage}</p>

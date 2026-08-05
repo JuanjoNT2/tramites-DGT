@@ -33,7 +33,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const emailParam = (url.searchParams.get('email') || '').trim().toLowerCase();
 	return {
 		next: url.searchParams.get('next') || '/',
-		email: emailParam
+		email: emailParam,
+		urlError: url.searchParams.get('error') || null
 	};
 };
 

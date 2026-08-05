@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { authEmailExists } from '$lib/auth/email-exists';
 import { inviteUserRedirect } from '$lib/auth/urls';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import type { Profile } from '$lib/supabase/types';
@@ -43,14 +44,30 @@ export const actions: Actions = {
 			return fail(400, { inviteError: emailErr, inviteEmail: email });
 		}
 
+		const existing = await authEmailExists(sb, email);
+		if (existing.exists) {
+			return fail(400, {
+				inviteError:
+					'Ya existe una cuenta o una invitación pendiente con ese email. No se ha enviado otra.',
+				inviteEmail: email
+			});
+		}
+
 		const { data, error } = await sb.auth.admin.inviteUserByEmail(email, {
 			redirectTo: inviteUserRedirect(url)
 		});
 
 		if (error) {
 			console.error('[admin/invite]', error.message);
+			const msg = error.message || '';
+			const already =
+				/already|registered|exists|existe|invited/i.test(msg) ||
+				error.code === 'email_exists' ||
+				error.status === 422;
 			return fail(400, {
-				inviteError: error.message || 'No se pudo enviar la invitación.',
+				inviteError: already
+					? 'Ya existe una cuenta o una invitación pendiente con ese email.'
+					: msg || 'No se pudo enviar la invitación.',
 				inviteEmail: email
 			});
 		}
@@ -59,7 +76,7 @@ export const actions: Actions = {
 			inviteOk: true as const,
 			inviteEmail: email,
 			inviteUserId: data.user?.id ?? null,
-			inviteMessage: `Invitación enviada a ${email}. Recibirá un correo para crear su cuenta.`
+			inviteMessage: `Invitación enviada a ${email}. Recibirá un correo para completar el registro.`
 		};
 	}
 };

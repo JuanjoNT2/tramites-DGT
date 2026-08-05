@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { authCallbackUrl } from '$lib/auth/urls';
-import { joinPersonName } from '$lib/cuenta/profile-prefill';
+import { joinPersonName, namePartsFromProfile } from '$lib/cuenta/profile-prefill';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import {
 	normalizePhone,
@@ -11,9 +11,52 @@ import {
 	validateRequired
 } from '$lib/utils/validators';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	if (locals.user) throw redirect(303, '/');
-	return {};
+function profileIncomplete(profile: App.Locals['profile']): boolean {
+	if (!profile) return true;
+	const names = namePartsFromProfile(profile);
+	return (
+		!names.nombre ||
+		!names.apellido1 ||
+		!names.apellido2 ||
+		!profile.telefono?.trim() ||
+		!profile.nif?.trim()
+	);
+}
+
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const inviteFlag = url.searchParams.get('invite') === '1';
+
+	if (locals.user) {
+		const incomplete = profileIncomplete(locals.profile);
+		if (inviteFlag || incomplete) {
+			const names = namePartsFromProfile(locals.profile);
+			return {
+				inviteMode: true as const,
+				email: locals.user.email ?? '',
+				nombre: names.nombre,
+				apellido1: names.apellido1,
+				apellido2: names.apellido2,
+				telefono: locals.profile?.telefono || '',
+				nif: locals.profile?.nif || ''
+			};
+		}
+		throw redirect(303, '/cuenta');
+	}
+
+	if (inviteFlag) {
+		// Enlace de invitación sin sesión válida
+		throw redirect(303, '/login?error=invite');
+	}
+
+	return {
+		inviteMode: false as const,
+		email: '',
+		nombre: '',
+		apellido1: '',
+		apellido2: '',
+		telefono: '',
+		nif: ''
+	};
 };
 
 export const actions: Actions = {
@@ -37,21 +80,23 @@ export const actions: Actions = {
 			.replace(/[\s-]/g, '');
 
 		const fullName = joinPersonName(nombre, apellido1, apellido2);
+		const inviteMode = Boolean(locals.user);
 
 		const fields = {
-			email,
+			email: inviteMode ? (locals.user?.email || email).toLowerCase() : email,
 			nombre,
 			apellido1,
 			apellido2,
 			telefono: telefonoRaw,
-			nif: nifRaw
+			nif: nifRaw,
+			inviteMode
 		} as const;
 
 		const nameErr =
 			validateRequired(nombre, 'El nombre') ||
 			validateRequired(apellido1, 'El primer apellido') ||
 			validateRequired(apellido2, 'El segundo apellido');
-		const emailErr = validateEmail(email);
+		const emailErr = inviteMode ? null : validateEmail(email);
 		const phoneErr = validatePhone(telefonoRaw);
 		const nifErr = validateNifNie(nifRaw);
 		const firstErr = nameErr || emailErr || phoneErr || nifErr;
@@ -73,6 +118,48 @@ export const actions: Actions = {
 
 		const telefono = normalizePhone(telefonoRaw);
 		const nif = nifRaw;
+
+		// Invitación aceptada: completar perfil + contraseña (ya hay sesión)
+		if (locals.user) {
+			const { error: pwErr } = await locals.supabase.auth.updateUser({
+				password,
+				data: {
+					full_name: fullName,
+					nombre,
+					apellido1,
+					apellido2,
+					telefono,
+					nif
+				}
+			});
+			if (pwErr) {
+				return fail(400, {
+					error: pwErr.message || 'No se pudo guardar la contraseña.',
+					...fields
+				} as const);
+			}
+
+			const sb = getServiceSupabase();
+			if (sb) {
+				await sb
+					.from('profiles')
+					.update({
+						email: fields.email,
+						full_name: fullName,
+						nombre,
+						apellido1,
+						apellido2,
+						telefono,
+						nif
+					})
+					.eq('id', locals.user.id)
+					.then(({ error: upErr }) => {
+						if (upErr) console.error('[registro/invite] profile update', upErr.message);
+					});
+			}
+
+			throw redirect(303, '/cuenta');
+		}
 
 		const emailRedirectTo = authCallbackUrl(url);
 		let data;

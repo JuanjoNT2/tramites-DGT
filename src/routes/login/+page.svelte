@@ -29,6 +29,15 @@
 
 		{#if form?.error}
 			<p class="err" role="alert">{form.error}</p>
+		{:else if data.urlError === 'invite'}
+			<p class="err" role="alert">
+				El enlace de invitación no es válido o ha caducado. Pide una nueva invitación o
+				<a href="/registro">regístrate</a>.
+			</p>
+		{:else if data.urlError === 'confirm'}
+			<p class="err" role="alert">
+				No se pudo confirmar el email. Solicita un nuevo enlace o inicia sesión si ya verificaste la cuenta.
+			</p>
 		{/if}
 
 		<form method="POST" class="form">
