@@ -41,7 +41,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	/** Nombrada: no puede coexistir con `default` si hay otras actions (p. ej. resend). */
+	login: async ({ request, locals }) => {
 		if (!locals.supabase) {
 			return fail(503, { error: 'Auth no configurada (faltan variables PUBLIC_SUPABASE_*).' });
 		}

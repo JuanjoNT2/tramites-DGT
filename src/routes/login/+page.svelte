@@ -60,7 +60,7 @@
 			</p>
 		{/if}
 
-		<form method="POST" class="form">
+		<form method="POST" action="?/login" class="form">
 			<input type="hidden" name="next" value={data.next} />
 			<label>
 				Email
