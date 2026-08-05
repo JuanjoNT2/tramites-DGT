@@ -203,7 +203,17 @@ export async function promoteSolicitudToPayment(
 export async function updateProfileFields(
 	userId: string,
 	fields: Partial<
-		Pick<Profile, 'full_name' | 'telefono' | 'nif' | 'direccion' | 'email'>
+		Pick<
+			Profile,
+			| 'full_name'
+			| 'nombre'
+			| 'apellido1'
+			| 'apellido2'
+			| 'telefono'
+			| 'nif'
+			| 'direccion'
+			| 'email'
+		>
 	>
 ): Promise<Profile> {
 	const sb = requireService();

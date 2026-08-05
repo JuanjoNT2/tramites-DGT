@@ -19,6 +19,9 @@ export type Profile = {
 	id: string;
 	email: string | null;
 	full_name: string | null;
+	nombre?: string | null;
+	apellido1?: string | null;
+	apellido2?: string | null;
 	role: UserRole;
 	telefono?: string | null;
 	nif?: string | null;

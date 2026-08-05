@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { authCallbackUrl } from '$lib/auth/urls';
+import { joinPersonName } from '$lib/cuenta/profile-prefill';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import {
 	normalizePhone,
@@ -25,21 +26,31 @@ export const actions: Actions = {
 			.trim()
 			.toLowerCase();
 		const password = String(form.get('password') || '');
-		const fullName = String(form.get('full_name') || '').trim();
+		const password2 = String(form.get('password2') || '');
+		const nombre = String(form.get('nombre') || '').trim();
+		const apellido1 = String(form.get('apellido1') || '').trim();
+		const apellido2 = String(form.get('apellido2') || '').trim();
 		const telefonoRaw = String(form.get('telefono') || '').trim();
 		const nifRaw = String(form.get('nif') || '')
 			.trim()
 			.toUpperCase()
 			.replace(/[\s-]/g, '');
 
+		const fullName = joinPersonName(nombre, apellido1, apellido2);
+
 		const fields = {
 			email,
-			full_name: fullName,
+			nombre,
+			apellido1,
+			apellido2,
 			telefono: telefonoRaw,
 			nif: nifRaw
 		} as const;
 
-		const nameErr = validateRequired(fullName, 'El nombre completo');
+		const nameErr =
+			validateRequired(nombre, 'El nombre') ||
+			validateRequired(apellido1, 'El primer apellido') ||
+			validateRequired(apellido2, 'El segundo apellido');
 		const emailErr = validateEmail(email);
 		const phoneErr = validatePhone(telefonoRaw);
 		const nifErr = validateNifNie(nifRaw);
@@ -56,6 +67,9 @@ export const actions: Actions = {
 				...fields
 			} as const);
 		}
+		if (password !== password2) {
+			return fail(400, { error: 'Las contraseñas no coinciden.', ...fields } as const);
+		}
 
 		const telefono = normalizePhone(telefonoRaw);
 		const nif = nifRaw;
@@ -68,7 +82,14 @@ export const actions: Actions = {
 				email,
 				password,
 				options: {
-					data: { full_name: fullName, telefono, nif },
+					data: {
+						full_name: fullName,
+						nombre,
+						apellido1,
+						apellido2,
+						telefono,
+						nif
+					},
 					emailRedirectTo
 				}
 			});
@@ -111,6 +132,9 @@ export const actions: Actions = {
 					.update({
 						email,
 						full_name: fullName,
+						nombre,
+						apellido1,
+						apellido2,
 						telefono,
 						nif
 					})

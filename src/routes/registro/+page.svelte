@@ -5,8 +5,14 @@
 
 	let { form }: { form: ActionData } = $props();
 
-	const fullNameValue = $derived(
-		form && 'full_name' in form && typeof form.full_name === 'string' ? form.full_name : ''
+	const nombreValue = $derived(
+		form && 'nombre' in form && typeof form.nombre === 'string' ? form.nombre : ''
+	);
+	const apellido1Value = $derived(
+		form && 'apellido1' in form && typeof form.apellido1 === 'string' ? form.apellido1 : ''
+	);
+	const apellido2Value = $derived(
+		form && 'apellido2' in form && typeof form.apellido2 === 'string' ? form.apellido2 : ''
 	);
 	const emailValue = $derived(
 		form && 'email' in form && typeof form.email === 'string' ? form.email : ''
@@ -14,9 +20,7 @@
 	const telefonoValue = $derived(
 		form && 'telefono' in form && typeof form.telefono === 'string' ? form.telefono : ''
 	);
-	let nif = $state(
-		form && 'nif' in form && typeof form.nif === 'string' ? form.nif : ''
-	);
+	let nif = $state(form && 'nif' in form && typeof form.nif === 'string' ? form.nif : '');
 </script>
 
 <svelte:head>
@@ -43,13 +47,33 @@
 
 			<form method="POST" class="form">
 				<label>
-					Nombre completo
+					Nombre
 					<input
 						type="text"
-						name="full_name"
+						name="nombre"
 						required
-						autocomplete="name"
-						value={fullNameValue}
+						autocomplete="given-name"
+						value={nombreValue}
+					/>
+				</label>
+				<label>
+					Primer apellido
+					<input
+						type="text"
+						name="apellido1"
+						required
+						autocomplete="family-name"
+						value={apellido1Value}
+					/>
+				</label>
+				<label>
+					Segundo apellido
+					<input
+						type="text"
+						name="apellido2"
+						required
+						autocomplete="additional-name"
+						value={apellido2Value}
 					/>
 				</label>
 				<label>
@@ -79,7 +103,19 @@
 					<span class="hint">Escribe los dígitos: la letra se calcula sola</span>
 					<NifInput name="nif" bind:value={nif} required />
 				</label>
-				<PasswordInput name="password" autocomplete="new-password" minlength={8} />
+				<PasswordInput
+					name="password"
+					label="Contraseña"
+					autocomplete="new-password"
+					minlength={8}
+				/>
+				<p class="hint-inline">Mínimo 8 caracteres. No hace falta mayúsculas ni símbolos.</p>
+				<PasswordInput
+					name="password2"
+					label="Repetir contraseña"
+					autocomplete="new-password"
+					minlength={8}
+				/>
 				<button type="submit" class="btn">Registrarme</button>
 			</form>
 
@@ -117,6 +153,12 @@
 	.hint {
 		font-weight: 500;
 		font-size: 0.8rem;
+		color: #5a6b7d;
+	}
+	.hint-inline {
+		margin: -8px 0 0;
+		font-size: 0.8rem;
+		font-weight: 500;
 		color: #5a6b7d;
 	}
 	input {

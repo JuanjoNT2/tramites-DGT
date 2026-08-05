@@ -93,11 +93,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		.join(' ');
 	const profilePatch: Partial<{
 		full_name: string;
+		nombre: string;
+		apellido1: string;
+		apellido2: string;
 		telefono: string;
 		nif: string;
 		direccion: string;
 	}> = {};
 	if (fullName) profilePatch.full_name = fullName;
+	if (str(payload.nombre).trim()) profilePatch.nombre = str(payload.nombre).trim();
+	if (str(payload.apellido1).trim()) profilePatch.apellido1 = str(payload.apellido1).trim();
+	if (str(payload.apellido2).trim()) profilePatch.apellido2 = str(payload.apellido2).trim();
 	if (str(payload.telefono).trim()) profilePatch.telefono = str(payload.telefono).trim();
 	if (str(payload.nif).trim()) profilePatch.nif = str(payload.nif).trim().toUpperCase();
 	const dirBits = [

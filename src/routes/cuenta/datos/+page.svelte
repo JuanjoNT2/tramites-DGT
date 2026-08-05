@@ -1,10 +1,15 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import NifInput from '$lib/components/ui/NifInput.svelte';
+	import { namePartsFromProfile } from '$lib/cuenta/profile-prefill';
 	import { validateNifNie, validatePhone, validateRequired } from '$lib/utils/validators';
 
 	let { data }: { data: PageData } = $props();
-	let full_name = $state(data.profile?.full_name || '');
+
+	const initialNames = namePartsFromProfile(data.profile);
+	let nombre = $state(initialNames.nombre);
+	let apellido1 = $state(initialNames.apellido1);
+	let apellido2 = $state(initialNames.apellido2);
 	let telefono = $state(data.profile?.telefono || '');
 	let nif = $state(data.profile?.nif || '');
 	let calle = $state(data.direccion.calle);
@@ -22,7 +27,9 @@
 		saving = true;
 		msg = null;
 		err =
-			validateRequired(full_name, 'El nombre completo') ||
+			validateRequired(nombre, 'El nombre') ||
+			validateRequired(apellido1, 'El primer apellido') ||
+			validateRequired(apellido2, 'El segundo apellido') ||
 			validatePhone(telefono) ||
 			validateNifNie(nif);
 		if (err) {
@@ -34,7 +41,9 @@
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					full_name,
+					nombre,
+					apellido1,
+					apellido2,
 					telefono,
 					nif,
 					direccion: { calle, cp, ciudad, provincia }
@@ -77,8 +86,16 @@
 		<span class="hint">El email de la cuenta no se cambia aquí.</span>
 	</label>
 	<label>
-		Nombre completo *
-		<input bind:value={full_name} required autocomplete="name" />
+		Nombre *
+		<input bind:value={nombre} required autocomplete="given-name" />
+	</label>
+	<label>
+		Primer apellido *
+		<input bind:value={apellido1} required autocomplete="family-name" />
+	</label>
+	<label>
+		Segundo apellido *
+		<input bind:value={apellido2} required autocomplete="additional-name" />
 	</label>
 	<label>
 		Móvil *
