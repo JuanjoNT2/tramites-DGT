@@ -56,12 +56,26 @@ export const actions: Actions = {
 			return fail(400, { error: 'Email y contraseña son obligatorios.', email } as const);
 		}
 
-		const { data, error } = await locals.supabase.auth.signInWithPassword({ email, password });
+		let data;
+		let error;
+		try {
+			const result = await locals.supabase.auth.signInWithPassword({ email, password });
+			data = result.data;
+			error = result.error;
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : String(e);
+			console.error('[login] signIn threw', e);
+			return fail(500, {
+				error: `Error al iniciar sesión: ${msg || 'desconocido'}`,
+				email
+			} as const);
+		}
+
 		if (error) {
 			const unconfirmed = /not confirmed|email_not_confirmed/i.test(error.message || '');
 			return fail(400, {
 				error: unconfirmed
-					? 'Debes verificar tu email antes de iniciar sesión.'
+					? 'Debes verificar tu email antes de iniciar sesión. Revisa tu correo o pulsa reenviar confirmación.'
 					: 'Email o contraseña incorrectos. Si te volviste a registrar, la contraseña no cambia: usa recuperar contraseña o la que tenías al confirmar la cuenta.',
 				email,
 				needsConfirm: unconfirmed
@@ -69,11 +83,17 @@ export const actions: Actions = {
 		}
 
 		const userId = data.user?.id;
-		const dest = userId
-			? await resolvePostLoginRedirect(userId, next)
-			: next.startsWith('/')
-				? next
-				: '/cuenta';
+		let dest: string;
+		try {
+			dest = userId
+				? await resolvePostLoginRedirect(userId, next)
+				: next.startsWith('/')
+					? next
+					: '/cuenta';
+		} catch (e) {
+			console.error('[login] resolvePostLoginRedirect', e);
+			dest = '/cuenta';
+		}
 		throw redirect(303, dest);
 	},
 

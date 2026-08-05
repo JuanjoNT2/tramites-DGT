@@ -101,19 +101,20 @@ export const handle: Handle = async ({ event, resolve }) => {
 			let profile = await loadProfile(user.id);
 			profile = await syncProfileFromUserMetadata(user, profile);
 			event.locals.profile = profile;
-			// Enlazar trámites hechos como invitado (una vez por sesión/cookie)
+			// Claim + cookie en el mismo tick (evitar set cookies tras generar la respuesta → 500)
 			if (!event.cookies.get('tdgt_claim')) {
-				claimAnonymousSolicitudes(user.id, user.email)
-					.then(() => {
-						event.cookies.set('tdgt_claim', '1', {
-							path: '/',
-							maxAge: 60 * 60 * 24 * 30,
-							httpOnly: true,
-							sameSite: 'lax',
-							secure: event.url.protocol === 'https:'
-						});
-					})
-					.catch(() => null);
+				try {
+					await claimAnonymousSolicitudes(user.id, user.email);
+				} catch (e) {
+					console.error('[hooks] claimAnonymousSolicitudes', e);
+				}
+				event.cookies.set('tdgt_claim', '1', {
+					path: '/',
+					maxAge: 60 * 60 * 24 * 30,
+					httpOnly: true,
+					sameSite: 'lax',
+					secure: event.url.protocol === 'https:'
+				});
 			}
 		}
 	}
