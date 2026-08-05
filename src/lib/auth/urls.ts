@@ -11,7 +11,9 @@ export function requestOrigin(url: URL): string {
 
 export function authCallbackUrl(url: URL, next = '/'): string {
 	const n = next.startsWith('/') ? next : '/';
-	const base = `${requestOrigin(url)}/auth/callback`;
+	// Preferir dominio canónico en emails (evita localhost/preview en el enlace)
+	const origin = siteOrigin() || requestOrigin(url);
+	const base = `${origin}/auth/callback`;
 	return `${base}?next=${encodeURIComponent(n)}`;
 }
 

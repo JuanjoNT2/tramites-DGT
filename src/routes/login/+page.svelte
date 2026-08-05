@@ -34,9 +34,18 @@
 				El enlace de invitación no es válido o ha caducado. Pide una nueva invitación o
 				<a href="/registro">regístrate</a>.
 			</p>
+		{:else if data.urlError === 'recovery'}
+			<p class="err" role="alert">
+				El enlace para restablecer la contraseña no es válido o ha caducado (solo se puede usar
+				una vez). <a href="/recuperar-password">Solicita uno nuevo</a> e inicia sesión después
+				de cambiarla.
+			</p>
 		{:else if data.urlError === 'confirm'}
 			<p class="err" role="alert">
-				No se pudo confirmar el email. Solicita un nuevo enlace o inicia sesión si ya verificaste la cuenta.
+				No se pudo verificar el enlace del correo. Puede haber caducado o haberse usado ya.
+				<a href="/recuperar-password">Recuperar contraseña</a>
+				·
+				<a href="/registro">Registrarse</a>
 			</p>
 		{/if}
 
