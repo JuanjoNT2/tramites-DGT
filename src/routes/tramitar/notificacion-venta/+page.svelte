@@ -129,6 +129,7 @@
 	let draftReady = $state(false);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
 	let nifPrefillSlotsDone = $state<Set<string>>(new Set());
+	let vehicleDetailsUnlocked = $state(false);
 
 	const docGroups = $derived(getDocumentGroups('notificacion-venta'));
 	const priceLines = $derived({
@@ -145,6 +146,14 @@
 	});
 	const inferredRol = $derived(inferUserPartyRole(comprador, vendedor, userMatch));
 	const activeParty = $derived(contactParty(comprador, vendedor, inferredRol));
+
+	function unlockVehicleDetails() {
+		vehicleDetailsUnlocked = true;
+	}
+
+	$effect(() => {
+		if (!validateMatricula(matricula)) unlockVehicleDetails();
+	});
 
 	function partyFieldErrors(prefix: 'comprador' | 'vendedor'): Record<string, string | null> {
 		const map: Record<string, string> = {
@@ -272,6 +281,15 @@
 		if (typeof data.cilindradaMoto === 'string') cilindradaMoto = data.cilindradaMoto;
 		comprador = partyFromFlat('comprador', data);
 		vendedor = partyFromFlat('vendedor', data);
+		const hasVehicleDetails =
+			Boolean(data.bastidor) ||
+			Boolean(data.marcaId) ||
+			Boolean(data.marcaNombre) ||
+			Boolean(data.marcaMotoId) ||
+			Boolean(data.modeloNombre);
+		if (hasVehicleDetails || !validateMatricula(typeof data.matricula === 'string' ? data.matricula : '')) {
+			unlockVehicleDetails();
+		}
 	}
 
 	async function syncProfileNifDocs() {
@@ -337,6 +355,7 @@
 		profilePrefillDone = false;
 		profileNifPrefillDone = false;
 		nifPrefillSlotsDone = new Set();
+		vehicleDetailsUnlocked = false;
 		applyProfilePrefill();
 	}
 
@@ -552,6 +571,28 @@
 	});
 
 	function next() {
+		if (step === 1 && !vehicleDetailsUnlocked) {
+			const plateErr = validateMatricula(matricula);
+			errors = { ...errors, matricula: plateErr };
+			if (plateErr) {
+				validationAttempted = true;
+				return;
+			}
+			unlockVehicleDetails();
+			noteProgress(true);
+			save();
+			return;
+		}
+
+		validationAttempted = true;
+		const stepErrors = validateStepAt(step);
+		errors = { ...errors, ...stepErrors };
+		if (Object.values(stepErrors).some(Boolean)) {
+			if (!errorSteps.includes(step)) errorSteps = [...errorSteps, step];
+			return;
+		}
+		errorSteps = errorSteps.filter((s) => s !== step);
+
 		funnel.stepCompleted({
 			tramite: 'notificacion-venta',
 			step,
@@ -741,6 +782,10 @@
 			{#if saveError}<p class="err" role="alert">{saveError}</p>{/if}
 
 			{#if step === 1}
+				<p class="step-lead">
+					Empieza por el tipo de vehículo y la matrícula. Después te pediremos marca, modelo y
+					bastidor.
+				</p>
 				<FormField label="Tipo de vehículo" required>
 					<RadioCards
 						name="tipoVehiculo"
@@ -751,72 +796,82 @@
 				<FormField label="Matrícula" error={errors.matricula} hint="Ej: 3990 WDS" required>
 					<input bind:value={matricula} placeholder="3990WDS" oninput={() => noteProgress()} />
 				</FormField>
-				<FormField label="Servicio del vehículo" error={errors.servicioVehiculo} required>
-					<select bind:value={servicioVehiculo}>
-						{#each vehicleServiceOptions as opt}
-							<option value={opt.value}>{opt.label}</option>
-						{/each}
-					</select>
-				</FormField>
-				{#if tipoVehiculo === 'coche'}
-					<VehicleModelPicker
-						bind:marcaId
-						bind:marcaNombre
-						bind:combustibleId
-						bind:combustibleNombre
-						bind:modeloId
-						bind:modeloNombre
-						bind:modeloMeta
-						errors={{
-							marca: errors.marca,
-							combustible: errors.combustible,
-							modelo: errors.modelo
-						}}
-					/>
-				{:else if tipoVehiculo === 'moto'}
-					<MotoModelPicker
-						bind:marcaId={marcaMotoId}
-						bind:marcaNombre={marcaMotoNombre}
-						bind:modeloId={modeloMotoId}
-						bind:modeloNombre={modeloMotoNombre}
-						bind:cilindrada={cilindradaMoto}
-						errors={{
-							marca: errors.marca,
-							modelo: errors.modelo,
-							cilindrada: errors.cilindrada
-						}}
-					/>
+
+				{#if !vehicleDetailsUnlocked}
+					<p class="reveal-hint">
+						Cuando indiques una matrícula válida aparecerán el resto de campos del vehículo.
+					</p>
 				{:else}
-					<div class="row-2">
-						<FormField label="Marca" error={errors.marca} required>
-							<input bind:value={marcaNombre} placeholder="Ej. Knaus, Tabbert…" />
+					<div class="reveal-block">
+						<h2 class="step-sub">Datos del vehículo</h2>
+						{#if tipoVehiculo === 'coche'}
+							<VehicleModelPicker
+								bind:marcaId
+								bind:marcaNombre
+								bind:combustibleId
+								bind:combustibleNombre
+								bind:modeloId
+								bind:modeloNombre
+								bind:modeloMeta
+								errors={{
+									marca: errors.marca,
+									combustible: errors.combustible,
+									modelo: errors.modelo
+								}}
+							/>
+						{:else if tipoVehiculo === 'moto'}
+							<MotoModelPicker
+								bind:marcaId={marcaMotoId}
+								bind:marcaNombre={marcaMotoNombre}
+								bind:modeloId={modeloMotoId}
+								bind:modeloNombre={modeloMotoNombre}
+								bind:cilindrada={cilindradaMoto}
+								errors={{
+									marca: errors.marca,
+									modelo: errors.modelo,
+									cilindrada: errors.cilindrada
+								}}
+							/>
+						{:else}
+							<div class="row-2">
+								<FormField label="Marca" error={errors.marca} required>
+									<input bind:value={marcaNombre} placeholder="Ej. Knaus, Tabbert…" />
+								</FormField>
+								<FormField label="Modelo" error={errors.modelo} required>
+									<input bind:value={modeloNombre} placeholder="Ej. Sport 500 QDK" />
+								</FormField>
+							</div>
+						{/if}
+						<FormField label="Servicio del vehículo" error={errors.servicioVehiculo} required>
+							<select bind:value={servicioVehiculo}>
+								{#each vehicleServiceOptions as opt}
+									<option value={opt.value}>{opt.label}</option>
+								{/each}
+							</select>
 						</FormField>
-						<FormField label="Modelo" error={errors.modelo} required>
-							<input bind:value={modeloNombre} placeholder="Ej. Sport 500 QDK" />
+						<FormField
+							label="Bastidor (VIN)"
+							error={errors.bastidor}
+							hint="Opcional. 17 caracteres de la ficha técnica (sin I, O ni Q)"
+						>
+							<input
+								bind:value={bastidor}
+								placeholder="Ej. VF1ABCDEF12345678"
+								maxlength="20"
+								autocomplete="off"
+								spellcheck="false"
+								oninput={() => {
+									bastidor = normalizeBastidor(bastidor).slice(0, 17);
+									const err = bastidor ? validateBastidor(bastidor) : null;
+									if (!err || errors.bastidor) {
+										errors = { ...errors, bastidor: err };
+									}
+									noteProgress();
+								}}
+							/>
 						</FormField>
 					</div>
 				{/if}
-				<FormField
-					label="Bastidor (VIN)"
-					error={errors.bastidor}
-					hint="Opcional. 17 caracteres de la ficha técnica (sin I, O ni Q)"
-				>
-					<input
-						bind:value={bastidor}
-						placeholder="Ej. VF1ABCDEF12345678"
-						maxlength="20"
-						autocomplete="off"
-						spellcheck="false"
-						oninput={() => {
-							bastidor = normalizeBastidor(bastidor).slice(0, 17);
-							const err = bastidor ? validateBastidor(bastidor) : null;
-							if (!err || errors.bastidor) {
-								errors = { ...errors, bastidor: err };
-							}
-							noteProgress();
-						}}
-					/>
-				</FormField>
 			{:else if step === 2}
 				<PartyFields
 					title="Datos del comprador"
@@ -941,7 +996,44 @@
 	h1 {
 		font-size: 26px;
 		font-weight: 800;
-		margin-bottom: 24px;
+		margin-bottom: 12px;
+	}
+	.step-lead {
+		margin: 0 0 22px;
+		color: var(--text2);
+		font-size: 0.95rem;
+		line-height: 1.45;
+		max-width: 36em;
+	}
+	.reveal-hint {
+		margin: 8px 0 0;
+		padding: 14px 16px;
+		border-radius: 10px;
+		background: #f3f7fb;
+		border: 1px solid #d7e3ef;
+		color: var(--text2);
+		font-size: 0.92rem;
+		line-height: 1.45;
+	}
+	.reveal-block {
+		margin-top: 8px;
+		animation: reveal-in 0.35s ease;
+	}
+	.step-sub {
+		font-size: 1.05rem;
+		font-weight: 800;
+		margin: 20px 0 16px;
+		color: var(--ink);
+	}
+	@keyframes reveal-in {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 	.nav-btns {
 		display: flex;
