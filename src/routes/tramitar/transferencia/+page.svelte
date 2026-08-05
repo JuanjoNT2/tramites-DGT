@@ -13,6 +13,8 @@
 		mergeProfileIntoParty,
 		flattenParty,
 		partyFromFlat,
+		inferUserPartyRole,
+		contactParty,
 		type PartyData
 	} from '$lib/cuenta/party-prefill';
 	import {
@@ -157,7 +159,6 @@
 	let incluirInforme = $state('si');
 	let motivoTransferencia = $state<'compraventa' | 'donacion'>('compraventa');
 	let liquidarItp = $state('si');
-	let rol = $state<'comprador' | 'vendedor'>('comprador');
 	let comprador = $state<PartyData>(emptyParty());
 	let vendedor = $state<PartyData>(emptyParty());
 	let docFiles = $state<Record<string, File | null>>({});
@@ -167,9 +168,22 @@
 	let pendingDraft = $state<Record<string, unknown> | null>(null);
 	let draftReady = $state(false);
 	let saveTimer: ReturnType<typeof setTimeout> | null = null;
+	/** Slots NIF ya precargados (evita reintentos y no adivinar rol). */
+	let nifPrefillSlotsDone = $state<Set<string>>(new Set());
 
-	const docGroups = $derived(getDocumentGroups('transferencia', { facturaEmpresa, rol }));
-	const activeParty = $derived(rol === 'comprador' ? comprador : vendedor);
+	const docGroups = $derived(getDocumentGroups('transferencia', { facturaEmpresa }));
+	const userMatch = $derived.by(() => {
+		const user = page.data.user;
+		const profile = page.data.profile as Profile | null | undefined;
+		return {
+			userEmail: user?.email ?? null,
+			profileNif: profile?.nif ?? null
+		};
+	});
+	const inferredRol = $derived(
+		inferUserPartyRole(comprador, vendedor, userMatch)
+	);
+	const activeParty = $derived(contactParty(comprador, vendedor, inferredRol));
 
 	function partyFieldErrors(prefix: 'comprador' | 'vendedor'): Record<string, string | null> {
 		const map: Record<string, string> = {
@@ -232,18 +246,6 @@
 		if (target === 'comprador') comprador = merged;
 		else vendedor = merged;
 		noteProgress(true);
-	}
-
-	function prefillActivePartyFromProfile() {
-		if (showDraftRestore) return;
-		const user = page.data.user;
-		const profile = page.data.profile as Profile | null | undefined;
-		if (!user) return;
-		if (rol === 'comprador') {
-			comprador = mergeProfileIntoParty(comprador, { userEmail: user.email, profile });
-		} else {
-			vendedor = mergeProfileIntoParty(vendedor, { userEmail: user.email, profile });
-		}
 	}
 
 	let factorCorreccion = $state<number | null>(null);
@@ -385,7 +387,6 @@
 			motivoTransferencia = data.motivoTransferencia;
 		}
 		if (typeof data.liquidarItp === 'string') liquidarItp = data.liquidarItp;
-		if (data.rol === 'comprador' || data.rol === 'vendedor') rol = data.rol;
 		comprador = partyFromFlat('comprador', data);
 		vendedor = partyFromFlat('vendedor', data);
 		const hasLegacy =
@@ -395,22 +396,24 @@
 			!data.vendedorEmail;
 		if (hasLegacy) {
 			const legacy = partyFromFlat('', data);
-			if (rol === 'comprador' && !comprador.email) comprador = legacy;
-			else if (rol === 'vendedor' && !vendedor.email) vendedor = legacy;
+			const legacyRol =
+				data.rol === 'vendedor' ? 'vendedor' : data.rol === 'comprador' ? 'comprador' : null;
+			if (legacyRol === 'vendedor' && !vendedor.email) vendedor = legacy;
+			else if (!comprador.email) comprador = legacy;
+			else if (!vendedor.email) vendedor = legacy;
 		}
 	}
 
 	function applyProfilePrefill() {
 		if (profilePrefillDone || showDraftRestore) return;
-		const user = page.data.user;
-		if (!user) return;
-		prefillActivePartyFromProfile();
+		if (!page.data.user) return;
+		// No rellenar una parte por defecto: el usuario usa «Autocompletar» en comprador o vendedor.
 		profilePrefillDone = true;
-		void applyProfileNifPrefill();
+		void syncProfileNifDocs();
 	}
 
-	async function applyProfileNifPrefill() {
-		if (profileNifPrefillDone || showDraftRestore) return;
+	async function syncProfileNifDocs() {
+		if (showDraftRestore) return;
 		const user = page.data.user;
 		const profile = page.data.profile as Profile | null | undefined;
 		if (!user) return;
@@ -420,12 +423,17 @@
 			profileNifPrefillDone = true;
 			return;
 		}
-		const slots = ownNifSlotIds(docGroups, { rol });
+		const rol = inferredRol;
+		if (!rol) return;
+		const slots = ownNifSlotIds(docGroups, { rol }).filter(
+			(id) => !docFiles[id] && !nifPrefillSlotsDone.has(id)
+		);
 		if (!slots.length) {
 			profileNifPrefillDone = true;
 			return;
 		}
 		profileNifPrefillDone = true;
+		nifPrefillSlotsDone = new Set([...nifPrefillSlotsDone, ...slots]);
 		await loadProfileNifIntoSlots({
 			slotIds: slots,
 			current: docFiles,
@@ -446,6 +454,7 @@
 		docFiles = await loadDraftFiles(STORAGE_KEY);
 		profilePrefillDone = false;
 		profileNifPrefillDone = false;
+		nifPrefillSlotsDone = new Set();
 		applyProfilePrefill();
 	}
 
@@ -458,6 +467,7 @@
 		if (hasDraftStorageAck()) draftReady = true;
 		profilePrefillDone = false;
 		profileNifPrefillDone = false;
+		nifPrefillSlotsDone = new Set();
 		applyProfilePrefill();
 	}
 
@@ -489,7 +499,7 @@
 			incluirInforme,
 			motivoTransferencia,
 			liquidarItp,
-			rol,
+			rol: inferredRol,
 			...flattenParty('comprador', comprador),
 			...flattenParty('vendedor', vendedor)
 		};
@@ -556,7 +566,6 @@
 		void incluirInforme;
 		void motivoTransferencia;
 		void liquidarItp;
-		void rol;
 		void comprador;
 		void vendedor;
 		void acceptPrivacy;
@@ -587,7 +596,6 @@
 		void fechaVenta;
 		void facturaEmpresa;
 		void incluirInforme;
-		void rol;
 		void comprador;
 		void vendedor;
 		void acceptPrivacy;
@@ -714,22 +722,15 @@
 		applyProfilePrefill();
 	});
 
-	/** Si cambia el rol, rellena perfil y NIF en los slots de esa parte. */
+	/** Cuando el email/NIF de una parte coincide con el perfil, carga su NIF en esos slots. */
 	$effect(() => {
-		void rol;
+		void comprador.email;
+		void comprador.nif;
+		void vendedor.email;
+		void vendedor.nif;
+		void inferredRol;
 		if (!profilePrefillDone || showDraftRestore || !page.data.user) return;
-		prefillActivePartyFromProfile();
-		const slots = ownNifSlotIds(docGroups, { rol });
-		const missing = slots.filter((id) => !docFiles[id]);
-		if (!missing.length) return;
-		void loadProfileNifIntoSlots({
-			slotIds: missing,
-			current: docFiles,
-			onfile: (id, file) => {
-				docFiles = { ...docFiles, [id]: file };
-				void saveDraftFile(STORAGE_KEY, id, file);
-			}
-		});
+		void syncProfileNifDocs();
 	});
 
 	function next() {
@@ -816,7 +817,7 @@
 			incluirInforme,
 			motivoTransferencia,
 			liquidarItp,
-			rol,
+			rol: inferredRol,
 			email: solicitante.email,
 			nif: solicitante.nif,
 			nombre: solicitante.nombre,
@@ -867,7 +868,7 @@
 			solicitudId: id,
 			files: docFiles,
 			accessToken,
-			rol
+			rol: inferredRol
 		});
 		if (!result.ok) {
 			payError = result.error;
@@ -1112,21 +1113,11 @@
 						/>
 					</FormField>
 				{:else if step === 2}
-					<FormField label="¿Cuál es tu rol?" required>
-						<RadioCards
-							name="rol"
-							bind:value={rol}
-							options={[
-								{ value: 'comprador', label: 'Soy el comprador' },
-								{ value: 'vendedor', label: 'Soy el vendedor' }
-							]}
-						/>
-					</FormField>
 					<PartyFields
 						title="Datos del comprador"
 						bind:party={comprador}
 						errors={partyFieldErrors('comprador')}
-						showAutofill={rol === 'comprador' || !!page.data.user}
+						showAutofill={!!page.data.user}
 						onautofill={() => autofillParty('comprador')}
 					/>
 					{#if comprador.email.trim() && !validateEmail(comprador.email) && !page.data.user}
@@ -1137,7 +1128,7 @@
 						title="Datos del vendedor"
 						bind:party={vendedor}
 						errors={partyFieldErrors('vendedor')}
-						showAutofill={rol === 'vendedor' || !!page.data.user}
+						showAutofill={!!page.data.user}
 						onautofill={() => autofillParty('vendedor')}
 					/>
 				{:else if step === 4}
@@ -1167,20 +1158,17 @@
 								<li><span>Kilómetros</span><span>{kilometros}</span></li>
 							{/if}
 							<li>
-								<span>Tu rol</span><span>{rol === 'comprador' ? 'Comprador' : 'Vendedor'}</span>
-							</li>
-							<li>
 								<span>Comprador</span>
 								<span>{comprador.nombre} {comprador.apellido1} {comprador.apellido2}</span>
 							</li>
 							<li><span>NIF comprador</span><span>{comprador.nif || '—'}</span></li>
+							<li><span>Email comprador</span><span>{comprador.email || '—'}</span></li>
 							<li>
 								<span>Vendedor</span>
 								<span>{vendedor.nombre} {vendedor.apellido1} {vendedor.apellido2}</span>
 							</li>
 							<li><span>NIF vendedor</span><span>{vendedor.nif || '—'}</span></li>
-							<li><span>Email contacto</span><span>{activeParty.email}</span></li>
-							<li><span>Teléfono contacto</span><span>{activeParty.telefono || '—'}</span></li>
+							<li><span>Email vendedor</span><span>{vendedor.email || '—'}</span></li>
 							<li><span>Total</span><span>{breakdown ? formatEur(breakdown.total) : '—'}</span></li>
 						</ul>
 						<ExistingAccountNotice

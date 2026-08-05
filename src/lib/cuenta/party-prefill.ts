@@ -3,6 +3,9 @@ import {
 	type SolicitanteFields
 } from '$lib/cuenta/profile-prefill';
 import type { Profile } from '$lib/supabase/types';
+import { normalizeDocumento } from '$lib/utils/validators';
+
+export type PartyRole = 'comprador' | 'vendedor';
 
 export type PartyData = {
 	email: string;
@@ -79,6 +82,47 @@ export function mergeProfileIntoParty(
 		puerta: patch.puerta ?? party.puerta,
 		cp: patch.cp ?? party.cp
 	};
+}
+
+/** ¿La parte coincide con el usuario logueado (email o NIF)? */
+export function partyMatchesUser(
+	party: PartyData,
+	opts: { userEmail?: string | null; profileNif?: string | null }
+): boolean {
+	const email = (opts.userEmail || '').trim().toLowerCase();
+	const nif = normalizeDocumento(opts.profileNif || '');
+	if (email && party.email.trim().toLowerCase() === email) return true;
+	if (nif && normalizeDocumento(party.nif) === nif) return true;
+	return false;
+}
+
+/**
+ * Infiera si el usuario es comprador o vendedor por email/NIF.
+ * null si no hay match claro (no forzar un rol).
+ */
+export function inferUserPartyRole(
+	comprador: PartyData,
+	vendedor: PartyData,
+	opts: { userEmail?: string | null; profileNif?: string | null }
+): PartyRole | null {
+	const c = partyMatchesUser(comprador, opts);
+	const v = partyMatchesUser(vendedor, opts);
+	if (c && !v) return 'comprador';
+	if (v && !c) return 'vendedor';
+	return null;
+}
+
+/** Parte de contacto para email/pago: la inferida, o la que tenga email. */
+export function contactParty(
+	comprador: PartyData,
+	vendedor: PartyData,
+	rol: PartyRole | null
+): PartyData {
+	if (rol === 'vendedor') return vendedor;
+	if (rol === 'comprador') return comprador;
+	if (comprador.email.trim()) return comprador;
+	if (vendedor.email.trim()) return vendedor;
+	return comprador;
 }
 
 /** Aplana PartyData al payload con prefijo (compradorNombre, vendedorEmail…). */
