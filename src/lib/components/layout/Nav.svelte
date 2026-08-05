@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { CtaIds, trackClick } from '$lib/analytics';
 	import { isStaffRole } from '$lib/auth/roles';
+	import { displayFirstName } from '$lib/cuenta/profile-prefill';
 	import { servicesByGroup, calculators } from '$lib/data/services';
 	import Logo from '$lib/components/layout/Logo.svelte';
 
@@ -17,13 +18,7 @@
 	const profile = $derived(page.data.profile);
 	const staff = $derived(isStaffRole(profile?.role));
 	const brandHref = $derived(staff ? '/gestor' : '/');
-	const displayName = $derived.by(() => {
-		const name = profile?.full_name?.trim();
-		if (name) return name.split(/\s+/)[0] || name;
-		const email = user?.email;
-		if (!email) return 'Mi cuenta';
-		return email.split('@')[0] || 'Mi cuenta';
-	});
+	const displayName = $derived(displayFirstName(profile, user?.email));
 	const accountLabel = $derived(`Hola, ${displayName}`);
 
 	function closeMobile() {

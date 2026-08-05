@@ -44,6 +44,20 @@ export function namePartsFromProfile(profile: Profile | null | undefined): {
 	return { nombre: '', apellido1: '', apellido2: '' };
 }
 
+/** Primer nombre para saludos (Nav, Mi área). Nunca el email completo. */
+export function displayFirstName(
+	profile: Profile | null | undefined,
+	email?: string | null
+): string {
+	const fromNombre = (profile?.nombre || '').trim();
+	if (fromNombre) return fromNombre.split(/\s+/)[0] || fromNombre;
+	const full = (profile?.full_name || '').trim();
+	if (full) return full.split(/\s+/)[0] || full;
+	const mail = (email || profile?.email || '').trim();
+	if (mail.includes('@')) return mail.split('@')[0] || 'Mi cuenta';
+	return 'Mi cuenta';
+}
+
 export type SolicitanteFields = {
 	email: string;
 	nif: string;

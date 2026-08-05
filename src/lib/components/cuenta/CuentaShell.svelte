@@ -63,51 +63,57 @@
 <style>
 	.cuenta {
 		display: grid;
-		grid-template-columns: 240px 1fr;
+		grid-template-columns: 200px minmax(0, 1fr);
 		min-height: 100vh;
+		max-width: 100%;
+		overflow-x: clip;
 		background: #f4f7fa;
 		color: #1a2b3c;
 		font-family: 'Open Sans', system-ui, sans-serif;
 	}
 	.side {
+		width: 200px;
+		max-width: 200px;
+		box-sizing: border-box;
 		background: #003050;
 		color: #fff;
-		padding: 24px 16px;
+		padding: 16px 12px;
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 6px;
 	}
 	.brand {
 		font-weight: 800;
-		font-size: 1.1rem;
+		font-size: 1.05rem;
 	}
 	.who-name {
 		margin: 0;
 		font-weight: 700;
+		font-size: 0.92rem;
 	}
 	.who {
 		margin: 0;
-		font-size: 0.75rem;
+		font-size: 0.72rem;
 		opacity: 0.8;
 		word-break: break-all;
 	}
 	nav {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
-		margin-top: 8px;
+		gap: 2px;
 	}
 	nav a {
 		color: #fff;
 		text-decoration: none;
-		padding: 8px 10px;
-		border-radius: 8px;
+		padding: 6px 8px;
+		border-radius: 6px;
 		font-weight: 600;
-		font-size: 0.88rem;
+		font-size: 0.82rem;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		gap: 8px;
+		gap: 6px;
+		line-height: 1.25;
 	}
 	nav a:hover {
 		background: rgba(255, 255, 255, 0.12);
@@ -115,32 +121,36 @@
 	.badge {
 		background: #00c6d1;
 		color: #003050;
-		font-size: 0.7rem;
+		font-size: 0.68rem;
 		font-weight: 800;
-		padding: 2px 7px;
+		padding: 2px 6px;
 		border-radius: 999px;
+		flex-shrink: 0;
 	}
 	.logout {
 		margin-top: auto;
 	}
 	.logout button {
 		width: 100%;
-		padding: 10px;
+		padding: 8px;
 		border: none;
 		border-radius: 8px;
 		background: rgba(255, 255, 255, 0.15);
 		color: #fff;
 		font-weight: 700;
+		font-size: 0.85rem;
 		cursor: pointer;
 	}
 	.home {
 		color: #9fd8e8;
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 		text-decoration: none;
 	}
 	.main {
-		padding: 28px 32px;
-		overflow: auto;
+		min-width: 0;
+		padding: 24px 28px;
+		overflow-x: auto;
+		overflow-y: auto;
 	}
 	.incomplete {
 		margin: 0 0 16px;
@@ -157,21 +167,28 @@
 	}
 	@media (max-width: 860px) {
 		.cuenta {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 		}
 		.side {
+			width: 100%;
+			max-width: 100%;
 			flex-direction: row;
 			flex-wrap: wrap;
 			align-items: center;
+			gap: 6px 10px;
 		}
 		nav {
 			width: 100%;
 			flex-direction: row;
 			flex-wrap: wrap;
+			gap: 4px;
 		}
 		.logout {
 			margin-top: 0;
 			width: 100%;
+		}
+		.main {
+			padding: 20px 16px;
 		}
 	}
 </style>

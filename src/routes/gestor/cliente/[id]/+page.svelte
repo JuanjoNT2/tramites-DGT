@@ -6,12 +6,59 @@
 	const p = $derived(data.profile);
 	const c = $derived(data.contact);
 
+	let titulo = $state('');
+	let cuerpo = $state('');
+	let solicitudId = $state('');
+	let sending = $state(false);
+	let feedback = $state<{ ok: boolean; text: string } | null>(null);
+
 	function statusLabel(status: string) {
 		return data.statusLabels[status as SolicitudStatus] || status;
 	}
 
 	function tipoLabel(tipo: string) {
 		return data.tipoLabels[tipo] || tipo;
+	}
+
+	async function enviarAviso(e: Event) {
+		e.preventDefault();
+		feedback = null;
+		const t = titulo.trim();
+		if (!t) {
+			feedback = { ok: false, text: 'El título es obligatorio.' };
+			return;
+		}
+		sending = true;
+		try {
+			const res = await fetch('/api/gestor/notificaciones', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					userId: p.id,
+					titulo: t,
+					cuerpo: cuerpo.trim() || undefined,
+					solicitudId: solicitudId || undefined
+				})
+			});
+			const body = await res.json().catch(() => ({}));
+			if (!res.ok) {
+				feedback = { ok: false, text: body.error || 'No se pudo enviar el aviso.' };
+				return;
+			}
+			const emailNote = body.emailSent
+				? 'También se ha enviado por email.'
+				: body.emailSkipped === 'sin_email'
+					? 'Guardado en la bandeja; el cliente no tiene email.'
+					: 'Guardado en la bandeja; el email no se pudo enviar (revisa SendGrid).';
+			feedback = { ok: true, text: `Aviso enviado. ${emailNote}` };
+			titulo = '';
+			cuerpo = '';
+			solicitudId = '';
+		} catch {
+			feedback = { ok: false, text: 'Error de red al enviar el aviso.' };
+		} finally {
+			sending = false;
+		}
 	}
 </script>
 
@@ -44,6 +91,53 @@
 			Esta cuenta no tiene teléfono ni NIF guardados en el perfil ni en sus trámites vinculados.
 		</p>
 	{/if}
+</section>
+
+<section class="card card-aviso">
+	<h2>Enviar aviso al cliente</h2>
+	<p class="hint">
+		Se guarda en su bandeja de notificaciones y se envía también por email (si SendGrid está
+		configurado).
+	</p>
+	<form class="aviso-form" onsubmit={enviarAviso}>
+		<label>
+			Título *
+			<input
+				type="text"
+				bind:value={titulo}
+				required
+				maxlength={160}
+				placeholder="Ej. Documentación pendiente"
+			/>
+		</label>
+		<label>
+			Mensaje
+			<textarea
+				bind:value={cuerpo}
+				rows="4"
+				maxlength={4000}
+				placeholder="Detalle de lo que necesita el cliente o el estado del trámite…"
+			></textarea>
+		</label>
+		<label>
+			Vincular a un trámite (opcional)
+			<select bind:value={solicitudId}>
+				<option value="">Sin trámite concreto</option>
+				{#each data.solicitudes as s}
+					<option value={s.id}>
+						{tipoLabel(s.tipo)} · {statusLabel(String(s.status))} ·
+						{new Date(s.created_at).toLocaleDateString('es-ES')}
+					</option>
+				{/each}
+			</select>
+		</label>
+		<button type="submit" class="btn" disabled={sending}>
+			{sending ? 'Enviando…' : 'Enviar aviso'}
+		</button>
+		{#if feedback}
+			<p class:ok={feedback.ok} class:err={!feedback.ok} role="status">{feedback.text}</p>
+		{/if}
+	</form>
 </section>
 
 <section class="card card-tramites">
@@ -164,6 +258,56 @@
 		border-radius: 12px;
 		padding: 16px 18px;
 		margin-bottom: 16px;
+	}
+	.card-aviso {
+		border-left: 4px solid #f0a202;
+		background: linear-gradient(90deg, rgba(240, 162, 2, 0.08), #fff 40%);
+	}
+	.aviso-form {
+		display: grid;
+		gap: 12px;
+		max-width: 560px;
+	}
+	.aviso-form label {
+		display: grid;
+		gap: 6px;
+		font-weight: 600;
+		font-size: 0.88rem;
+	}
+	.aviso-form input,
+	.aviso-form textarea,
+	.aviso-form select {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 10px 12px;
+		border: 1px solid #c5d0da;
+		border-radius: 8px;
+		font: inherit;
+		font-weight: 400;
+	}
+	.aviso-form .btn {
+		justify-self: start;
+		padding: 10px 18px;
+		border: none;
+		border-radius: 8px;
+		background: #003050;
+		color: #fff;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.aviso-form .btn:disabled {
+		opacity: 0.6;
+		cursor: wait;
+	}
+	.aviso-form .ok {
+		margin: 0;
+		color: #0f5132;
+		font-weight: 600;
+	}
+	.aviso-form .err {
+		margin: 0;
+		color: #9b1c1c;
+		font-weight: 600;
 	}
 	.card-tramites {
 		border-left: 4px solid #00c6d1;

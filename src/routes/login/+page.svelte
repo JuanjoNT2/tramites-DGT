@@ -9,6 +9,9 @@
 			? form.email
 			: data.email || ''
 	);
+	const needsConfirm = $derived(
+		Boolean(form && 'needsConfirm' in form && form.needsConfirm)
+	);
 </script>
 
 <svelte:head>
@@ -27,8 +30,16 @@
 			{/if}
 		</p>
 
-		{#if form?.error}
+		{#if form && 'ok' in form && form.ok}
+			<p class="ok" role="status">{form.message}</p>
+		{:else if form?.error}
 			<p class="err" role="alert">{form.error}</p>
+			{#if needsConfirm}
+				<form method="POST" action="?/resend" class="resend">
+					<input type="hidden" name="email" value={emailValue} />
+					<button type="submit" class="btn-link">Reenviar correo de confirmación</button>
+				</form>
+			{/if}
 		{:else if data.urlError === 'invite'}
 			<p class="err" role="alert">
 				El enlace de invitación no es válido o ha caducado. Pide una nueva invitación o
@@ -107,6 +118,26 @@
 		padding: 10px 12px;
 		border-radius: 8px;
 		margin-bottom: 16px;
+	}
+	.ok {
+		background: #e6f6ed;
+		color: #0f5132;
+		padding: 10px 12px;
+		border-radius: 8px;
+		margin-bottom: 16px;
+	}
+	.resend {
+		margin: -8px 0 16px;
+	}
+	.btn-link {
+		background: none;
+		border: none;
+		padding: 0;
+		font: inherit;
+		color: var(--navy, #003050);
+		text-decoration: underline;
+		cursor: pointer;
+		font-weight: 600;
 	}
 	.alt {
 		margin-top: 20px;

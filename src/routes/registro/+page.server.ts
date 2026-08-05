@@ -140,10 +140,14 @@ export const actions: Actions = {
 			}
 
 			const sb = getServiceSupabase();
-			if (sb) {
-				await sb
-					.from('profiles')
-					.update({
+			if (!sb) {
+				console.error(
+					'[registro/invite] profile upsert omitido: falta SUPABASE_SERVICE_ROLE_KEY'
+				);
+			} else {
+				const { error: upErr } = await sb.from('profiles').upsert(
+					{
+						id: locals.user.id,
 						email: fields.email,
 						full_name: fullName,
 						nombre,
@@ -151,11 +155,12 @@ export const actions: Actions = {
 						apellido2,
 						telefono,
 						nif
-					})
-					.eq('id', locals.user.id)
-					.then(({ error: upErr }) => {
-						if (upErr) console.error('[registro/invite] profile update', upErr.message);
-					});
+					},
+					{ onConflict: 'id' }
+				);
+				if (upErr) {
+					console.error('[registro/invite] profile upsert failed', upErr.message);
+				}
 			}
 
 			throw redirect(303, '/cuenta');
@@ -192,6 +197,29 @@ export const actions: Actions = {
 		}
 
 		if (error) {
+			const already =
+				error.code === 'user_already_exists' ||
+				/already|registered|exists|existe/i.test(error.message || '');
+			if (already) {
+				const { error: resendErr } = await locals.supabase.auth.resend({
+					type: 'signup',
+					email,
+					options: { emailRedirectTo }
+				});
+				if (!resendErr) {
+					return {
+						ok: true as const,
+						...fields,
+						message:
+							'Esa cuenta ya existía. Si aún no está verificada, te hemos reenviado el correo de confirmación. Revisa bandeja y spam.'
+					};
+				}
+				return fail(400, {
+					error:
+						'Esa cuenta ya existe. Prueba a iniciar sesión o recuperar la contraseña. Si no te llega el correo de verificación, escríbenos.',
+					...fields
+				} as const);
+			}
 			const detail = [
 				typeof error.message === 'string' && error.message !== '{}' ? error.message : null,
 				error.code,
@@ -211,24 +239,57 @@ export const actions: Actions = {
 			} as const);
 		}
 
+		// Anti-enumeración: email ya registrado → user con identities vacías y sin session
+		const fakeDuplicate =
+			data.user &&
+			!data.session &&
+			Array.isArray(data.user.identities) &&
+			data.user.identities.length === 0;
+
+		if (fakeDuplicate) {
+			const { error: resendErr } = await locals.supabase.auth.resend({
+				type: 'signup',
+				email,
+				options: { emailRedirectTo }
+			});
+			console.info('[registro] email ya existía; resend', {
+				email,
+				resendOk: !resendErr,
+				resendErr: resendErr?.message
+			});
+			return {
+				ok: true as const,
+				...fields,
+				message: resendErr
+					? 'Si esa cuenta ya existe y no está verificada, usa «Reenviar confirmación» en el login o recupera la contraseña.'
+					: 'Esa cuenta ya existía. Te hemos reenviado el correo de confirmación (revisa bandeja y spam). Si ya la verificaste, inicia sesión.'
+			};
+		}
+
 		if (data.user?.id) {
 			const sb = getServiceSupabase();
-			if (sb) {
-				await sb
-					.from('profiles')
-					.update({
+			if (!sb) {
+				console.error(
+					'[registro] profile upsert omitido: falta SUPABASE_SERVICE_ROLE_KEY'
+				);
+			} else {
+				const { error: upErr } = await sb.from('profiles').upsert(
+					{
+						id: data.user.id,
 						email,
 						full_name: fullName,
 						nombre,
 						apellido1,
 						apellido2,
 						telefono,
-						nif
-					})
-					.eq('id', data.user.id)
-					.then(({ error: upErr }) => {
-						if (upErr) console.error('[registro] profile update', upErr.message);
-					});
+						nif,
+						role: 'user'
+					},
+					{ onConflict: 'id' }
+				);
+				if (upErr) {
+					console.error('[registro] profile upsert failed', upErr.message, upErr.code);
+				}
 			}
 		}
 

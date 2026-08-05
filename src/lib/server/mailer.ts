@@ -129,3 +129,39 @@ export async function sendOtraParteInviteEmail(opts: {
 		].join('\n')
 	});
 }
+
+/** Aviso del gestor al ciudadano (bandeja + email). */
+export async function sendGestorAvisoEmail(opts: {
+	to: string;
+	titulo: string;
+	cuerpo?: string | null;
+	nombre?: string | null;
+	link?: string | null;
+}) {
+	const base = siteOrigin();
+	const inboxUrl = `${base}/cuenta/notificaciones`;
+	const actionUrl =
+		opts.link && opts.link.startsWith('/')
+			? `${base}${opts.link}`
+			: opts.link?.startsWith('http')
+				? opts.link
+				: inboxUrl;
+	const hello = opts.nombre?.trim() ? `Hola ${opts.nombre.trim()},` : 'Hola,';
+	const body = (opts.cuerpo || '').trim();
+
+	return sendEmail({
+		to: opts.to,
+		subject: opts.titulo.trim() || 'Aviso de tu trámite',
+		text: [
+			hello,
+			'',
+			opts.titulo.trim(),
+			...(body ? ['', body] : []),
+			'',
+			`Ver en tu área: ${actionUrl}`,
+			`Todas las notificaciones: ${inboxUrl}`,
+			'',
+			'Trámites DGT Online'
+		].join('\n')
+	});
+}

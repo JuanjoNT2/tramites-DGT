@@ -91,6 +91,9 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
+		min-width: 0;
+		max-width: 100%;
+		overflow-x: auto;
 		background: #fff;
 		border: 1px solid #d8e0e8;
 		border-radius: 12px;
