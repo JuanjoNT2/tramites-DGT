@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { CtaIds, trackClick } from '$lib/analytics';
 	import { isStaffRole } from '$lib/auth/roles';
+	import { loginUrl } from '$lib/auth/urls';
 	import { displayFirstName } from '$lib/cuenta/profile-prefill';
 	import { servicesByGroup, calculators } from '$lib/data/services';
 	import Logo from '$lib/components/layout/Logo.svelte';
@@ -20,6 +21,7 @@
 	const brandHref = $derived(staff ? '/gestor' : '/');
 	const displayName = $derived(displayFirstName(profile, user?.email));
 	const accountLabel = $derived(`Hola, ${displayName}`);
+	const loginHref = $derived(loginUrl(page.url.pathname + page.url.search));
 
 	function closeMobile() {
 		open = false;
@@ -29,11 +31,19 @@
 	}
 
 	function toggleMobile() {
+		openAccount = false;
 		open = !open;
 		if (!open) {
 			openTramites = false;
 			openCalculador = false;
 		}
+	}
+
+	function toggleAccount() {
+		open = false;
+		openTramites = false;
+		openCalculador = false;
+		openAccount = !openAccount;
 	}
 
 	$effect(() => {
@@ -45,9 +55,11 @@
 	});
 
 	$effect(() => {
-		if (!browser || !open) return;
+		if (!browser || (!open && !openAccount)) return;
 		function onKey(e: KeyboardEvent) {
-			if (e.key === 'Escape') closeMobile();
+			if (e.key !== 'Escape') return;
+			if (openAccount) openAccount = false;
+			else closeMobile();
 		}
 		window.addEventListener('keydown', onKey);
 		return () => window.removeEventListener('keydown', onKey);
@@ -135,72 +147,87 @@
 			>
 		</nav>
 
+		{#snippet accountMenu()}
+			<div class="drop-menu account-menu" role="menu">
+				{#if staff}
+					<a href="/gestor" role="menuitem" onclick={() => (openAccount = false)}>Dashboard</a>
+					<a href="/gestor/usuarios" role="menuitem" onclick={() => (openAccount = false)}
+						>Usuarios</a
+					>
+					<a href="/gestor/seguridad" role="menuitem" onclick={() => (openAccount = false)}
+						>Cambiar contraseña</a
+					>
+					<form method="POST" action="/gestor?/logout">
+						<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
+					</form>
+				{:else}
+					<a href="/cuenta" role="menuitem" onclick={() => (openAccount = false)}>Resumen</a>
+					<a
+						href="/cuenta/tramites?estado=en_curso"
+						role="menuitem"
+						onclick={() => (openAccount = false)}>Trámites en curso</a
+					>
+					<a
+						href="/cuenta/tramites?estado=realizados"
+						role="menuitem"
+						onclick={() => (openAccount = false)}>Trámites realizados</a
+					>
+					<a href="/cuenta/vehiculos" role="menuitem" onclick={() => (openAccount = false)}
+						>Mis vehículos</a
+					>
+					<a href="/cuenta/datos" role="menuitem" onclick={() => (openAccount = false)}>Mis datos</a>
+					<a href="/cuenta/documentos" role="menuitem" onclick={() => (openAccount = false)}
+						>Documentos</a
+					>
+					<a href="/cuenta/notificaciones" role="menuitem" onclick={() => (openAccount = false)}
+						>Notificaciones</a
+					>
+					<form method="POST" action="/cuenta?/logout">
+						<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
+					</form>
+				{/if}
+			</div>
+		{/snippet}
+
 		{#if user}
-			<div class="account desktop-cta dropdown account-drop">
+			<div class="account-wrap dropdown account-drop">
 				<button
 					type="button"
-					class="btn cta account-btn"
+					class="btn cta account-btn desktop-cta"
 					title={user.email ?? 'Mi cuenta'}
 					aria-label={`Sesión iniciada como ${displayName}`}
 					aria-expanded={openAccount}
-					onclick={() => (openAccount = !openAccount)}
+					onclick={toggleAccount}
 				>
 					{accountLabel} ▾
 				</button>
+				<!-- Menú colapsado: icono + «Hola…» a la izquierda del burger -->
+				<button
+					type="button"
+					class="mobile-account-btn"
+					title={user.email ?? 'Mi cuenta'}
+					aria-label={`Sesión iniciada como ${displayName}`}
+					aria-expanded={openAccount}
+					onclick={toggleAccount}
+				>
+					<svg class="account-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+						<path
+							fill="currentColor"
+							d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v1.2c0 .7.5 1.2 1.2 1.2h16.8c.7 0 1.2-.5 1.2-1.2v-1.2c0-3.2-6.4-4.8-9.6-4.8z"
+						/>
+					</svg>
+					<span class="mobile-hello">{accountLabel}</span>
+				</button>
 				{#if openAccount}
-					<div class="drop-menu account-menu" role="menu">
-						{#if staff}
-							<a href="/gestor" role="menuitem" onclick={() => (openAccount = false)}
-								>Dashboard</a
-							>
-							<a href="/gestor/usuarios" role="menuitem" onclick={() => (openAccount = false)}
-								>Usuarios</a
-							>
-							<a href="/gestor/seguridad" role="menuitem" onclick={() => (openAccount = false)}
-								>Cambiar contraseña</a
-							>
-							<form method="POST" action="/gestor?/logout">
-								<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
-							</form>
-						{:else}
-							<a href="/cuenta" role="menuitem" onclick={() => (openAccount = false)}>Resumen</a>
-							<a
-								href="/cuenta/tramites?estado=en_curso"
-								role="menuitem"
-								onclick={() => (openAccount = false)}>Trámites en curso</a
-							>
-							<a
-								href="/cuenta/tramites?estado=realizados"
-								role="menuitem"
-								onclick={() => (openAccount = false)}>Trámites realizados</a
-							>
-							<a href="/cuenta/vehiculos" role="menuitem" onclick={() => (openAccount = false)}
-								>Mis vehículos</a
-							>
-							<a href="/cuenta/datos" role="menuitem" onclick={() => (openAccount = false)}
-								>Mis datos</a
-							>
-							<a href="/cuenta/documentos" role="menuitem" onclick={() => (openAccount = false)}
-								>Documentos</a
-							>
-							<a
-								href="/cuenta/notificaciones"
-								role="menuitem"
-								onclick={() => (openAccount = false)}>Notificaciones</a
-							>
-							<form method="POST" action="/cuenta?/logout">
-								<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
-							</form>
-						{/if}
-					</div>
+					{@render accountMenu()}
 				{/if}
 			</div>
 		{:else}
 			<a
-				href="/login"
+				href={loginHref}
 				class="btn cta desktop-cta"
 				data-analytics={CtaIds.NAV_LOGIN}
-				onclick={() => trackClick(CtaIds.NAV_LOGIN, { destination: '/login' })}
+				onclick={() => trackClick(CtaIds.NAV_LOGIN, { destination: loginHref })}
 			>
 				Iniciar sesión
 			</a>
@@ -338,8 +365,9 @@
 							</form>
 						</div>
 					{:else}
-						<a href="/cuenta" class="btn mobile-cta" onclick={closeMobile}>{accountLabel}</a>
+						<p class="mobile-session" aria-live="polite">{accountLabel}</p>
 						<div class="mobile-sub account-mobile">
+							<a href="/cuenta" onclick={closeMobile}>Resumen</a>
 							<a href="/cuenta/tramites?estado=en_curso" onclick={closeMobile}>Trámites en curso</a>
 							<a href="/cuenta/tramites?estado=realizados" onclick={closeMobile}
 								>Trámites realizados</a
@@ -355,10 +383,10 @@
 					{/if}
 				{:else}
 					<a
-						href="/login"
+						href={loginHref}
 						class="btn mobile-cta"
 						onclick={() => {
-							trackClick(CtaIds.NAV_LOGIN, { destination: '/login', nav: 'mobile' });
+							trackClick(CtaIds.NAV_LOGIN, { destination: loginHref, nav: 'mobile' });
 							closeMobile();
 						}}
 					>
@@ -542,10 +570,41 @@
 		height: 44px;
 		margin-right: -6px;
 		background: transparent;
-		border: none;
+		border: 1px solid transparent;
+		border-radius: 10px;
 		cursor: pointer;
 		color: var(--ink);
 		flex-shrink: 0;
+		transition:
+			background 0.18s var(--ease),
+			border-color 0.18s var(--ease),
+			color 0.18s var(--ease),
+			transform 0.18s var(--ease);
+	}
+
+	.burger:hover {
+		background: rgba(0, 198, 209, 0.12);
+		border-color: rgba(0, 168, 179, 0.35);
+		color: var(--navy, #003050);
+		transform: scale(1.04);
+	}
+
+	.burger:active {
+		transform: scale(0.97);
+		background: rgba(0, 198, 209, 0.2);
+	}
+
+	.burger:focus-visible {
+		outline: 2px solid var(--brand-teal, #00a8b3);
+		outline-offset: 2px;
+	}
+
+	.burger:hover .burger-lines:not(.is-open) span:nth-child(1) {
+		transform: translateY(-1px);
+	}
+
+	.burger:hover .burger-lines:not(.is-open) span:nth-child(3) {
+		transform: translateY(1px);
 	}
 
 	.burger-lines {
@@ -688,12 +747,19 @@
 		justify-content: center;
 	}
 
-	.account {
+	.mobile-session {
+		margin: 16px 20px 8px;
+		font-size: 15px;
+		font-weight: 800;
+		color: var(--navy, #003050);
+	}
+
+	.account-wrap {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		max-width: 280px;
 		position: relative;
+		flex-shrink: 1;
+		min-width: 0;
 	}
 
 	.account-btn {
@@ -705,10 +771,50 @@
 		cursor: pointer;
 	}
 
+	.mobile-account-btn {
+		display: none;
+		align-items: center;
+		gap: 8px;
+		max-width: min(200px, 46vw);
+		height: 40px;
+		padding: 0 10px;
+		border: 1px solid rgba(0, 48, 80, 0.14);
+		border-radius: 999px;
+		background: #fff;
+		color: var(--navy, #003050);
+		font: inherit;
+		font-size: 13px;
+		font-weight: 700;
+		cursor: pointer;
+		min-width: 0;
+	}
+
+	.mobile-account-btn:hover,
+	.mobile-account-btn[aria-expanded='true'] {
+		border-color: var(--brand-teal, #00a8b3);
+		background: rgba(0, 198, 209, 0.08);
+	}
+
+	.account-icon {
+		flex-shrink: 0;
+	}
+
+	.mobile-hello {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-width: 0;
+	}
+
 	.account-menu {
 		right: 0;
 		left: auto;
 		min-width: 220px;
+	}
+
+	/* Visible al abrir por click (el hover del dropdown no basta en móvil) */
+	.account-wrap > .account-menu {
+		display: block;
 	}
 
 	.account-menu a,
@@ -769,12 +875,29 @@
 			display: none;
 		}
 
+		.mobile-account-btn {
+			display: inline-flex;
+		}
+
 		.burger {
 			display: flex;
 		}
 
 		.mobile-panel {
 			display: block;
+		}
+	}
+
+	@media (max-width: 420px) {
+		.mobile-hello {
+			display: none;
+		}
+
+		.mobile-account-btn {
+			width: 40px;
+			padding: 0;
+			justify-content: center;
+			border-radius: 50%;
 		}
 	}
 </style>

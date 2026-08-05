@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { loginUrl } from '$lib/auth/urls';
 	import { validateEmail } from '$lib/utils/validators';
 
 	let {
@@ -25,13 +26,11 @@
 	const emailValid = $derived(Boolean(emailNorm) && validateEmail(emailNorm) === null);
 	const dismissed = $derived(dismissedEmail === emailNorm && dismissedEmail !== '');
 	const nextPath = $derived(
-		(returnPath || page.url.pathname).startsWith('/')
-			? returnPath || page.url.pathname
+		(returnPath || page.url.pathname + page.url.search).startsWith('/')
+			? returnPath || page.url.pathname + page.url.search
 			: `/${returnPath || page.url.pathname}`
 	);
-	const loginHref = $derived(
-		`/login?next=${encodeURIComponent(nextPath)}&email=${encodeURIComponent(emailNorm)}`
-	);
+	const loginHref = $derived(loginUrl(nextPath, emailNorm));
 
 	const showBanner = $derived(emailValid && !loggedIn && !dismissed);
 

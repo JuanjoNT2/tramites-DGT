@@ -10,6 +10,7 @@
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import SessionIdleModal from '$lib/components/SessionIdleModal.svelte';
 	import { createIdleTimeout } from '$lib/auth/idle-timeout';
+	import { loginUrl } from '$lib/auth/urls';
 	import { getSupabaseBrowser } from '$lib/supabase/browser';
 	import { initAnalytics, trackPageView } from '$lib/analytics';
 	import { organizationJsonLd, websiteJsonLd } from '$lib/seo/site';
@@ -40,7 +41,9 @@
 		} catch {
 			/* ignore */
 		}
-		await goto('/login?reason=idle', { invalidateAll: true });
+		const href = loginUrl(page.url.pathname + page.url.search);
+		const sep = href.includes('?') ? '&' : '?';
+		await goto(`${href}${sep}reason=idle`, { invalidateAll: true });
 		loggingOut = false;
 	}
 

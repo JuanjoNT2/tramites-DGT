@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { isStaffRole } from '$lib/auth/roles';
-import { authCallbackUrl } from '$lib/auth/urls';
+import { authCallbackUrl, safePostLoginNext } from '$lib/auth/urls';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { validateEmail } from '$lib/utils/validators';
 
@@ -9,7 +9,7 @@ async function resolvePostLoginRedirect(
 	userId: string,
 	nextRaw: string | null | undefined
 ): Promise<string> {
-	const next = (nextRaw || '').startsWith('/') ? nextRaw! : '';
+	const next = safePostLoginNext(nextRaw);
 	const sb = getServiceSupabase();
 	let role: string | null = null;
 	if (sb) {
@@ -20,8 +20,9 @@ async function resolvePostLoginRedirect(
 		if (next.startsWith('/gestor')) return next;
 		return '/gestor';
 	}
-	if (next.startsWith('/')) return next;
-	return '/cuenta';
+	// Con next (p. ej. trámite) volver ahí; sin next, home — no empujar a /cuenta
+	if (next) return next;
+	return '/';
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -34,7 +35,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}
 	const emailParam = (url.searchParams.get('email') || '').trim().toLowerCase();
 	return {
-		next: url.searchParams.get('next') || '/',
+		next: safePostLoginNext(url.searchParams.get('next')),
 		email: emailParam,
 		urlError: url.searchParams.get('error') || null
 	};
@@ -51,10 +52,10 @@ export const actions: Actions = {
 			.trim()
 			.toLowerCase();
 		const password = String(form.get('password') || '');
-		const next = String(form.get('next') || '/');
+		const next = safePostLoginNext(String(form.get('next') || ''));
 
 		if (!email || !password) {
-			return fail(400, { error: 'Email y contraseña son obligatorios.', email } as const);
+			return fail(400, { error: 'Email y contraseña son obligatorios.', email, next } as const);
 		}
 
 		let data;
@@ -68,7 +69,8 @@ export const actions: Actions = {
 			console.error('[login] signIn threw', e);
 			return fail(500, {
 				error: `Error al iniciar sesión: ${msg || 'desconocido'}`,
-				email
+				email,
+				next
 			} as const);
 		}
 
@@ -79,6 +81,7 @@ export const actions: Actions = {
 					? 'Debes verificar tu email antes de iniciar sesión. Revisa tu correo o pulsa reenviar confirmación.'
 					: 'Email o contraseña incorrectos. Si te volviste a registrar, la contraseña no cambia: usa recuperar contraseña o la que tenías al confirmar la cuenta.',
 				email,
+				next,
 				needsConfirm: unconfirmed
 			} as const);
 		}
@@ -86,14 +89,10 @@ export const actions: Actions = {
 		const userId = data.user?.id;
 		let dest: string;
 		try {
-			dest = userId
-				? await resolvePostLoginRedirect(userId, next)
-				: next.startsWith('/')
-					? next
-					: '/cuenta';
+			dest = userId ? await resolvePostLoginRedirect(userId, next) : next || '/';
 		} catch (e) {
 			console.error('[login] resolvePostLoginRedirect', e);
-			dest = '/cuenta';
+			dest = next || '/';
 		}
 		throw redirect(303, dest);
 	},

@@ -9,8 +9,14 @@
 			? form.email
 			: data.email || ''
 	);
+	const nextValue = $derived(
+		form && 'next' in form && typeof form.next === 'string' ? form.next : data.next || ''
+	);
 	const needsConfirm = $derived(
 		Boolean(form && 'needsConfirm' in form && form.needsConfirm)
+	);
+	const registroHref = $derived(
+		nextValue ? `/registro?next=${encodeURIComponent(nextValue)}` : '/registro'
 	);
 </script>
 
@@ -23,7 +29,7 @@
 	<div class="wrap auth card pad">
 		<h1>Iniciar sesión</h1>
 		<p class="lead">
-			{#if data.next && data.next !== '/' && data.next.startsWith('/tramitar')}
+			{#if nextValue.startsWith('/tramitar')}
 				Accede a tu cuenta para continuar el trámite donde lo dejaste.
 			{:else}
 				Accede a tu cuenta para asociar trámites y consultar el estado.
@@ -61,7 +67,7 @@
 		{/if}
 
 		<form method="POST" action="?/login" class="form">
-			<input type="hidden" name="next" value={data.next} />
+			<input type="hidden" name="next" value={nextValue} />
 			<label>
 				Email
 				<input type="email" name="email" required autocomplete="email" value={emailValue} />
@@ -74,7 +80,7 @@
 			<a href="/recuperar-password">¿Olvidaste la contraseña?</a>
 		</p>
 		<p class="alt">
-			¿No tienes cuenta? <a href="/registro">Regístrate</a>
+			¿No tienes cuenta? <a href={registroHref}>Regístrate</a>
 		</p>
 	</div>
 </section>

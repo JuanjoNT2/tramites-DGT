@@ -1,5 +1,6 @@
 import { page } from '$app/state';
 import { goto } from '$app/navigation';
+import { loginUrl } from '$lib/auth/urls';
 import { saveDraft } from '$lib/tramite/draft';
 
 export type GuardarTramiteResult =
@@ -67,7 +68,7 @@ export async function handleWizardSave(opts: {
 
 	if (!loggedIn) {
 		const next = opts.returnPath.startsWith('/') ? opts.returnPath : `/${opts.returnPath}`;
-		await goto(`/login?next=${encodeURIComponent(next)}`);
+		await goto(loginUrl(next));
 		return { kind: 'login' };
 	}
 
@@ -80,7 +81,7 @@ export async function handleWizardSave(opts: {
 	if (!result.ok) {
 		if (result.needsLogin) {
 			const next = opts.returnPath.startsWith('/') ? opts.returnPath : `/${opts.returnPath}`;
-			await goto(`/login?next=${encodeURIComponent(next)}`);
+			await goto(loginUrl(next));
 			return { kind: 'login' };
 		}
 		return { kind: 'error', error: result.error };
