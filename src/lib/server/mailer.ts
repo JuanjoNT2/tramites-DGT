@@ -1,5 +1,6 @@
 import { env } from '$env/dynamic/private';
 import { siteOrigin } from '$lib/auth/urls';
+import { getAdminNotifyEmail } from '$lib/server/site-settings';
 import { SOLICITUD_TIPO_LABELS } from '$lib/supabase/types';
 
 async function sendEmail(opts: {
@@ -126,6 +127,77 @@ export async function sendOtraParteInviteEmail(opts: {
 			`Accede aquí: ${url}`,
 			'',
 			'Trámites DGT Online'
+		].join('\n')
+	});
+}
+
+/** Aviso interno: nuevo usuario registrado. */
+export async function sendAdminUserRegisteredEmail(opts: {
+	nombre: string;
+	apellido1: string;
+	apellido2?: string;
+	email: string;
+}) {
+	const to = await getAdminNotifyEmail();
+	const full = [opts.nombre, opts.apellido1, opts.apellido2]
+		.map((s) => (s || '').trim())
+		.filter(Boolean)
+		.join(' ');
+
+	return sendEmail({
+		to,
+		subject: `Nuevo usuario registrado: ${opts.email}`,
+		text: [
+			'Se ha registrado un nuevo usuario en Trámites DGT Online.',
+			'',
+			`Nombre: ${opts.nombre.trim() || '—'}`,
+			`Apellidos: ${[opts.apellido1, opts.apellido2].map((s) => (s || '').trim()).filter(Boolean).join(' ') || '—'}`,
+			`Nombre completo: ${full || '—'}`,
+			`Email: ${opts.email.trim()}`,
+			'',
+			'Trámites DGT Online — aviso automático'
+		].join('\n')
+	});
+}
+
+/** Aviso interno: venta / pago confirmado. */
+export async function sendAdminSalePaidEmail(opts: {
+	email?: string | null;
+	nombre?: string | null;
+	apellido1?: string | null;
+	apellido2?: string | null;
+	tipo: string;
+	solicitudId: string;
+	amountEur?: number | null;
+}) {
+	const to = await getAdminNotifyEmail();
+	const base = siteOrigin();
+	const label = tipoLabel(opts.tipo);
+	const clientName = [opts.nombre, opts.apellido1, opts.apellido2]
+		.map((s) => (s || '').trim())
+		.filter(Boolean)
+		.join(' ');
+	const amount =
+		opts.amountEur != null && Number.isFinite(opts.amountEur)
+			? `${opts.amountEur.toFixed(2)} €`
+			: null;
+	const gestorUrl = `${base}/gestor/${opts.solicitudId}`;
+
+	return sendEmail({
+		to,
+		subject: `Venta confirmada: ${label}`,
+		text: [
+			'Un usuario ha finalizado un trámite y lo ha pagado.',
+			'',
+			`Cliente: ${clientName || '—'}`,
+			`Email: ${(opts.email || '').trim() || '—'}`,
+			`Trámite: ${label}`,
+			`Referencia: ${opts.solicitudId}`,
+			...(amount ? [`Importe: ${amount}`] : []),
+			'',
+			`Ver en gestor: ${gestorUrl}`,
+			'',
+			'Trámites DGT Online — aviso automático'
 		].join('\n')
 	});
 }

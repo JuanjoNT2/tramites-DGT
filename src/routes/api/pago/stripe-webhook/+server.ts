@@ -1,6 +1,7 @@
 import { json, text, type RequestHandler } from '@sveltejs/kit';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { constructStripeEvent, isStripeConfigured } from '$lib/server/stripe';
+import { notifyAdminSalePaid } from '$lib/server/admin-notify';
 import { sendPagoConfirmadoEmail } from '$lib/server/mailer';
 import { createNotificacion } from '$lib/cuenta/data';
 import { toStoredEvent } from '$lib/analytics/server/store';
@@ -115,6 +116,13 @@ async function markSolicitudPaid(opts: {
 	await sb.from('solicitudes').update({ status: 'pagada', payload }).eq('id', opts.solicitudId);
 
 	await recordPaymentCompleted({ solicitud, session: opts.session });
+
+	const paidSolicitud: Solicitud = {
+		...solicitud,
+		status: 'pagada',
+		payload
+	};
+	void notifyAdminSalePaid(paidSolicitud);
 
 	const email = solicitud.email;
 	const nombre = typeof prev.nombre === 'string' ? prev.nombre : null;

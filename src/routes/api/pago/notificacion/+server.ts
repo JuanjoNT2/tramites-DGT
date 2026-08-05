@@ -1,6 +1,7 @@
 import { text, type RequestHandler } from '@sveltejs/kit';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { parseRedsysNotification } from '$lib/server/redsys';
+import { notifyAdminSalePaid } from '$lib/server/admin-notify';
 import { sendPagoConfirmadoEmail } from '$lib/server/mailer';
 import { createNotificacion } from '$lib/cuenta/data';
 import type { Solicitud } from '$lib/supabase/types';
@@ -35,6 +36,10 @@ async function handleNotification(params: URLSearchParams) {
 	if (!sol) return text('OK');
 
 	const solicitud = sol as Solicitud;
+	if (solicitud.status === 'pagada' || solicitud.status === 'realizada') {
+		return text('OK');
+	}
+
 	const prev = (solicitud.payload as Record<string, unknown>) || {};
 	const prevPago = (prev.pago as Record<string, unknown>) || {};
 
@@ -89,6 +94,12 @@ async function handleNotification(params: URLSearchParams) {
 	await sb.from('solicitudes').update({ status, payload }).eq('id', solicitudId);
 
 	if (notification.authorized) {
+		void notifyAdminSalePaid({
+			...solicitud,
+			status: 'pagada',
+			payload
+		});
+
 		const email = solicitud.email;
 		const nombre = typeof prev.nombre === 'string' ? prev.nombre : null;
 		if (email) {

@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { authCallbackUrl } from '$lib/auth/urls';
 import { joinPersonName, namePartsFromProfile } from '$lib/cuenta/profile-prefill';
+import { notifyAdminUserRegistered } from '$lib/server/admin-notify';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import {
 	normalizePhone,
@@ -163,6 +164,13 @@ export const actions: Actions = {
 				}
 			}
 
+			void notifyAdminUserRegistered({
+				nombre,
+				apellido1,
+				apellido2,
+				email: fields.email
+			});
+
 			throw redirect(303, '/cuenta');
 		}
 
@@ -291,6 +299,7 @@ export const actions: Actions = {
 					console.error('[registro] profile upsert failed', upErr.message, upErr.code);
 				}
 			}
+			void notifyAdminUserRegistered({ nombre, apellido1, apellido2, email });
 		}
 
 		if (data.session) {

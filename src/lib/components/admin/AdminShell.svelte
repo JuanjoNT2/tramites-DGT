@@ -22,7 +22,8 @@
 		{ href: '/admin/conexiones', label: 'Conexiones' },
 		{ href: '/admin/etiquetado', label: 'Etiquetado' },
 		{ href: '/admin/datalayer', label: 'Data layer' },
-		{ href: '/admin/usuarios', label: 'Usuarios' }
+		{ href: '/admin/usuarios', label: 'Usuarios' },
+		{ href: '/admin/notificaciones', label: 'Notificaciones' }
 	];
 
 	function withRange(href: string) {
