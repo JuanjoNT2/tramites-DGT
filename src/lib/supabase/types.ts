@@ -28,6 +28,8 @@ export type Profile = {
 	direccion?: ProfileDireccion | Record<string, unknown> | null;
 	/** ISO date YYYY-MM-DD */
 	fecha_nacimiento?: string | null;
+	/** HOMBRE | MUJER */
+	sexo?: string | null;
 	created_at: string;
 	updated_at: string;
 };

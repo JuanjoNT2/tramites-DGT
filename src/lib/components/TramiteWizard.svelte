@@ -310,7 +310,8 @@
 				localidad,
 				direccion,
 				cp,
-				fechaNacimiento
+				fechaNacimiento,
+				sexo
 			},
 			{ userEmail: user.email, profile }
 		);
@@ -326,6 +327,7 @@
 		if (patch.direccion != null) direccion = patch.direccion;
 		if (patch.cp != null) cp = patch.cp;
 		if (patch.fechaNacimiento != null) fechaNacimiento = patch.fechaNacimiento;
+		if (patch.sexo != null) sexo = patch.sexo;
 		profilePrefillDone = true;
 	}
 

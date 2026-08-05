@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	if (sb) {
 		const { error: probe } = await sb
 			.from('profiles')
-			.select('telefono,nif,direccion,fecha_nacimiento')
+			.select('telefono,nif,direccion,fecha_nacimiento,sexo')
 			.limit(1);
 		if (isSchemaMissingError(probe)) schemaHint = SCHEMA_HINT;
 	}
@@ -29,6 +29,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		email: locals.user?.email ?? null,
 		emailConfirmed: Boolean(locals.user?.email_confirmed_at),
 		fechaNacimiento: normalizeFechaNacimiento(locals.profile?.fecha_nacimiento),
+		sexo: locals.profile?.sexo || '',
 		direccion: {
 			calle: d.calle || '',
 			cp: d.cp || '',

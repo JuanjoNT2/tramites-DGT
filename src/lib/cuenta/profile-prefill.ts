@@ -71,10 +71,21 @@ export type SolicitanteFields = {
 	direccion: string;
 	cp: string;
 	fechaNacimiento?: string;
+	sexo?: string;
 };
 
 function str(v: unknown): string {
 	return typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
+}
+
+const SEXO_OK = new Set(['HOMBRE', 'MUJER']);
+
+export function normalizeSexo(value: unknown): string {
+	const raw = str(value).toUpperCase();
+	if (SEXO_OK.has(raw)) return raw;
+	if (raw === 'H' || raw === 'MASCULINO' || raw === 'MALE') return 'HOMBRE';
+	if (raw === 'M' || raw === 'FEMENINO' || raw === 'FEMALE') return 'MUJER';
+	return '';
 }
 
 /** YYYY-MM-DD desde payload o perfil. */
@@ -100,6 +111,7 @@ export function profilePatchFromSolicitantePayload(payload: Record<string, unkno
 		| 'nif'
 		| 'direccion'
 		| 'fecha_nacimiento'
+		| 'sexo'
 	>
 > {
 	const patch: Partial<
@@ -113,6 +125,7 @@ export function profilePatchFromSolicitantePayload(payload: Record<string, unkno
 			| 'nif'
 			| 'direccion'
 			| 'fecha_nacimiento'
+			| 'sexo'
 		>
 	> = {};
 
@@ -146,6 +159,9 @@ export function profilePatchFromSolicitantePayload(payload: Record<string, unkno
 
 	const fnac = normalizeFechaNacimiento(payload.fechaNacimiento ?? payload.fecha_nacimiento);
 	if (fnac) patch.fecha_nacimiento = fnac;
+
+	const sexo = normalizeSexo(payload.sexo);
+	if (sexo) patch.sexo = sexo;
 
 	return patch;
 }
@@ -192,6 +208,9 @@ export function mergeProfileIntoSolicitante(
 
 	const fnac = normalizeFechaNacimiento(profile?.fecha_nacimiento);
 	if (fnac && !(fields.fechaNacimiento || '').trim()) patch.fechaNacimiento = fnac;
+
+	const sexo = normalizeSexo(profile?.sexo);
+	if (sexo && !(fields.sexo || '').trim()) patch.sexo = sexo;
 
 	return patch;
 }

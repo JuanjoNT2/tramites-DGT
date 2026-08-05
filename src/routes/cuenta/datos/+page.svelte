@@ -3,6 +3,7 @@
 	import DateInput from '$lib/components/ui/DateInput.svelte';
 	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import { namePartsFromProfile } from '$lib/cuenta/profile-prefill';
+	import { sexoOptions } from '$lib/data/tramite-options';
 	import {
 		todayIso,
 		validateDate,
@@ -19,6 +20,7 @@
 	let apellido2 = $state(initialNames.apellido2);
 	let telefono = $state(data.profile?.telefono || '');
 	let nif = $state(data.profile?.nif || '');
+	let sexo = $state(data.sexo || '');
 	let fechaNacimiento = $state(data.fechaNacimiento || '');
 	let calle = $state(data.direccion.calle);
 	let cp = $state(data.direccion.cp);
@@ -61,6 +63,7 @@
 					apellido2,
 					telefono,
 					nif,
+					sexo: sexo.trim() || null,
 					fecha_nacimiento: fechaNacimiento.trim() || null,
 					direccion: { calle, cp, ciudad, provincia }
 				})
@@ -123,6 +126,16 @@
 		<NifInput bind:value={nif} required />
 	</label>
 	<label>
+		Sexo
+		<span class="hint">Se reutiliza en trámites que lo pidan</span>
+		<select bind:value={sexo}>
+			<option value="">—</option>
+			{#each sexoOptions as s}
+				<option value={s.value}>{s.label}</option>
+			{/each}
+		</select>
+	</label>
+	<label>
 		Fecha de nacimiento
 		<span class="hint">Se reutiliza en trámites que la pidan</span>
 		<DateInput bind:value={fechaNacimiento} max={todayIso()} />
@@ -169,7 +182,8 @@
 		font-size: 0.75rem;
 		color: #5a6b7d;
 	}
-	input {
+	input,
+	select {
 		padding: 8px 10px;
 		border: 1px solid #c5d0da;
 		border-radius: 8px;
