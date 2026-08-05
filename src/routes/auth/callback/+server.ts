@@ -25,7 +25,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		const { error } = await locals.supabase.auth.verifyOtp({ token_hash, type });
 		if (!error) {
 			const dest =
-				type === 'recovery'
+				type === 'recovery' || type === 'invite'
 					? '/auth/actualizar-password'
 					: next.startsWith('/')
 						? next

@@ -18,3 +18,8 @@ export function authCallbackUrl(url: URL, next = '/'): string {
 export function passwordRecoveryRedirect(url: URL): string {
 	return authCallbackUrl(url, '/auth/actualizar-password');
 }
+
+/** Invitación Auth: tras aceptar el enlace, el usuario elige contraseña. */
+export function inviteUserRedirect(url: URL): string {
+	return authCallbackUrl(url, '/auth/actualizar-password');
+}

@@ -66,6 +66,40 @@ En **Authentication → URL configuration**:
 
 Confirmar que “Confirm email” está activo.
 
+### Plantillas de email (castellano + marca)
+
+Supabase envía por defecto textos en **inglés** y sin marca. Hay que personalizarlos en el dashboard
+(no van en el código de Vercel):
+
+**Authentication → Email Templates**
+
+| Plantilla | Asunto sugerido | HTML en el repo |
+|---|---|---|
+| Confirm signup | `Confirma tu email · Trámites DGT Online` | `supabase/templates/confirm-signup.html` |
+| Reset password | `Restablece tu contraseña · Trámites DGT Online` | `supabase/templates/recovery.html` |
+| Invite user | `Te han invitado a Trámites DGT Online` | `supabase/templates/invite.html` |
+
+1. Abre cada plantilla en el dashboard.
+2. Sustituye el **Subject** por el de la tabla.
+3. Pega el HTML completo del archivo correspondiente.
+4. Guarda.
+
+El logo usa `{{ .SiteURL }}/brand/logo-blanco.png` (debe existir en producción tras el deploy).
+El saludo puede usar `{{ .Data.nombre }}` (metadata del registro).
+
+#### Aviso de Gmail («mensaje sospechoso» / imágenes ocultas)
+
+No es un fallo específico de SendGrid: Gmail oculta imágenes y marca avisos cuando el dominio
+es nuevo, el volumen es bajo o faltan/fallan **SPF, DKIM y DMARC** en el dominio del remitente
+(`gestion.tramitesdgtonline.com`). Conviene:
+
+- Dominio autenticado en SendGrid (Single Sender / Domain Authentication).
+- Registros DNS SPF + DKIM de SendGrid y DMARC en el dominio.
+- Remitente estable (`no-reply@gestion.…`) y Site URL canónica `https://tramitesdgtonline.com`.
+
+Las plantillas del repo están pensadas para leerse bien **aunque Gmail oculte las imágenes**
+(texto en castellano + botón/enlace).
+
 ## 4. Roles gestor / admin Auth
 
 **No se elevan roles desde la web.** Se asignan con:
