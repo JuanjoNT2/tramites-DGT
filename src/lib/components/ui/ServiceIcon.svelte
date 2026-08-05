@@ -134,20 +134,32 @@
 			stroke-linecap="round"
 		/>
 	{:else if id === 'duplicado'}
+		<!-- Permiso de detrás (desplazado) para sugerir duplicado -->
+		<rect
+			x="10"
+			y="5"
+			width="35"
+			height="24"
+			rx="3.5"
+			stroke="currentColor"
+			stroke-width="2.4"
+			opacity="0.55"
+		/>
+		<!-- Permiso de delante (mismo diseño, encima) -->
 		<rect
 			x="3"
-			y="10"
-			width="42"
-			height="28"
-			rx="4"
+			y="15"
+			width="35"
+			height="24"
+			rx="3.5"
 			stroke="currentColor"
 			stroke-width="2.6"
 		/>
-		<circle cx="15" cy="24" r="6" stroke="currentColor" stroke-width="2.6" />
+		<circle cx="13.5" cy="27" r="5" stroke="currentColor" stroke-width="2.4" />
 		<path
-			d="M26 18h14M26 24h11M26 30h8"
+			d="M22 22h12M22 27h9M22 32h7"
 			stroke="currentColor"
-			stroke-width="2.6"
+			stroke-width="2.4"
 			stroke-linecap="round"
 		/>
 	{:else if id === 'cancelacion'}
