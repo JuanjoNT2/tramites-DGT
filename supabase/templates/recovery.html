@@ -2,6 +2,9 @@
 <!--
   Asunto en Supabase (Authentication → Email Templates → Reset password):
   Restablece tu contraseña · Trámites DGT Online
+
+  IMPORTANTE: usar token_hash → /auth/verificar (NO ConfirmationURL).
+  ConfirmationURL se invalida si Gmail/antivirus abre el enlace antes que el usuario.
 -->
 <html lang="es">
 <head>
@@ -38,13 +41,13 @@
                 <strong>Trámites DGT Online</strong>.
               </p>
               <p style="margin:0 0 22px;font-size:16px;line-height:1.5;">
-                Si has sido tú, pulsa el botón para elegir una nueva contraseña.
+                Si has sido tú, pulsa el botón. En la siguiente pantalla pulsa <strong>Continuar</strong> para elegir tu nueva contraseña.
               </p>
               <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px;">
                 <tr>
                   <td style="border-radius:8px;background:#00c6d1;">
                     <a
-                      href="{{ .ConfirmationURL }}"
+                      href="{{ .SiteURL }}/auth/verificar?token_hash={{ .TokenHash }}&type=recovery&next=%2Fauth%2Factualizar-password"
                       style="display:inline-block;padding:12px 20px;font-size:16px;font-weight:700;color:#003050;text-decoration:none;"
                     >
                       Elegir nueva contraseña
@@ -56,7 +59,7 @@
                 Si el botón no funciona, copia y pega este enlace:
               </p>
               <p style="margin:0 0 18px;font-size:12px;line-height:1.5;word-break:break-all;">
-                <a href="{{ .ConfirmationURL }}" style="color:#003050;">{{ .ConfirmationURL }}</a>
+                <a href="{{ .SiteURL }}/auth/verificar?token_hash={{ .TokenHash }}&type=recovery&next=%2Fauth%2Factualizar-password" style="color:#003050;">{{ .SiteURL }}/auth/verificar?token_hash={{ .TokenHash }}&type=recovery&next=%2Fauth%2Factualizar-password</a>
               </p>
               <p style="margin:0;font-size:13px;line-height:1.5;color:#5a6b7d;">
                 Si no has pedido este cambio, ignora el correo: tu contraseña no se modificará.

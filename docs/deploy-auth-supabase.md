@@ -60,9 +60,14 @@ En **Authentication → URL configuration**:
 - Site URL: valor de `PUBLIC_SITE_ORIGIN`
 - Redirect URLs:
   - `https://tramitesdgtonline.com/auth/callback`
+  - `https://tramitesdgtonline.com/auth/verificar`
   - `https://tramitesdgtonline.com/auth/callback?**` (si el panel lo pide)
   - `https://*.vercel.app/auth/callback`
   - `http://localhost:5173/auth/callback` (dev)
+  - `http://localhost:5173/auth/verificar` (dev)
+
+Los emails de Auth deben usar `token_hash` → `/auth/verificar` (plantillas en `supabase/templates/`),
+no `ConfirmationURL`, para que Gmail no consuma el enlace al previsualizarlo.
 
 Confirmar que “Confirm email” está activo.
 
