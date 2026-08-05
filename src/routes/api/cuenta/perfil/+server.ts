@@ -1,12 +1,14 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { requireUser, updateProfileFields } from '$lib/cuenta/data';
-import { joinPersonName } from '$lib/cuenta/profile-prefill';
+import { joinPersonName, normalizeFechaNacimiento } from '$lib/cuenta/profile-prefill';
 import type { ProfileDireccion } from '$lib/supabase/types';
 import {
 	normalizePhone,
+	validateDate,
 	validateNifNie,
 	validatePhone,
-	validateRequired
+	validateRequired,
+	todayIso
 } from '$lib/utils/validators';
 
 export const PATCH: RequestHandler = async ({ request, locals }) => {
@@ -44,6 +46,23 @@ export const PATCH: RequestHandler = async ({ request, locals }) => {
 		validateRequired(apellido2, 'El segundo apellido');
 	const phoneErr = validatePhone(telefonoRaw);
 	const nifErr = validateNifNie(nifRaw);
+
+	let fecha_nacimiento: string | null | undefined;
+	if ('fecha_nacimiento' in body || 'fechaNacimiento' in body) {
+		const raw = normalizeFechaNacimiento(body.fecha_nacimiento ?? body.fechaNacimiento);
+		if (!raw) {
+			fecha_nacimiento = null;
+		} else {
+			const dateErr = validateDate(raw, {
+				label: 'La fecha de nacimiento',
+				required: true,
+				max: todayIso()
+			});
+			if (dateErr) return json({ error: dateErr }, { status: 400 });
+			fecha_nacimiento = raw;
+		}
+	}
+
 	const first = nameErr || phoneErr || nifErr;
 	if (first) return json({ error: first }, { status: 400 });
 
@@ -58,6 +77,9 @@ export const PATCH: RequestHandler = async ({ request, locals }) => {
 	};
 	if (body.direccion && typeof body.direccion === 'object') {
 		fields.direccion = body.direccion as ProfileDireccion;
+	}
+	if (fecha_nacimiento !== undefined) {
+		fields.fecha_nacimiento = fecha_nacimiento;
 	}
 
 	const profile = await updateProfileFields(user.id, fields);

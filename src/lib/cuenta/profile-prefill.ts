@@ -70,7 +70,85 @@ export type SolicitanteFields = {
 	localidad: string;
 	direccion: string;
 	cp: string;
+	fechaNacimiento?: string;
 };
+
+function str(v: unknown): string {
+	return typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim();
+}
+
+/** YYYY-MM-DD desde payload o perfil. */
+export function normalizeFechaNacimiento(value: unknown): string {
+	const raw = str(value);
+	if (!raw) return '';
+	const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+	return m ? m[1] : raw;
+}
+
+/**
+ * Campos de perfil a partir del payload del wizard (solo no vacíos).
+ * Dirección siempre como objeto estructurado.
+ */
+export function profilePatchFromSolicitantePayload(payload: Record<string, unknown>): Partial<
+	Pick<
+		Profile,
+		| 'full_name'
+		| 'nombre'
+		| 'apellido1'
+		| 'apellido2'
+		| 'telefono'
+		| 'nif'
+		| 'direccion'
+		| 'fecha_nacimiento'
+	>
+> {
+	const patch: Partial<
+		Pick<
+			Profile,
+			| 'full_name'
+			| 'nombre'
+			| 'apellido1'
+			| 'apellido2'
+			| 'telefono'
+			| 'nif'
+			| 'direccion'
+			| 'fecha_nacimiento'
+		>
+	> = {};
+
+	const nombre = str(payload.nombre);
+	const apellido1 = str(payload.apellido1);
+	const apellido2 = str(payload.apellido2);
+	if (nombre) patch.nombre = nombre;
+	if (apellido1) patch.apellido1 = apellido1;
+	if (apellido2) patch.apellido2 = apellido2;
+	const fullName = joinPersonName(nombre, apellido1, apellido2);
+	if (fullName) patch.full_name = fullName;
+
+	const telefono = str(payload.telefono);
+	if (telefono) patch.telefono = telefono;
+
+	const nif = str(payload.nif).toUpperCase().replace(/[\s-]/g, '');
+	if (nif) patch.nif = nif;
+
+	const calle = str(payload.direccion);
+	const cp = str(payload.cp);
+	const ciudad = str(payload.municipio) || str(payload.localidad) || str(payload.ciudad);
+	const provincia = str(payload.provincia);
+	if (calle || cp || ciudad || provincia) {
+		const direccion: ProfileDireccion = {};
+		if (calle) direccion.calle = calle;
+		if (cp) direccion.cp = cp;
+		if (ciudad) direccion.ciudad = ciudad;
+		if (provincia) direccion.provincia = provincia;
+		patch.direccion = direccion;
+	}
+
+	const fnac = normalizeFechaNacimiento(payload.fechaNacimiento ?? payload.fecha_nacimiento);
+	if (fnac) patch.fecha_nacimiento = fnac;
+
+	return patch;
+}
 
 /**
  * Rellena solo campos vacíos del solicitante a partir del perfil logueado.
@@ -100,14 +178,20 @@ export function mergeProfileIntoSolicitante(
 	if (!fields.apellido1.trim() && names.apellido1) patch.apellido1 = names.apellido1;
 	if (!fields.apellido2.trim() && names.apellido2) patch.apellido2 = names.apellido2;
 
-	const dir = (profile?.direccion || null) as ProfileDireccion | null;
+	const dir = (profile?.direccion || null) as ProfileDireccion | string | null;
 	if (dir && typeof dir === 'object') {
 		if (!fields.direccion.trim() && dir.calle?.trim()) patch.direccion = dir.calle.trim();
 		if (!fields.cp.trim() && dir.cp?.trim()) patch.cp = dir.cp.trim();
 		if (!fields.municipio.trim() && dir.ciudad?.trim()) patch.municipio = dir.ciudad.trim();
 		if (!fields.localidad.trim() && dir.ciudad?.trim()) patch.localidad = dir.ciudad.trim();
 		if (!fields.provincia.trim() && dir.provincia?.trim()) patch.provincia = dir.provincia.trim();
+	} else if (typeof dir === 'string' && dir.trim() && !fields.direccion.trim()) {
+		// Perfiles antiguos con dirección en un único string
+		patch.direccion = dir.trim();
 	}
+
+	const fnac = normalizeFechaNacimiento(profile?.fecha_nacimiento);
+	if (fnac && !(fields.fechaNacimiento || '').trim()) patch.fechaNacimiento = fnac;
 
 	return patch;
 }

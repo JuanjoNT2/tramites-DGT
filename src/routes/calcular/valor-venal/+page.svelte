@@ -9,11 +9,13 @@
 	import { computeValorVenal, formatEur, parsePrecioBase } from '$lib/utils/pricing';
 	import { fetchFactorCorreccion, looksLikeDate } from '$lib/utils/transfer-price-client';
 	import { getStaticSeo } from '$lib/seo/site';
+	import { scrollWizardToTop } from '$lib/utils/scroll';
 
 	const seo = getStaticSeo('/calcular/valor-venal')!;
 
 	const steps = ['Tipo de vehículo', 'Datos del vehículo', 'Resultado'];
 	let step = $state(1);
+	let wizardRoot: HTMLElement | undefined = $state();
 
 	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
 	let marcaId = $state('');
@@ -93,16 +95,22 @@
 	});
 
 	function next() {
-		if (step < 3) step++;
+		if (step < 3) {
+			step++;
+			void scrollWizardToTop(wizardRoot);
+		}
 	}
 	function prev() {
-		if (step > 1) step--;
+		if (step > 1) {
+			step--;
+			void scrollWizardToTop(wizardRoot);
+		}
 	}
 </script>
 
 <SeoHead title={seo.title} description={seo.description} path={seo.path} />
 
-<section class="section">
+<section class="section wizard-scroll-root" bind:this={wizardRoot}>
 	<div class="wrap layout">
 		<div class="main card pad">
 			<StepProgress current={step} total={3} labels={steps} />
@@ -220,6 +228,9 @@
 </section>
 
 <style>
+	.wizard-scroll-root {
+		scroll-margin-top: 88px;
+	}
 	.layout {
 		display: grid;
 		grid-template-columns: 1fr 300px;

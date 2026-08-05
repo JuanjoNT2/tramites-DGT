@@ -1,8 +1,15 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import DateInput from '$lib/components/ui/DateInput.svelte';
 	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import { namePartsFromProfile } from '$lib/cuenta/profile-prefill';
-	import { validateNifNie, validatePhone, validateRequired } from '$lib/utils/validators';
+	import {
+		todayIso,
+		validateDate,
+		validateNifNie,
+		validatePhone,
+		validateRequired
+	} from '$lib/utils/validators';
 
 	let { data }: { data: PageData } = $props();
 
@@ -12,6 +19,7 @@
 	let apellido2 = $state(initialNames.apellido2);
 	let telefono = $state(data.profile?.telefono || '');
 	let nif = $state(data.profile?.nif || '');
+	let fechaNacimiento = $state(data.fechaNacimiento || '');
 	let calle = $state(data.direccion.calle);
 	let cp = $state(data.direccion.cp);
 	let ciudad = $state(data.direccion.ciudad);
@@ -31,7 +39,14 @@
 			validateRequired(apellido1, 'El primer apellido') ||
 			validateRequired(apellido2, 'El segundo apellido') ||
 			validatePhone(telefono) ||
-			validateNifNie(nif);
+			validateNifNie(nif) ||
+			(fechaNacimiento.trim()
+				? validateDate(fechaNacimiento, {
+						label: 'La fecha de nacimiento',
+						required: true,
+						max: todayIso()
+					})
+				: null);
 		if (err) {
 			saving = false;
 			return;
@@ -46,6 +61,7 @@
 					apellido2,
 					telefono,
 					nif,
+					fecha_nacimiento: fechaNacimiento.trim() || null,
 					direccion: { calle, cp, ciudad, provincia }
 				})
 			});
@@ -106,10 +122,15 @@
 		<span class="hint">Escribe los dígitos: la letra se calcula sola</span>
 		<NifInput bind:value={nif} required />
 	</label>
-	<label>Calle<input bind:value={calle} /></label>
-	<label>Código postal<input bind:value={cp} /></label>
-	<label>Ciudad<input bind:value={ciudad} /></label>
-	<label>Provincia<input bind:value={provincia} /></label>
+	<label>
+		Fecha de nacimiento
+		<span class="hint">Se reutiliza en trámites que la pidan</span>
+		<DateInput bind:value={fechaNacimiento} max={todayIso()} />
+	</label>
+	<label>Calle<input bind:value={calle} autocomplete="street-address" /></label>
+	<label>Código postal<input bind:value={cp} autocomplete="postal-code" /></label>
+	<label>Ciudad<input bind:value={ciudad} autocomplete="address-level2" /></label>
+	<label>Provincia<input bind:value={provincia} autocomplete="address-level1" /></label>
 	<button type="submit" class="btn" disabled={saving}>{saving ? 'Guardando…' : 'Guardar'}</button>
 </form>
 

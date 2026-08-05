@@ -3,6 +3,7 @@
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import PaymentStep from '$lib/components/ui/PaymentStep.svelte';
 	import { validateEmail, validateMatricula, validateRequired } from '$lib/utils/validators';
+	import { scrollWizardToTop } from '$lib/utils/scroll';
 	import { createSolicitudAndStartPayment, postToRedsys } from '$lib/pago/client';
 
 	let {
@@ -18,6 +19,7 @@
 	} = $props();
 
 	let step = $state(1);
+	let wizardRoot: HTMLElement | undefined = $state();
 	let matricula = $state('');
 	let email = $state('');
 	let nombre = $state('');
@@ -81,7 +83,7 @@
 	<title>{title} | Trámites DGT Online</title>
 </svelte:head>
 
-<section class="section">
+<section class="section wizard-scroll-root" bind:this={wizardRoot}>
 	<div class="wrap main card pad">
 		{#if done}
 			<div class="ok">
@@ -119,13 +121,21 @@
 				<PaymentStep total={amount} loading={submitting} onPay={submit} />
 			{/if}
 			<div class="nav">
-				{#if step > 1}<button class="btn ghost" onclick={() => step--}>Anterior</button>{:else}<span
-					></span>{/if}
+				{#if step > 1}<button
+						class="btn ghost"
+						onclick={() => {
+							step--;
+							void scrollWizardToTop(wizardRoot);
+						}}>Anterior</button
+					>{:else}<span></span>{/if}
 				{#if step < steps.length}
 					<button
 						class="btn"
 						onclick={() => {
-							if (validate()) step++;
+							if (validate()) {
+								step++;
+								void scrollWizardToTop(wizardRoot);
+							}
 						}}>Siguiente</button
 					>
 				{/if}
@@ -135,6 +145,9 @@
 </section>
 
 <style>
+	.wizard-scroll-root {
+		scroll-margin-top: 88px;
+	}
 	.main {
 		max-width: 640px;
 		margin: 0 auto;

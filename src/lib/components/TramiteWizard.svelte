@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { scrollWizardToTop } from '$lib/utils/scroll';
 	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import DateInput from '$lib/components/ui/DateInput.svelte';
@@ -86,6 +87,7 @@
 	const isEtiquetaShip = $derived(variant === 'etiqueta' || variant === 'etiqueta-vmp');
 
 	let step = $state(1);
+	let wizardRoot: HTMLElement | undefined = $state();
 	let errors = $state<Record<string, string | null>>({});
 	let errorSteps = $state<number[]>([]);
 	/** Tras un intento de pago/envío, revalidar al editar para quitar el rojo al corregir */
@@ -307,7 +309,8 @@
 				municipio,
 				localidad,
 				direccion,
-				cp
+				cp,
+				fechaNacimiento
 			},
 			{ userEmail: user.email, profile }
 		);
@@ -322,6 +325,7 @@
 		if (patch.localidad != null) localidad = patch.localidad;
 		if (patch.direccion != null) direccion = patch.direccion;
 		if (patch.cp != null) cp = patch.cp;
+		if (patch.fechaNacimiento != null) fechaNacimiento = patch.fechaNacimiento;
 		profilePrefillDone = true;
 	}
 
@@ -676,6 +680,7 @@
 		step = n;
 		noteProgress();
 		save();
+		void scrollWizardToTop(wizardRoot);
 	}
 
 	$effect(() => {
@@ -702,12 +707,16 @@
 				step_name: steps[step - 1],
 				total_steps: steps.length
 			});
+			void scrollWizardToTop(wizardRoot);
 		}
 	}
 
 	function prev() {
-		if (step > 1) step--;
-		save();
+		if (step > 1) {
+			step--;
+			save();
+			void scrollWizardToTop(wizardRoot);
+		}
 	}
 
 	function buildPayload(): Record<string, unknown> {
@@ -859,7 +868,7 @@
 	<title>{title} | Trámites DGT Online</title>
 </svelte:head>
 
-<section class="section wizard-section">
+<section class="section wizard-section" bind:this={wizardRoot}>
 	<div class="wrap wizard-layout">
 		<div class="main card pad">
 			<WizardStepper current={step} labels={steps} {errorSteps} onchange={goTo} />
@@ -1298,6 +1307,7 @@
 	.wizard-section {
 		padding-top: 40px;
 		padding-bottom: 80px;
+		scroll-margin-top: 88px;
 	}
 	.wizard-layout {
 		display: grid;

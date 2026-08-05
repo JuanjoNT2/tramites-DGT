@@ -5,7 +5,8 @@ import path from 'node:path';
 import { env } from '$env/dynamic/private';
 import { isStaffRole } from '$lib/auth/roles';
 import { getServiceSupabase } from '$lib/supabase/admin';
-import { upsertVehiculoFromPayload } from '$lib/cuenta/data';
+import { updateProfileFields, upsertVehiculoFromPayload } from '$lib/cuenta/data';
+import { profilePatchFromSolicitantePayload } from '$lib/cuenta/profile-prefill';
 import { validateSolicitudPayload } from '$lib/server/solicitud-validate';
 import { sendOtraParteInviteEmail, sendSolicitudReceivedEmail } from '$lib/server/mailer';
 import { generatePagoAccessToken } from '$lib/pago/access';
@@ -94,6 +95,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		if (userId) {
 			await upsertVehiculoFromPayload(userId, body).catch(() => null);
+			const profilePatch = profilePatchFromSolicitantePayload(body);
+			if (Object.keys(profilePatch).length) {
+				await updateProfileFields(userId, profilePatch).catch((e) =>
+					console.error('[solicitud] profile sync', e)
+				);
+			}
 		}
 
 		if (email) {

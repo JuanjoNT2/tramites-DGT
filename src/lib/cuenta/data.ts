@@ -212,6 +212,7 @@ export async function updateProfileFields(
 			| 'telefono'
 			| 'nif'
 			| 'direccion'
+			| 'fecha_nacimiento'
 			| 'email'
 		>
 	>

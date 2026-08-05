@@ -6,6 +6,7 @@ import {
 	upsertVehiculoFromPayload,
 	updateProfileFields
 } from '$lib/cuenta/data';
+import { profilePatchFromSolicitantePayload } from '$lib/cuenta/profile-prefill';
 import { validateEmail, validateMatricula, validateNifNie, validatePhone } from '$lib/utils/validators';
 
 function str(v: unknown): string {
@@ -87,40 +88,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	const vehiculo = await upsertVehiculoFromPayload(user.id, payload).catch(() => null);
 
-	const fullName = [str(payload.nombre), str(payload.apellido1), str(payload.apellido2)]
-		.map((s) => s.trim())
-		.filter(Boolean)
-		.join(' ');
-	const profilePatch: Partial<{
-		full_name: string;
-		nombre: string;
-		apellido1: string;
-		apellido2: string;
-		telefono: string;
-		nif: string;
-		direccion: string;
-	}> = {};
-	if (fullName) profilePatch.full_name = fullName;
-	if (str(payload.nombre).trim()) profilePatch.nombre = str(payload.nombre).trim();
-	if (str(payload.apellido1).trim()) profilePatch.apellido1 = str(payload.apellido1).trim();
-	if (str(payload.apellido2).trim()) profilePatch.apellido2 = str(payload.apellido2).trim();
-	if (str(payload.telefono).trim()) profilePatch.telefono = str(payload.telefono).trim();
-	if (str(payload.nif).trim()) profilePatch.nif = str(payload.nif).trim().toUpperCase();
-	const dirBits = [
-		str(payload.direccion),
-		str(payload.cp),
-		str(payload.municipio),
-		str(payload.provincia)
-	]
-		.map((s) => s.trim())
-		.filter(Boolean);
-	if (dirBits.length) profilePatch.direccion = dirBits.join(', ');
-
+	const profilePatch = profilePatchFromSolicitantePayload(payload);
 	if (Object.keys(profilePatch).length) {
-		await updateProfileFields(
-			user.id,
-			profilePatch as Parameters<typeof updateProfileFields>[1]
-		).catch(() => null);
+		await updateProfileFields(user.id, profilePatch).catch((e) =>
+			console.error('[guardar-tramite] profile sync', e)
+		);
 	}
 
 	return json({

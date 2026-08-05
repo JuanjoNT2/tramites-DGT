@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { scrollWizardToTop } from '$lib/utils/scroll';
 	import WizardStepper from '$lib/components/ui/WizardStepper.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import DateInput from '$lib/components/ui/DateInput.svelte';
@@ -86,6 +87,7 @@
 	}
 
 	let step = $state(1);
+	let wizardRoot: HTMLElement | undefined = $state();
 	let errors = $state<Record<string, string | null>>({});
 	let errorSteps = $state<number[]>([]);
 	let validationAttempted = $state(false);
@@ -627,6 +629,7 @@
 		step = n;
 		noteProgress(true);
 		save();
+		void scrollWizardToTop(wizardRoot);
 	}
 
 	$effect(() => {
@@ -653,12 +656,16 @@
 				step_name: stepLabels[step - 1],
 				total_steps: TOTAL_STEPS
 			});
+			void scrollWizardToTop(wizardRoot);
 		}
 	}
 
 	function prev() {
-		if (step > 1) step--;
-		save();
+		if (step > 1) {
+			step--;
+			save();
+			void scrollWizardToTop(wizardRoot);
+		}
 	}
 
 	function buildPayload(): Record<string, unknown> {
@@ -833,7 +840,7 @@
 
 <SeoHead title={seo.title} description={seo.description} path={seo.path} />
 
-<section class="section">
+<section class="section wizard-scroll-root" bind:this={wizardRoot}>
 	<div class="wrap layout">
 		<div class="main card pad">
 			<WizardStepper current={step} labels={stepLabels} {errorSteps} onchange={goTo} />
@@ -1115,6 +1122,9 @@
 />
 
 <style>
+	.wizard-scroll-root {
+		scroll-margin-top: 88px;
+	}
 	.layout {
 		display: grid;
 		grid-template-columns: 1fr 320px;

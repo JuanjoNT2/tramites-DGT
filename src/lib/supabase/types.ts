@@ -26,6 +26,8 @@ export type Profile = {
 	telefono?: string | null;
 	nif?: string | null;
 	direccion?: ProfileDireccion | Record<string, unknown> | null;
+	/** ISO date YYYY-MM-DD */
+	fecha_nacimiento?: string | null;
 	created_at: string;
 	updated_at: string;
 };
