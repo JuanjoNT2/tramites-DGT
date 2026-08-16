@@ -2,6 +2,12 @@
 	import type { PageData } from './$types';
 	import type { SolicitudStatus } from '$lib/supabase/types';
 	import { payloadFieldsForDisplay } from '$lib/gestor/payload-display';
+	import {
+		facturaClienteFromPayload,
+		facturaEmitidaFromPayload,
+		formatFacturaDireccion,
+		solicitaFacturaFromPayload
+	} from '$lib/tramite/factura-cliente';
 
 	let { data }: { data: PageData } = $props();
 	let s = $state(data.item);
@@ -10,6 +16,7 @@
 	let msg = $state<string | null>(null);
 	let err = $state<string | null>(null);
 	let uploading = $state(false);
+	let facturando = $state(false);
 
 	$effect(() => {
 		s = data.item;
@@ -17,7 +24,37 @@
 		status = String(data.item.status);
 	});
 
-	const fields = $derived(payloadFieldsForDisplay((s.payload || {}) as Record<string, unknown>));
+	const payload = $derived((s.payload || {}) as Record<string, unknown>);
+	const fields = $derived(payloadFieldsForDisplay(payload));
+	const pideFactura = $derived(solicitaFacturaFromPayload(payload));
+	const facturaEmitida = $derived(facturaEmitidaFromPayload(payload));
+	const factura = $derived(facturaClienteFromPayload(payload));
+
+	async function emitirFactura(enviarEmail: boolean) {
+		facturando = true;
+		msg = null;
+		err = null;
+		try {
+			const res = await fetch('/gestor/api/factura', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ solicitudId: s.id, enviarEmail })
+			});
+			const body = await res.json();
+			if (!res.ok) throw new Error(body.message || body.error || 'Error al emitir la factura');
+			if (body.item) s = body.item;
+			msg = body.warning
+				? body.warning
+				: enviarEmail
+					? `Factura ${body.numero} emitida y enviada.`
+					: `Factura ${body.numero} emitida.`;
+			window.open(`/gestor/api/factura?id=${encodeURIComponent(s.id)}`, '_blank');
+		} catch (e) {
+			err = e instanceof Error ? e.message : 'Error';
+		} finally {
+			facturando = false;
+		}
+	}
 
 	async function changeStatus() {
 		msg = null;
@@ -74,6 +111,47 @@
 
 {#if msg}<p class="ok">{msg}</p>{/if}
 {#if err}<p class="err">{err}</p>{/if}
+
+{#if pideFactura}
+	<section class="card factura" class:emitida={facturaEmitida}>
+		<h2>{facturaEmitida ? 'Factura emitida' : 'Factura pendiente de emitir'}</h2>
+		<p class="factura-lead">
+			{#if facturaEmitida}
+				Nº <strong>{String(payload.facturaNumero)}</strong>
+				· {payload.facturaEmitidaAt
+					? new Date(String(payload.facturaEmitidaAt)).toLocaleString('es-ES')
+					: ''}
+				{#if payload.facturaEmitidaPor}
+					· por {String(payload.facturaEmitidaPor)}
+				{/if}
+			{:else}
+				El cliente pidió factura del servicio de gestoría. Revísala y emítela cuando el pago esté
+				confirmado.
+			{/if}
+		</p>
+		<dl class="factura-datos">
+			<div><dt>Razón social</dt><dd>{factura.razonSocial || '—'}</dd></div>
+			<div><dt>NIF/CIF</dt><dd>{factura.nif || '—'}</dd></div>
+			<div><dt>Email</dt><dd>{factura.email || '—'}</dd></div>
+			<div><dt>Dirección</dt><dd>{formatFacturaDireccion(factura)}</dd></div>
+		</dl>
+		<div class="factura-actions">
+			{#if facturaEmitida}
+				<a class="btn" href="/gestor/api/factura?id={s.id}">Descargar PDF</a>
+				<button type="button" class="btn ghost" onclick={() => emitirFactura(true)} disabled={facturando}>
+					{facturando ? 'Enviando…' : 'Reenviar por email'}
+				</button>
+			{:else}
+				<button type="button" class="btn" onclick={() => emitirFactura(true)} disabled={facturando}>
+					{facturando ? 'Emitiendo…' : 'Emitir y enviar'}
+				</button>
+				<button type="button" class="btn ghost" onclick={() => emitirFactura(false)} disabled={facturando}>
+					Solo descargar
+				</button>
+			{/if}
+		</div>
+	</section>
+{/if}
 
 <dl class="meta">
 	<div><dt>Estado</dt><dd>{data.statusLabels[s.status as SolicitudStatus] || s.status}</dd></div>
@@ -266,6 +344,40 @@
 		background: #1a5c38;
 		color: #fff;
 	}
+	.btn.ghost {
+		background: #e8eef3;
+	}
+	.btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+	.factura {
+		border-color: #f0b429;
+		background: #fffbeb;
+	}
+	.factura.emitida {
+		border-color: #86d4a8;
+		background: #f0fdf4;
+	}
+	.factura-lead {
+		margin: 0 0 12px;
+		color: #5a6b7d;
+		font-size: 0.9rem;
+	}
+	.factura-datos {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px 16px;
+		margin: 0 0 14px;
+	}
+	.factura-datos dt {
+		font-size: 0.72rem;
+	}
+	.factura-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
 	.meta {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -295,6 +407,9 @@
 	}
 	@media (max-width: 720px) {
 		.meta {
+			grid-template-columns: 1fr;
+		}
+		.factura-datos {
 			grid-template-columns: 1fr;
 		}
 	}

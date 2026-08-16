@@ -12,6 +12,13 @@
 	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
 	import PrivacyAcceptField from '$lib/components/legal/PrivacyAcceptField.svelte';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
+	import FacturaClienteFields from '$lib/components/tramite/FacturaClienteFields.svelte';
+	import {
+		emptyFacturaCliente,
+		facturaClienteErrors,
+		facturaClienteFromPayload,
+		facturaClienteToPayload
+	} from '$lib/tramite/factura-cliente';
 	import PartyFields from '$lib/components/tramite/PartyFields.svelte';
 	import VehicleModelPicker from '$lib/components/VehicleModelPicker.svelte';
 	import MotoModelPicker from '$lib/components/MotoModelPicker.svelte';
@@ -123,6 +130,7 @@
 	let cilindradaMoto = $state('');
 	let comprador = $state<PartyData>(emptyParty());
 	let vendedor = $state<PartyData>(emptyParty());
+	let facturaCliente = $state(emptyFacturaCliente());
 	let docFiles = $state<Record<string, File | null>>({});
 	let acceptPrivacy = $state(false);
 	let showDraftNotice = $state(false);
@@ -288,6 +296,7 @@
 		if (typeof data.cilindradaMoto === 'string') cilindradaMoto = data.cilindradaMoto;
 		comprador = partyFromFlat('comprador', data);
 		vendedor = partyFromFlat('vendedor', data);
+		facturaCliente = facturaClienteFromPayload(data);
 		const hasVehicleDetails =
 			Boolean(data.bastidor) ||
 			Boolean(data.marcaId) ||
@@ -386,6 +395,7 @@
 			modeloMotoNombre,
 			cilindradaMoto,
 			rol: inferredRol,
+			...facturaClienteToPayload(facturaCliente),
 			...flattenParty('comprador', comprador),
 			...flattenParty('vendedor', vendedor)
 		};
@@ -445,6 +455,13 @@
 		void cilindradaMoto;
 		void comprador;
 		void vendedor;
+		void facturaCliente.tipoCliente;
+		void facturaCliente.solicitarFactura;
+		void facturaCliente.razonSocial;
+		void facturaCliente.nif;
+		void facturaCliente.email;
+		void facturaCliente.direccion;
+		void facturaCliente.cp;
 		void acceptPrivacy;
 		void docFiles;
 		scheduleSave();
@@ -468,6 +485,13 @@
 		void cilindradaMoto;
 		void comprador;
 		void vendedor;
+		void facturaCliente.tipoCliente;
+		void facturaCliente.solicitarFactura;
+		void facturaCliente.razonSocial;
+		void facturaCliente.nif;
+		void facturaCliente.email;
+		void facturaCliente.direccion;
+		void facturaCliente.cp;
 		void acceptPrivacy;
 		void docFiles;
 		applyValidationState();
@@ -509,6 +533,7 @@
 		}
 		if (s === 5) {
 			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
+			Object.assign(e, facturaClienteErrors(facturaCliente));
 		}
 		return e;
 	}
@@ -657,6 +682,7 @@
 			puerta: solicitante.puerta,
 			...flattenParty('comprador', comprador),
 			...flattenParty('vendedor', vendedor),
+			...facturaClienteToPayload(facturaCliente),
 			docsAttached: Object.keys(docFiles).filter((k) => docFiles[k]),
 			acceptPrivacy,
 			priceLines: priceLines.lines,
@@ -914,6 +940,11 @@
 						<li><span>Email vendedor</span><span>{vendedor.email || '—'}</span></li>
 						<li><span>Total</span><span>{formatEur(priceLines.total)}</span></li>
 					</ul>
+					<FacturaClienteFields
+						bind:factura={facturaCliente}
+						source={activeParty}
+						{errors}
+					/>
 					<ExistingAccountNotice
 						bind:exists={emailAccountExists}
 						email={activeParty.email}

@@ -1,5 +1,6 @@
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { classifySolicitud } from '$lib/gestor/clients';
+import { facturaEmitidaFromPayload, solicitaFacturaFromPayload } from '$lib/tramite/factura-cliente';
 import type { Solicitud } from '$lib/supabase/types';
 
 export type GestorTramiteVista = 'pendientes' | 'finalizados' | 'todos';
@@ -13,10 +14,13 @@ export type TramiteResumen = {
 	matricula: string | null;
 	createdAt: string;
 	updatedAt: string | null;
+	solicitaFactura: boolean;
+	facturaEmitida: boolean;
 };
 
 function toResumen(s: Solicitud): TramiteResumen {
-	const mat = String(s.payload?.matricula ?? '').trim();
+	const payload = (s.payload || {}) as Record<string, unknown>;
+	const mat = String(payload.matricula ?? '').trim();
 	return {
 		id: s.id,
 		tipo: s.tipo,
@@ -25,7 +29,9 @@ function toResumen(s: Solicitud): TramiteResumen {
 		userId: s.user_id,
 		matricula: mat || null,
 		createdAt: s.created_at,
-		updatedAt: s.updated_at ?? null
+		updatedAt: s.updated_at ?? null,
+		solicitaFactura: solicitaFacturaFromPayload(payload),
+		facturaEmitida: facturaEmitidaFromPayload(payload)
 	};
 }
 

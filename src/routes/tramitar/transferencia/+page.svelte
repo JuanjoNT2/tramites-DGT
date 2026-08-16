@@ -65,6 +65,13 @@
 	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
 	import PrivacyAcceptField from '$lib/components/legal/PrivacyAcceptField.svelte';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
+	import FacturaClienteFields from '$lib/components/tramite/FacturaClienteFields.svelte';
+	import {
+		emptyFacturaCliente,
+		facturaClienteErrors,
+		facturaClienteFromPayload,
+		facturaClienteToPayload
+	} from '$lib/tramite/factura-cliente';
 	import { getStaticSeo } from '$lib/seo/site';
 	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
 	import { loadProfileNifIntoSlots, uploadTramiteDocuments } from '$lib/tramite/upload-docs';
@@ -161,6 +168,7 @@
 	let incluirInforme = $state('si');
 	let motivoTransferencia = $state<'compraventa' | 'donacion'>('compraventa');
 	let liquidarItp = $state('si');
+	let facturaCliente = $state(emptyFacturaCliente());
 	let comprador = $state<PartyData>(emptyParty());
 	let vendedor = $state<PartyData>(emptyParty());
 	let docFiles = $state<Record<string, File | null>>({});
@@ -411,6 +419,7 @@
 			motivoTransferencia = data.motivoTransferencia;
 		}
 		if (typeof data.liquidarItp === 'string') liquidarItp = data.liquidarItp;
+		facturaCliente = facturaClienteFromPayload(data);
 		comprador = partyFromFlat('comprador', data);
 		vendedor = partyFromFlat('vendedor', data);
 		const hasVehicleDetails =
@@ -536,6 +545,7 @@
 			motivoTransferencia,
 			liquidarItp,
 			rol: inferredRol,
+			...facturaClienteToPayload(facturaCliente),
 			...flattenParty('comprador', comprador),
 			...flattenParty('vendedor', vendedor)
 		};
@@ -602,6 +612,13 @@
 		void incluirInforme;
 		void motivoTransferencia;
 		void liquidarItp;
+		void facturaCliente.tipoCliente;
+		void facturaCliente.solicitarFactura;
+		void facturaCliente.razonSocial;
+		void facturaCliente.nif;
+		void facturaCliente.email;
+		void facturaCliente.direccion;
+		void facturaCliente.cp;
 		void comprador;
 		void vendedor;
 		void acceptPrivacy;
@@ -634,6 +651,13 @@
 		void incluirInforme;
 		void comprador;
 		void vendedor;
+		void facturaCliente.tipoCliente;
+		void facturaCliente.solicitarFactura;
+		void facturaCliente.razonSocial;
+		void facturaCliente.nif;
+		void facturaCliente.email;
+		void facturaCliente.direccion;
+		void facturaCliente.cp;
 		void acceptPrivacy;
 		void docFiles;
 		void breakdown;
@@ -695,6 +719,7 @@
 			if (!breakdown || !(breakdown.total > 0)) {
 				e.total = 'Completa CCAA, fechas y modelo para calcular el importe.';
 			}
+			Object.assign(e, facturaClienteErrors(facturaCliente));
 		}
 		return e;
 	}
@@ -885,6 +910,7 @@
 			precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
 			factorCorreccion,
 			fuenteDepreciacion,
+			...facturaClienteToPayload(facturaCliente),
 			metaFiscal: breakdown
 				? {
 						valoracionReal: breakdown.valoracionReal,
@@ -1241,6 +1267,11 @@
 							<li><span>Email vendedor</span><span>{vendedor.email || '—'}</span></li>
 							<li><span>Total</span><span>{breakdown ? formatEur(breakdown.total) : '—'}</span></li>
 						</ul>
+						<FacturaClienteFields
+							bind:factura={facturaCliente}
+							source={activeParty}
+							{errors}
+						/>
 						<ExistingAccountNotice
 							bind:exists={emailAccountExists}
 							email={activeParty.email}

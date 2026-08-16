@@ -8,6 +8,7 @@ async function sendEmail(opts: {
 	subject: string;
 	text: string;
 	html?: string;
+	attachments?: { filename: string; content: Buffer; type?: string }[];
 }): Promise<boolean> {
 	const key = env.SENDGRID_API_KEY?.trim();
 	const from = env.SENDGRID_FROM?.trim() || 'noreply@tramitesdgtonline.com';
@@ -29,7 +30,17 @@ async function sendEmail(opts: {
 			content: [
 				{ type: 'text/plain', value: opts.text },
 				...(opts.html ? [{ type: 'text/html', value: opts.html }] : [])
-			]
+			],
+			...(opts.attachments?.length
+				? {
+						attachments: opts.attachments.map((a) => ({
+							content: a.content.toString('base64'),
+							filename: a.filename,
+							type: a.type || 'application/pdf',
+							disposition: 'attachment'
+						}))
+					}
+				: {})
 		})
 	});
 
@@ -169,6 +180,12 @@ export async function sendAdminSalePaidEmail(opts: {
 	tipo: string;
 	solicitudId: string;
 	amountEur?: number | null;
+	factura?: {
+		razonSocial: string;
+		nif: string;
+		email: string;
+		direccion: string;
+	} | null;
 }) {
 	const to = await getAdminNotifyEmail();
 	const base = siteOrigin();
@@ -182,10 +199,11 @@ export async function sendAdminSalePaidEmail(opts: {
 			? `${opts.amountEur.toFixed(2)} €`
 			: null;
 	const gestorUrl = `${base}/gestor/${opts.solicitudId}`;
+	const pideFactura = Boolean(opts.factura);
 
 	return sendEmail({
 		to,
-		subject: `Venta confirmada: ${label}`,
+		subject: pideFactura ? `Venta confirmada (pide factura): ${label}` : `Venta confirmada: ${label}`,
 		text: [
 			'Un usuario ha finalizado un trámite y lo ha pagado.',
 			'',
@@ -194,11 +212,49 @@ export async function sendAdminSalePaidEmail(opts: {
 			`Trámite: ${label}`,
 			`Referencia: ${opts.solicitudId}`,
 			...(amount ? [`Importe: ${amount}`] : []),
+			...(pideFactura && opts.factura
+				? [
+						'',
+						'El cliente ha pedido factura del servicio:',
+						`Razón social: ${opts.factura.razonSocial || '—'}`,
+						`NIF/CIF: ${opts.factura.nif || '—'}`,
+						`Email factura: ${opts.factura.email || '—'}`,
+						`Dirección: ${opts.factura.direccion || '—'}`,
+						'Emitir desde el gestor cuando corresponda.'
+					]
+				: []),
 			'',
 			`Ver en gestor: ${gestorUrl}`,
 			'',
 			'Trámites DGT Online — aviso automático'
 		].join('\n')
+	});
+}
+
+export async function sendFacturaClienteEmail(opts: {
+	to: string;
+	numero: string;
+	tipo: string;
+	solicitudId: string;
+	nombre?: string | null;
+	pdf: Buffer;
+}) {
+	const label = tipoLabel(opts.tipo);
+	const hello = opts.nombre?.trim() ? `Hola ${opts.nombre.trim()},` : 'Hola,';
+	const filename = `factura-${opts.numero}.pdf`;
+
+	return sendEmail({
+		to: opts.to,
+		subject: `Factura ${opts.numero} — ${label}`,
+		text: [
+			hello,
+			'',
+			`Adjuntamos la factura ${opts.numero} del trámite «${label}».`,
+			`Referencia: ${opts.solicitudId}`,
+			'',
+			'Trámites DGT Online'
+		].join('\n'),
+		attachments: [{ filename, content: opts.pdf, type: 'application/pdf' }]
 	});
 }
 

@@ -1,4 +1,9 @@
 import { sendAdminSalePaidEmail, sendAdminUserRegisteredEmail, sendAdminContactoEmail, sendAdminPagoIncidenciaEmail } from '$lib/server/mailer';
+import {
+	facturaClienteFromPayload,
+	formatFacturaDireccion,
+	solicitaFacturaFromPayload
+} from '$lib/tramite/factura-cliente';
 import type { Solicitud } from '$lib/supabase/types';
 
 export function notifyAdminUserRegistered(opts: {
@@ -40,6 +45,7 @@ export function notifyAdminPagoIncidencia(opts: {
 }
 export function notifyAdminSalePaid(solicitud: Solicitud) {
 	const payload = (solicitud.payload as Record<string, unknown>) || {};
+	const factura = solicitaFacturaFromPayload(payload) ? facturaClienteFromPayload(payload) : null;
 	return sendAdminSalePaidEmail({
 		email: solicitud.email,
 		nombre: typeof payload.nombre === 'string' ? payload.nombre : null,
@@ -47,6 +53,14 @@ export function notifyAdminSalePaid(solicitud: Solicitud) {
 		apellido2: typeof payload.apellido2 === 'string' ? payload.apellido2 : null,
 		tipo: solicitud.tipo,
 		solicitudId: solicitud.id,
-		amountEur: amountFromPayload(payload)
+		amountEur: amountFromPayload(payload),
+		factura: factura
+			? {
+					razonSocial: factura.razonSocial,
+					nif: factura.nif,
+					email: factura.email,
+					direccion: formatFacturaDireccion(factura)
+				}
+			: null
 	}).catch((e) => console.error('[admin-notify] sale paid', e));
 }

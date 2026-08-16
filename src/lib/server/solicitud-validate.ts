@@ -11,6 +11,7 @@ import {
 	validateRequired
 } from '$lib/utils/validators';
 import { resolveCanonicalAmount } from '$lib/server/solicitud-price';
+import { facturaClienteFromPayload, firstFacturaClienteError } from '$lib/tramite/factura-cliente';
 import { SOLICITUD_TIPOS } from '$lib/supabase/types';
 
 export type SolicitudValidationResult =
@@ -46,6 +47,16 @@ function personNameErrors(nif: string, nombre: string, apellido1: string): strin
 	if (nameErr) return nameErr;
 	if (isCifDocumento(nif)) return null;
 	return firstError(validateRequired(apellido1, 'El primer apellido'));
+}
+
+function withFacturaCliente(
+	body: Record<string, unknown>,
+	result: { ok: true; email: string | null } | { ok: false; error: string }
+): { ok: true; email: string | null } | { ok: false; error: string } {
+	if (!result.ok) return result;
+	const err = firstFacturaClienteError(facturaClienteFromPayload(body));
+	if (err) return { ok: false, error: err };
+	return result;
 }
 
 /** Validación de campos (síncrona). El importe se resuelve aparte. */
@@ -105,7 +116,7 @@ export function validateSolicitudFields(
 			validateCodigoPostal(str(body.cp || body.compradorCp || body.vendedorCp))
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email };
+		return withFacturaCliente(body, { ok: true, email });
 	}
 
 	if (tipo === 'etiqueta-vmp' || tipo === 'vmp') {
@@ -123,7 +134,7 @@ export function validateSolicitudFields(
 			validateCodigoPostal(str(body.cp))
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email };
+		return withFacturaCliente(body, { ok: true, email });
 	}
 
 	if (tipo === 'duplicado-carnet' || tipo === 'duplicado') {
@@ -146,7 +157,7 @@ export function validateSolicitudFields(
 			validateCodigoPostal(str(body.cp))
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email };
+		return withFacturaCliente(body, { ok: true, email });
 	}
 
 	if (tipo === 'notificacion-venta') {
@@ -166,10 +177,10 @@ export function validateSolicitudFields(
 			validateCodigoPostal(str(body.cp || body.vendedorCp || body.compradorCp))
 		);
 		if (err) return { ok: false, error: err };
-		return {
+		return withFacturaCliente(body, {
 			ok: true,
 			email: email || str(body.vendedorEmail || body.compradorEmail).trim().toLowerCase() || null
-		};
+		});
 	}
 
 	if (
@@ -203,7 +214,7 @@ export function validateSolicitudFields(
 						})
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email };
+		return withFacturaCliente(body, { ok: true, email });
 	}
 
 	return { ok: false, error: 'Tipo de trámite no válido' };

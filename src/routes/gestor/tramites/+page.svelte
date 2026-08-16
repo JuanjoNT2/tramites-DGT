@@ -80,6 +80,7 @@
 				<th>Estado</th>
 				<th>Cliente</th>
 				<th>Matrícula</th>
+				<th>Factura</th>
 				<th></th>
 			</tr>
 		</thead>
@@ -98,11 +99,20 @@
 						{/if}
 					</td>
 					<td>{t.matricula || '—'}</td>
+					<td>
+						{#if t.solicitaFactura && t.facturaEmitida}
+							<span class="badge ok">Emitida</span>
+						{:else if t.solicitaFactura}
+							<span class="badge warn">Pendiente</span>
+						{:else}
+							—
+						{/if}
+					</td>
 					<td><a href="/gestor/{t.id}">Abrir</a></td>
 				</tr>
 			{:else}
 				<tr>
-					<td colspan="6" class="empty">No hay trámites en esta vista.</td>
+					<td colspan="7" class="empty">No hay trámites en esta vista.</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -241,6 +251,21 @@
 		background: #e8eef3;
 		font-size: 0.8rem;
 		font-weight: 600;
+	}
+	.badge {
+		display: inline-block;
+		padding: 2px 8px;
+		border-radius: 999px;
+		font-size: 0.75rem;
+		font-weight: 700;
+	}
+	.badge.warn {
+		background: #fff3cd;
+		color: #7a5b00;
+	}
+	.badge.ok {
+		background: #e8f5ee;
+		color: #0f5132;
 	}
 	.empty {
 		color: #5a6b7d;

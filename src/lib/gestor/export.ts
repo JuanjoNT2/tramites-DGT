@@ -186,6 +186,27 @@ function groupFields(fields: PayloadFieldRow[]): { title: string; rows: PayloadF
 			]
 		},
 		{
+			title: 'Factura del servicio',
+			keys: [
+				'tipoCliente',
+				'solicitarFactura',
+				'facturaRazonSocial',
+				'facturaNif',
+				'facturaEmail',
+				'facturaTipoVia',
+				'facturaDireccion',
+				'facturaNumeroVia',
+				'facturaPiso',
+				'facturaPuerta',
+				'facturaCp',
+				'facturaMunicipio',
+				'facturaProvincia',
+				'facturaNumero',
+				'facturaEmitidaAt',
+				'facturaEmitidaPor'
+			]
+		},
+		{
 			title: 'Presupuesto y pago',
 			keys: [
 				'priceLines',

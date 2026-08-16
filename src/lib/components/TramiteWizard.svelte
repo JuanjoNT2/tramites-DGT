@@ -45,7 +45,14 @@
 	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
 	import PrivacyAcceptField from '$lib/components/legal/PrivacyAcceptField.svelte';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
+	import FacturaClienteFields from '$lib/components/tramite/FacturaClienteFields.svelte';
 	import VmpModelPicker from '$lib/components/VmpModelPicker.svelte';
+	import {
+		emptyFacturaCliente,
+		facturaClienteErrors,
+		facturaClienteFromPayload,
+		facturaClienteToPayload
+	} from '$lib/tramite/factura-cliente';
 	import { createSolicitud } from '$lib/pago/client';
 	import { handleWizardSave } from '$lib/tramite/save';
 	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
@@ -152,6 +159,7 @@
 	let localidad = $state('');
 	let tipoEnvio = $state('postal');
 	let cartaFinalizacion = $state('si');
+	let factura = $state(emptyFacturaCliente());
 	let acceptPrivacy = $state(false);
 	let showDraftNotice = $state(false);
 	let showDraftRestore = $state(false);
@@ -310,6 +318,7 @@
 		if (typeof data.localidad === 'string') localidad = data.localidad;
 		if (typeof data.tipoEnvio === 'string') tipoEnvio = data.tipoEnvio;
 		if (typeof data.cartaFinalizacion === 'string') cartaFinalizacion = data.cartaFinalizacion;
+		factura = facturaClienteFromPayload(data);
 	}
 
 	function applyProfilePrefill() {
@@ -458,7 +467,8 @@
 			cp,
 			localidad,
 			tipoEnvio,
-			cartaFinalizacion
+			cartaFinalizacion,
+			...facturaClienteToPayload(factura)
 		};
 	}
 
@@ -537,6 +547,13 @@
 		void localidad;
 		void tipoEnvio;
 		void cartaFinalizacion;
+		void factura.tipoCliente;
+		void factura.solicitarFactura;
+		void factura.razonSocial;
+		void factura.nif;
+		void factura.email;
+		void factura.direccion;
+		void factura.cp;
 		void acceptPrivacy;
 		void docFiles;
 		scheduleSave();
@@ -582,6 +599,13 @@
 		void localidad;
 		void tipoEnvio;
 		void cartaFinalizacion;
+		void factura.tipoCliente;
+		void factura.solicitarFactura;
+		void factura.razonSocial;
+		void factura.nif;
+		void factura.email;
+		void factura.direccion;
+		void factura.cp;
 		void acceptPrivacy;
 		void docFiles;
 		applyValidationState();
@@ -692,6 +716,7 @@
 
 		if (s === finalStep) {
 			if (!acceptPrivacy) e.privacy = 'Debes aceptar la política de privacidad';
+			Object.assign(e, facturaClienteErrors(factura));
 		}
 
 		return e;
@@ -826,7 +851,8 @@
 			docsAttached: Object.keys(docFiles).filter((k) => docFiles[k]),
 			priceLines: priceLines.lines,
 			total: priceLines.total,
-			amount: priceLines.total
+			amount: priceLines.total,
+			...facturaClienteToPayload(factura)
 		};
 	}
 
@@ -1390,6 +1416,25 @@
 							</li>
 						</ul>
 
+						<FacturaClienteFields
+							bind:factura
+							source={{
+								nombre,
+								apellido1,
+								apellido2,
+								nif,
+								email,
+								tipoVia,
+								direccion,
+								numero,
+								piso,
+								puerta,
+								cp,
+								municipio: municipio || localidad,
+								provincia
+							}}
+							{errors}
+						/>
 						<ExistingAccountNotice
 							bind:exists={emailAccountExists}
 							{email}
