@@ -13,10 +13,12 @@ export type DocGroup = {
 export type DocCatalogContext = {
 	motivoDuplicado?: string;
 	otraParteEmail?: string;
-	/** comprador | vendedor — para priorizar hints */
+	/** facturaEmpresa | comprador | vendedor — para priorizar hints */
 	rol?: string;
 	tipoSolicitudVmp?: string;
 	facturaEmpresa?: string;
+	liquidarItp?: string;
+	motivoTransferencia?: string;
 	/** cancelación: el usuario declara tener carta de fin de pago */
 	cartaFinalizacion?: string;
 };
@@ -103,6 +105,15 @@ export function getDocumentGroups(
 							label: 'Factura de venta',
 							hint: 'Obligatoria si el vendedor es empresa/autónomo con factura.',
 							required: ctx.facturaEmpresa === 'si'
+						},
+						{
+							id: 'justificante_itp',
+							label: 'Justificante ITP (modelo 620/621)',
+							hint: 'Obligatorio si ya has liquidado el impuesto en Hacienda.',
+							required:
+								ctx.motivoTransferencia !== 'donacion' &&
+								ctx.liquidarItp === 'no' &&
+								ctx.facturaEmpresa !== 'si'
 						}
 					]
 				}

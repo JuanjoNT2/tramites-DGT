@@ -6,6 +6,7 @@ import {
 	requireUser,
 	updateVehiculo
 } from '$lib/cuenta/data';
+import { normalizeMatricula, validateMatricula } from '$lib/utils/validators';
 
 export const GET: RequestHandler = async ({ locals }) => {
 	const user = requireUser(locals);
@@ -21,8 +22,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	} catch {
 		return json({ error: 'JSON inválido' }, { status: 400 });
 	}
-	const matricula = String(body.matricula || '').trim();
-	if (!matricula) return json({ error: 'Matrícula obligatoria' }, { status: 400 });
+	const matricula = normalizeMatricula(String(body.matricula || ''));
+	const plateErr = validateMatricula(matricula);
+	if (plateErr) return json({ error: plateErr }, { status: 400 });
 
 	const item = await createVehiculo(user.id, {
 		matricula,
@@ -44,9 +46,15 @@ export const PATCH: RequestHandler = async ({ request, locals }) => {
 	}
 	const id = String(body.id || '');
 	if (!id) return json({ error: 'id obligatorio' }, { status: 400 });
+	let matricula: string | undefined;
+	if (body.matricula != null) {
+		matricula = normalizeMatricula(String(body.matricula));
+		const plateErr = validateMatricula(matricula);
+		if (plateErr) return json({ error: plateErr }, { status: 400 });
+	}
 
 	const item = await updateVehiculo(user.id, id, {
-		matricula: body.matricula != null ? String(body.matricula) : undefined,
+		matricula,
 		tipo: body.tipo != null ? String(body.tipo) : undefined,
 		marca: body.marca != null ? String(body.marca) : undefined,
 		modelo: body.modelo != null ? String(body.modelo) : undefined,

@@ -29,7 +29,7 @@ const PENDING = new Set(['nueva', 'en_curso', 'pendiente_pago', 'pagada']);
 
 export function classifySolicitud(status: string): 'pendiente' | 'finalizado' | 'otro' {
 	if (isEnCursoStatus(status) || PENDING.has(status)) return 'pendiente';
-	if (isRealizadoStatus(status)) return 'finalizado';
+	if (isRealizadoStatus(status) || status === 'cancelada') return 'finalizado';
 	return 'otro';
 }
 

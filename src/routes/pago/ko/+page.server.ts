@@ -13,6 +13,9 @@ const TRAMITAR_PATH: Record<string, string> = {
 	'duplicado-carnet': '/tramitar/duplicado-carnet',
 	duplicado: '/tramitar/duplicado-carnet',
 	'cancelacion-reserva': '/tramitar/cancelacion-reserva',
+	'notificacion-venta': '/tramitar/notificacion-venta',
+	'nota-simple': '/tramitar/nota-simple',
+	'baja-temporal': '/tramitar/baja-temporal',
 	cancelacion: '/tramitar/cancelacion-reserva'
 };
 

@@ -89,11 +89,11 @@
       ]
     },
     {
-      "path": "/duplicado-de-carnet-de-conducir",
+      "path": "/duplicado-permiso-circulacion",
       "page_type": "landing_servicio",
       "content_group": "servicios",
       "tramite": "duplicado",
-      "label": "Duplicado carnet de conducir",
+      "label": "Duplicado permiso de circulación",
       "events": [
         "page_view",
         "cta_click"

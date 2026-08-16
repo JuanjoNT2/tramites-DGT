@@ -47,7 +47,7 @@
 		<form method="POST" action="/cuenta?/logout" class="logout">
 			<button type="submit">Cerrar sesión</button>
 		</form>
-		<a class="home" href="/">← Volver a Trámites DGT</a>
+		<a class="home" href="/">← Volver a Trámites DGT Online</a>
 	</aside>
 	<div class="main">
 		{#if profileIncomplete}

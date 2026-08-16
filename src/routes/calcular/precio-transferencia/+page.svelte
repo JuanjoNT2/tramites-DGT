@@ -17,6 +17,7 @@
 	} from '$lib/utils/transfer-price-client';
 	import { getStaticSeo } from '$lib/seo/site';
 	import { scrollWizardToTop } from '$lib/utils/scroll';
+	import { validateDate, validateDateOrder, validateRequired } from '$lib/utils/validators';
 
 	const seo = getStaticSeo('/calcular/precio-transferencia')!;
 
@@ -59,6 +60,7 @@
 	let fuenteDepreciacion = $state<string | null>(null);
 	let factorLoading = $state(false);
 	let factorError = $state<string | null>(null);
+	let errors = $state<Record<string, string | null>>({});
 
 	const ccaaOptions = ccaaList.map((c) => ({ value: c.id, label: c.name }));
 
@@ -67,7 +69,8 @@
 		const needsFactor = looksLikeDate(fechaMatricula.trim());
 		if (needsFactor && factorLoading) return null;
 		if (needsFactor && factorError) return null;
-		return buildTransferBreakdown({
+		try {
+			return buildTransferBreakdown({
 			precioVenta,
 			ccaaId,
 			tipoVehiculo,
@@ -76,7 +79,10 @@
 			factorCorreccion: needsFactor ? factorCorreccion : null,
 			facturaEmpresa: facturaEmpresa === 'si',
 			fuenteDepreciacion
-		});
+			});
+		} catch {
+			return null;
+		}
 	});
 
 	$effect(() => {
@@ -119,7 +125,38 @@
 		};
 	});
 
+	function validateStep(s: number): Record<string, string | null> {
+		const e: Record<string, string | null> = {};
+		if (s === 2) {
+			if (tipoVehiculo === 'coche') {
+				e.marca = validateRequired(marcaId, 'La marca');
+				e.combustible = validateRequired(combustibleId, 'El combustible');
+				e.modelo = validateRequired(modeloId, 'El modelo');
+			} else {
+				e.marca = validateRequired(marcaMotoId, 'La marca');
+			}
+			e.fechaMatricula = validateDate(fechaMatricula, {
+				label: 'La fecha de primera matrícula',
+				notFuture: true
+			});
+		}
+		if (s === 3) {
+			e.ccaaId = validateRequired(ccaaId, 'La comunidad autónoma');
+			if (!(Number(precioVenta) > 0)) e.precioVenta = 'Indica un precio de venta mayor que 0';
+			e.fechaVenta = validateDate(fechaVenta, {
+				label: 'La fecha de venta',
+				notFuture: true
+			});
+			const order = validateDateOrder(fechaMatricula, fechaVenta);
+			if (order) e.fechaVenta = order;
+		}
+		return e;
+	}
+
 	function next() {
+		const stepErrors = validateStep(step);
+		errors = stepErrors;
+		if (Object.values(stepErrors).some(Boolean)) return;
 		if (step < 4) {
 			step++;
 			void scrollWizardToTop(wizardRoot);
@@ -162,6 +199,11 @@
 						bind:modeloId
 						bind:modeloNombre
 						bind:modeloMeta
+						errors={{
+							marca: errors.marca,
+							combustible: errors.combustible,
+							modelo: errors.modelo
+						}}
 					/>
 				{:else}
 					<MotoModelPicker
@@ -170,19 +212,29 @@
 						bind:modeloId={modeloMotoId}
 						bind:modeloNombre={modeloMotoNombre}
 						bind:cilindrada={cilindradaMoto}
+						errors={{ marca: errors.marca }}
 					/>
 				{/if}
-				<FormField label="Fecha primera matrícula" hint="Formato: dd/mm/aaaa" required>
+				<FormField
+					label="Fecha primera matrícula"
+					hint="Formato: dd/mm/aaaa"
+					error={errors.fechaMatricula}
+					required
+				>
 					<input type="text" bind:value={fechaMatricula} placeholder="15/03/2018" />
 				</FormField>
 			{:else if step === 3}
-				<FormField label="Comunidad Autónoma del comprador" required>
+				<FormField
+					label="Comunidad Autónoma del comprador"
+					error={errors.ccaaId}
+					required
+				>
 					<SearchSelect options={ccaaOptions} bind:value={ccaaId} placeholder="Buscar CCAA…" />
 				</FormField>
-				<FormField label="Precio de compraventa (€)" required>
+				<FormField label="Precio de compraventa (€)" error={errors.precioVenta} required>
 					<input type="number" bind:value={precioVenta} min="0" step="100" />
 				</FormField>
-				<FormField label="Fecha de venta" required>
+				<FormField label="Fecha de venta" error={errors.fechaVenta} required>
 					<DateInput bind:value={fechaVenta} />
 				</FormField>
 				<FormField label="¿Vendedor empresa/autónomo con factura?">

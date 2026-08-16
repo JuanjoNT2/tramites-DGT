@@ -8,7 +8,8 @@ import { getServiceSupabase } from '$lib/supabase/admin';
 import { updateProfileFields, upsertVehiculoFromPayload } from '$lib/cuenta/data';
 import { profilePatchFromSolicitantePayload } from '$lib/cuenta/profile-prefill';
 import { validateSolicitudPayload } from '$lib/server/solicitud-validate';
-import { sendOtraParteInviteEmail, sendSolicitudReceivedEmail } from '$lib/server/mailer';
+import { sendOtraParteInviteEmail, sendSolicitudReceivedEmail, sendContactoAckEmail } from '$lib/server/mailer';
+import { notifyAdminContacto } from '$lib/server/admin-notify';
 import { generatePagoAccessToken } from '$lib/pago/access';
 
 type LocalEntry = {
@@ -46,7 +47,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	const tipo = String(body.tipo ?? 'desconocido');
-	const validated = validateSolicitudPayload(tipo, body);
+	const validated = await validateSolicitudPayload(tipo, body);
 	if (!validated.ok) {
 		return json({ error: validated.error }, { status: 400 });
 	}
@@ -103,7 +104,19 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			}
 		}
 
-		if (email) {
+		if (tipo === 'contacto') {
+			if (email) {
+				sendContactoAckEmail({
+					to: email,
+					nombre: typeof body.nombre === 'string' ? body.nombre : null
+				}).catch((e) => console.error('[solicitud] contacto ack', e));
+			}
+			notifyAdminContacto({
+				nombre: typeof body.nombre === 'string' ? body.nombre : '',
+				email: email || '',
+				mensaje: String(body.mensaje || body.message || '')
+			});
+		} else if (email) {
 			sendSolicitudReceivedEmail({
 				to: email,
 				solicitudId: id,

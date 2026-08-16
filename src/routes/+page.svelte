@@ -47,7 +47,7 @@
 		<div class="sec-head">
 			<h2>Ventajas de realizar trámites 100% online</h2>
 			<p class="sec-sub">
-				Trámites DGT es la plataforma online que te permite transferir cualquier vehículo 100% online.
+				Trámites DGT Online es la plataforma online que te permite transferir cualquier vehículo 100% online.
 			</p>
 		</div>
 		<div class="grid-4">
@@ -187,7 +187,7 @@
 		background-color: #003050;
 		background-image:
 			linear-gradient(105deg, rgba(0, 48, 80, 0.88) 0%, rgba(0, 48, 80, 0.72) 42%, rgba(0, 36, 56, 0.55) 100%),
-			url('/images/hero.webp');
+			url('/images/services/transferencia.webp');
 		background-repeat: no-repeat;
 		background-size: cover;
 		background-position: center;
@@ -555,7 +555,7 @@
 	}
 
 	.step-visual {
-		background: #eef5f8 url('/images/steps/bg-service.png') center / cover no-repeat;
+		background: #eef5f8 url('/images/steps/presupuesto.webp') center / cover no-repeat;
 		border-radius: 16px;
 		padding: 24px;
 		display: flex;

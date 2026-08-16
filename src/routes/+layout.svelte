@@ -12,7 +12,7 @@
 	import { createIdleTimeout } from '$lib/auth/idle-timeout';
 	import { loginUrl } from '$lib/auth/urls';
 	import { getSupabaseBrowser } from '$lib/supabase/browser';
-	import { initAnalytics, trackPageView } from '$lib/analytics';
+	import { initAnalytics, trackPageView, getAnalyticsConsent } from '$lib/analytics';
 	import { organizationJsonLd, websiteJsonLd } from '$lib/seo/site';
 
 	let { children } = $props();
@@ -72,6 +72,17 @@
 		idleCtrl.start();
 	}
 
+	function maybeInjectGtm() {
+		if (getAnalyticsConsent() !== 'granted') return;
+		const gtmId = env.PUBLIC_GTM_ID;
+		if (gtmId) injectGtm(gtmId);
+	}
+
+	function onConsent(e: Event) {
+		const detail = (e as CustomEvent<string>).detail;
+		if (detail === 'granted') maybeInjectGtm();
+	}
+
 	function injectGtm(id: string) {
 		if (document.getElementById('gtm-script')) return;
 		window.dataLayer = window.dataLayer || [];
@@ -92,8 +103,8 @@
 		syncIdleWatch();
 		if (!isShell) {
 			initAnalytics();
-			const gtmId = env.PUBLIC_GTM_ID;
-			if (gtmId) injectGtm(gtmId);
+			maybeInjectGtm();
+			window.addEventListener('tdgt-consent', onConsent);
 		}
 
 		// Enlaces de Auth que aterrizan en / (Site URL) con #access_token=…&type=recovery
@@ -132,6 +143,7 @@
 		return () => {
 			idleCtrl?.stop();
 			idleCtrl = null;
+			window.removeEventListener('tdgt-consent', onConsent);
 		};
 	});
 

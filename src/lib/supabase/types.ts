@@ -166,5 +166,5 @@ export function isEnCursoStatus(status: string): boolean {
 }
 
 export function isRealizadoStatus(status: string): boolean {
-	return status === 'realizada' || status === 'cancelada';
+	return status === 'realizada';
 }

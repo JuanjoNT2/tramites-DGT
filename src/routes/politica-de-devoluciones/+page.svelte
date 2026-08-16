@@ -10,7 +10,21 @@
 <section class="section">
 	<div class="wrap card pad">
 		<h1>Política de devoluciones</h1>
-		<p class="legal">Documento legal en preparación. Versión demostración del nuevo sitio.</p>
+		<p class="legal">
+			Los servicios de tramitación se prestan a medida. Si el expediente aún no se ha iniciado ante
+			la DGT, Hacienda u otro organismo, puedes solicitar la cancelación y el reembolso del importe
+			pagado (salvo tasas ya abonadas a terceros).
+		</p>
+		<p class="legal">
+			Una vez iniciado el trámite o pagadas tasas oficiales, no es posible devolver esos importes.
+			Los errores en los datos facilitados por el usuario no dan derecho a reembolso de tasas ya
+			ingresadas.
+		</p>
+		<p class="legal">
+			Para solicitar una devolución, escribe a
+			<a href="mailto:info@tramitesdgtonline.com">info@tramitesdgtonline.com</a> indicando la
+			referencia del trámite. Responderemos en un plazo máximo de 14 días naturales.
+		</p>
 	</div>
 </section>
 
@@ -28,5 +42,10 @@
 	.legal {
 		color: var(--text2);
 		line-height: 1.6;
+		margin-bottom: 14px;
+	}
+	.legal a {
+		color: var(--accent);
+		font-weight: 700;
 	}
 </style>

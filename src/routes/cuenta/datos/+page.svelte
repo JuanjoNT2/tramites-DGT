@@ -13,7 +13,8 @@
 		validateDate,
 		validateNifNie,
 		validatePhone,
-		validateRequired
+		validateRequired,
+		isCifDocumento
 	} from '$lib/utils/validators';
 
 	let { data }: { data: PageData } = $props();
@@ -78,6 +79,7 @@
 	let nifUploading = $state<'nif_frontal' | 'nif_trasero' | null>(null);
 
 	const incomplete = $derived(!saved.telefono.trim() || !saved.nif.trim());
+	const isEmpresa = $derived(isCifDocumento(nif));
 	let editing = $state(incomplete);
 	let msg = $state<string | null>(null);
 	let err = $state<string | null>(null);
@@ -158,12 +160,11 @@
 		saving = true;
 		msg = null;
 		err =
-			validateRequired(nombre, 'El nombre') ||
-			validateRequired(apellido1, 'El primer apellido') ||
-			validateRequired(apellido2, 'El segundo apellido') ||
+			validateRequired(nombre, isEmpresa ? 'La razón social' : 'El nombre') ||
+			(isEmpresa ? null : validateRequired(apellido1, 'El primer apellido')) ||
 			validatePhone(telefono) ||
 			validateNifNie(nif) ||
-			(fechaNacimiento.trim()
+			(!isEmpresa && fechaNacimiento.trim()
 				? validateDate(fechaNacimiento, {
 						label: 'La fecha de nacimiento',
 						required: true,
@@ -286,26 +287,29 @@
 			<span class="hint">El email de la cuenta no se cambia aquí.</span>
 		</label>
 		<label>
-			Nombre *
-			<input bind:value={nombre} required autocomplete="given-name" />
+			{isEmpresa ? 'Razón social' : 'Nombre'} *
+			<input bind:value={nombre} required autocomplete={isEmpresa ? 'organization' : 'given-name'} />
 		</label>
-		<label>
-			Primer apellido *
-			<input bind:value={apellido1} required autocomplete="family-name" />
-		</label>
-		<label>
-			Segundo apellido *
-			<input bind:value={apellido2} required autocomplete="additional-name" />
-		</label>
+		{#if !isEmpresa}
+			<label>
+				Primer apellido *
+				<input bind:value={apellido1} required autocomplete="family-name" />
+			</label>
+			<label>
+				Segundo apellido
+				<input bind:value={apellido2} autocomplete="additional-name" />
+			</label>
+		{/if}
 		<label>
 			Móvil *
 			<input bind:value={telefono} type="tel" required autocomplete="tel" placeholder="612345678" />
 		</label>
 		<label>
-			NIF / NIE *
+			NIF / NIE / CIF *
 			<span class="hint">Escribe los dígitos: la letra se calcula sola</span>
 			<NifInput bind:value={nif} required />
 		</label>
+		{#if !isEmpresa}
 		<label>
 			Sexo
 			<span class="hint">Se reutiliza en trámites que lo pidan</span>
@@ -321,6 +325,7 @@
 			<span class="hint">Se reutiliza en trámites que la pidan</span>
 			<DateInput bind:value={fechaNacimiento} max={todayIso()} />
 		</label>
+		{/if}
 		<label>
 			Tipo de vía
 			<select bind:value={tipoVia}>
@@ -379,13 +384,17 @@
 	<section class="card view">
 		<dl>
 			<div><dt>Email</dt><dd>{data.email || '—'}</dd></div>
-			<div><dt>Nombre</dt><dd>{saved.nombre || '—'}</dd></div>
-			<div><dt>Primer apellido</dt><dd>{saved.apellido1 || '—'}</dd></div>
-			<div><dt>Segundo apellido</dt><dd>{saved.apellido2 || '—'}</dd></div>
+			<div><dt>{isCifDocumento(saved.nif) ? 'Razón social' : 'Nombre'}</dt><dd>{saved.nombre || '—'}</dd></div>
+			{#if !isCifDocumento(saved.nif)}
+				<div><dt>Primer apellido</dt><dd>{saved.apellido1 || '—'}</dd></div>
+				<div><dt>Segundo apellido</dt><dd>{saved.apellido2 || '—'}</dd></div>
+			{/if}
 			<div><dt>Móvil</dt><dd>{saved.telefono || '—'}</dd></div>
-			<div><dt>NIF / NIE</dt><dd>{saved.nif || '—'}</dd></div>
-			<div><dt>Sexo</dt><dd>{sexoLabel}</dd></div>
-			<div><dt>Fecha de nacimiento</dt><dd>{formatFecha(saved.fechaNacimiento)}</dd></div>
+			<div><dt>NIF / NIE / CIF</dt><dd>{saved.nif || '—'}</dd></div>
+			{#if !isCifDocumento(saved.nif)}
+				<div><dt>Sexo</dt><dd>{sexoLabel}</dd></div>
+				<div><dt>Fecha de nacimiento</dt><dd>{formatFecha(saved.fechaNacimiento)}</dd></div>
+			{/if}
 			<div><dt>Dirección</dt><dd>{viaLabel}</dd></div>
 			<div><dt>Código postal</dt><dd>{saved.cp || '—'}</dd></div>
 			<div><dt>Municipio</dt><dd>{saved.ciudad || '—'}</dd></div>

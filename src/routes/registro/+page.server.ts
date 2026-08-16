@@ -5,6 +5,7 @@ import { joinPersonName, namePartsFromProfile } from '$lib/cuenta/profile-prefil
 import { notifyAdminUserRegistered } from '$lib/server/admin-notify';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import {
+	isCifDocumento,
 	normalizePhone,
 	validateEmail,
 	validateNifNie,
@@ -15,10 +16,10 @@ import {
 function profileIncomplete(profile: App.Locals['profile']): boolean {
 	if (!profile) return true;
 	const names = namePartsFromProfile(profile);
+	const empresa = isCifDocumento(profile.nif || '');
 	return (
 		!names.nombre ||
-		!names.apellido1 ||
-		!names.apellido2 ||
+		(!empresa && !names.apellido1) ||
 		!profile.telefono?.trim() ||
 		!profile.nif?.trim()
 	);
@@ -93,10 +94,10 @@ export const actions: Actions = {
 			inviteMode
 		} as const;
 
+		const empresa = isCifDocumento(nifRaw);
 		const nameErr =
-			validateRequired(nombre, 'El nombre') ||
-			validateRequired(apellido1, 'El primer apellido') ||
-			validateRequired(apellido2, 'El segundo apellido');
+			validateRequired(nombre, empresa ? 'La razón social' : 'El nombre') ||
+			(empresa ? null : validateRequired(apellido1, 'El primer apellido'));
 		const emailErr = inviteMode ? null : validateEmail(email);
 		const phoneErr = validatePhone(telefonoRaw);
 		const nifErr = validateNifNie(nifRaw);
@@ -115,6 +116,9 @@ export const actions: Actions = {
 		}
 		if (password !== password2) {
 			return fail(400, { error: 'Las contraseñas no coinciden.', ...fields } as const);
+		}
+		if (form.get('privacy') !== 'on') {
+			return fail(400, { error: 'Debes aceptar la política de privacidad.', ...fields } as const);
 		}
 
 		const telefono = normalizePhone(telefonoRaw);

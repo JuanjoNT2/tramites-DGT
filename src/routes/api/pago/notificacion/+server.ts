@@ -1,7 +1,7 @@
 import { text, type RequestHandler } from '@sveltejs/kit';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { parseRedsysNotification } from '$lib/server/redsys';
-import { notifyAdminSalePaid } from '$lib/server/admin-notify';
+import { notifyAdminSalePaid, notifyAdminPagoIncidencia } from '$lib/server/admin-notify';
 import { sendPagoConfirmadoEmail } from '$lib/server/mailer';
 import { createNotificacion } from '$lib/cuenta/data';
 import type { Solicitud } from '$lib/supabase/types';
@@ -74,6 +74,13 @@ async function handleNotification(params: URLSearchParams) {
 			.from('solicitudes')
 			.update({ status: 'pendiente_pago', payload: payloadMismatch })
 			.eq('id', solicitudId);
+		void notifyAdminPagoIncidencia({
+			solicitudId,
+			tipo: solicitud.tipo,
+			expectedCents,
+			paidCents,
+			provider: 'redsys'
+		});
 		return text('OK');
 	}
 

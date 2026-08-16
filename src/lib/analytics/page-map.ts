@@ -98,7 +98,7 @@ export const PAGE_TAGS: PageTag[] = [
 		ctas: [CtaIds.LANDING_SOLICITAR]
 	}),
 	tag(
-		'/duplicado-de-carnet-de-conducir',
+		'/duplicado-permiso-circulacion',
 		'landing_servicio',
 		'servicios',
 		'Duplicado permiso de circulación',
@@ -137,6 +137,13 @@ export const PAGE_TAGS: PageTag[] = [
 		tramite: 'duplicado',
 		ctas: [CtaIds.LANDING_SOLICITAR]
 	}),
+	tag(
+		'/duplicado-de-carnet-de-conducir',
+		'landing_servicio',
+		'servicios',
+		'Duplicado (alias carnet)',
+		{ tramite: 'duplicado', ctas: [CtaIds.LANDING_SOLICITAR] }
+	),
 	tag('/cancelacion-reserva-dominio', 'landing_servicio', 'servicios', 'Cancelación (alias)', {
 		tramite: 'cancelacion',
 		ctas: [CtaIds.LANDING_SOLICITAR]

@@ -13,7 +13,8 @@ import { claimAnonymousSolicitudes } from '$lib/cuenta/data';
 const REDIRECTS: Record<string, string> = {
 	'/etiqueta-medioambiental': '/distintivo-medioambiental',
 	'/informe-vehiculo-dgt': '/informe-trafico',
-	'/duplicado-carnet': '/duplicado-de-carnet-de-conducir',
+	'/duplicado-carnet': '/duplicado-permiso-circulacion',
+	'/duplicado-de-carnet-de-conducir': '/duplicado-permiso-circulacion',
 	'/cancelacion-reserva-dominio': '/cancelacion-de-reserva-de-dominio',
 	'/legal/privacidad': '/politica-de-privacidad',
 	'/legal/cookies': '/politica-de-cookies',
@@ -105,16 +106,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 			if (!event.cookies.get('tdgt_claim')) {
 				try {
 					await claimAnonymousSolicitudes(user.id, user.email);
+					event.cookies.set('tdgt_claim', '1', {
+						path: '/',
+						maxAge: 60 * 60 * 24 * 30,
+						httpOnly: true,
+						sameSite: 'lax',
+						secure: event.url.protocol === 'https:'
+					});
 				} catch (e) {
 					console.error('[hooks] claimAnonymousSolicitudes', e);
 				}
-				event.cookies.set('tdgt_claim', '1', {
-					path: '/',
-					maxAge: 60 * 60 * 24 * 30,
-					httpOnly: true,
-					sameSite: 'lax',
-					secure: event.url.protocol === 'https:'
-				});
 			}
 		}
 	}

@@ -3,7 +3,7 @@
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import { getStaticSeo, serviceJsonLd } from '$lib/seo/site';
 
-	const seo = getStaticSeo('/duplicado-de-carnet-de-conducir')!;
+	const seo = getStaticSeo('/duplicado-permiso-circulacion')!;
 </script>
 
 <SeoHead

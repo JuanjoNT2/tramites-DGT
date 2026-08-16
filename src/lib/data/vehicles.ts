@@ -14,7 +14,10 @@ export const ccaaList = [
 	{ id: 'rioja', name: 'La Rioja', itpRate: 0.04 },
 	{ id: 'navarra', name: 'Navarra', itpRate: 0.04 },
 	{ id: 'pais-vasco', name: 'País Vasco', itpRate: 0.04 },
-	{ id: 'murcia', name: 'Región de Murcia', itpRate: 0.04 }
+	{ id: 'murcia', name: 'Región de Murcia', itpRate: 0.04 },
+	{ id: 'canarias', name: 'Canarias', itpRate: 0 },
+	{ id: 'ceuta', name: 'Ceuta', itpRate: 0 },
+	{ id: 'melilla', name: 'Melilla', itpRate: 0 }
 ] as const;
 
 export const combustibles = ['Gasolina', 'Diésel', 'Híbrido', 'Eléctrico', 'GLP', 'GNC'] as const;

@@ -30,7 +30,7 @@ Convenciones on-page: [`.cursor/rules/seo.mdc`](.cursor/rules/seo.mdc). Componen
 | `/transferencia-vehiculos` | Landing transferencia |
 | `/distintivo-medioambiental` | Landing etiqueta |
 | `/informe-trafico` | Landing informe |
-| `/duplicado-de-carnet-de-conducir` | Landing duplicado |
+| `/duplicado-permiso-circulacion` | Landing duplicado permiso de circulación |
 | `/cancelacion-de-reserva-de-dominio` | Landing cancelación |
 | `/tramitar/*` | Wizards amigables |
 | `/calcular/*` | Calculadoras |

@@ -6,7 +6,7 @@ export const SITE_ORIGIN = (env.PUBLIC_SITE_ORIGIN || 'https://tramitesdgtonline
 	''
 );
 export const SITE_NAME = 'Trámites DGT Online';
-export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/images/hero.webp`;
+export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/images/services/transferencia.webp`;
 export const DEFAULT_DESCRIPTION =
 	'Realiza trámites de vehículo 100% online: transferencias, etiqueta medioambiental, informe DGT y más. Sin cita previa, sin esperas.';
 
@@ -66,7 +66,7 @@ export const STATIC_SEO_PAGES: StaticSeoPage[] = [
 		priority: 0.9
 	},
 	{
-		path: '/duplicado-de-carnet-de-conducir',
+		path: '/duplicado-permiso-circulacion',
 		title: pageTitle('Duplicado permiso de circulación'),
 		description:
 			'Solicita el duplicado del permiso de circulación de tu vehículo online, de forma rápida y segura.',

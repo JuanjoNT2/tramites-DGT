@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { HTMLInputAttributes } from 'svelte/elements';
 	import { applyNifNieLetter, nifNieControlLetter, normalizeDocumento } from '$lib/utils/validators';
 
 	let {
@@ -14,7 +15,7 @@
 		placeholder?: string;
 		required?: boolean;
 		disabled?: boolean;
-		autocomplete?: string;
+		autocomplete?: HTMLInputAttributes['autocomplete'];
 	} = $props();
 
 	const letterMismatch = $derived.by(() => {

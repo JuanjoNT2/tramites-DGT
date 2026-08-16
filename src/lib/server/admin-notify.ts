@@ -1,4 +1,4 @@
-import { sendAdminSalePaidEmail, sendAdminUserRegisteredEmail } from '$lib/server/mailer';
+import { sendAdminSalePaidEmail, sendAdminUserRegisteredEmail, sendAdminContactoEmail, sendAdminPagoIncidenciaEmail } from '$lib/server/mailer';
 import type { Solicitud } from '$lib/supabase/types';
 
 export function notifyAdminUserRegistered(opts: {
@@ -21,7 +21,23 @@ function amountFromPayload(payload: Record<string, unknown>): number | null {
 	return null;
 }
 
-/** Aviso de venta cuando una solicitud acaba de pasar a pagada. */
+export function notifyAdminContacto(opts: { nombre: string; email: string; mensaje: string }) {
+	return sendAdminContactoEmail(opts).catch((e) =>
+		console.error('[admin-notify] contacto', e)
+	);
+}
+
+export function notifyAdminPagoIncidencia(opts: {
+	solicitudId: string;
+	tipo: string;
+	expectedCents: number;
+	paidCents: number;
+	provider: string;
+}) {
+	return sendAdminPagoIncidenciaEmail(opts).catch((e) =>
+		console.error('[admin-notify] pago incidencia', e)
+	);
+}
 export function notifyAdminSalePaid(solicitud: Solicitud) {
 	const payload = (solicitud.payload as Record<string, unknown>) || {};
 	return sendAdminSalePaidEmail({

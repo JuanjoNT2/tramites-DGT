@@ -1,8 +1,8 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { isStaffRole } from '$lib/auth/roles';
-import { promoteSolicitudToPayment, requireUser, upsertVehiculoFromPayload } from '$lib/cuenta/data';
+import { promoteSolicitudToPayment, requireUser, upsertVehiculoFromPayload, getUserSolicitud } from '$lib/cuenta/data';
 import { validateSolicitudPayload } from '$lib/server/solicitud-validate';
-import { generatePagoAccessToken } from '$lib/pago/access';
+import { generatePagoAccessToken, getPayloadAccessToken } from '$lib/pago/access';
 import { sendOtraParteInviteEmail, sendSolicitudReceivedEmail } from '$lib/server/mailer';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -31,13 +31,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	const payload = { ...body.payload };
+	delete payload.amount;
+	delete payload.total;
 	const tipo = String(payload.tipo ?? 'desconocido');
-	if (body.amount != null && Number.isFinite(Number(body.amount))) {
-		payload.amount = Number(body.amount);
-		payload.total = Number(body.amount);
-	}
 
-	const validated = validateSolicitudPayload(tipo, payload);
+	const validated = await validateSolicitudPayload(tipo, payload);
 	if (!validated.ok) {
 		return json({ error: validated.error }, { status: 400 });
 	}
@@ -54,7 +52,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		};
 	}
 
-	const accessToken = generatePagoAccessToken();
+	const current = await getUserSolicitud(user.id, solicitudId);
+	const accessToken =
+		getPayloadAccessToken(current.payload as Record<string, unknown>) || generatePagoAccessToken();
 	payload.accessToken = accessToken;
 
 	const sol = await promoteSolicitudToPayment(user.id, solicitudId, payload);

@@ -237,3 +237,68 @@ export async function sendGestorAvisoEmail(opts: {
 		].join('\n')
 	});
 }
+
+export async function sendContactoAckEmail(opts: { to: string; nombre?: string | null }) {
+	const hello = opts.nombre?.trim() ? `Hola ${opts.nombre.trim()},` : 'Hola,';
+	return sendEmail({
+		to: opts.to,
+		subject: 'Hemos recibido tu mensaje',
+		text: [
+			hello,
+			'',
+			'Hemos recibido tu consulta y te responderemos lo antes posible.',
+			'',
+			'Trámites DGT Online'
+		].join('\n')
+	});
+}
+
+export async function sendAdminContactoEmail(opts: {
+	nombre: string;
+	email: string;
+	mensaje: string;
+}) {
+	const to = await getAdminNotifyEmail();
+	return sendEmail({
+		to,
+		subject: `Contacto web: ${opts.email}`,
+		text: [
+			'Nuevo mensaje desde el formulario de contacto.',
+			'',
+			`Nombre: ${opts.nombre.trim() || '—'}`,
+			`Email: ${opts.email.trim() || '—'}`,
+			'',
+			opts.mensaje.trim() || '—',
+			'',
+			'Trámites DGT Online — aviso automático'
+		].join('\n')
+	});
+}
+
+export async function sendAdminPagoIncidenciaEmail(opts: {
+	solicitudId: string;
+	tipo: string;
+	expectedCents: number;
+	paidCents: number;
+	provider: string;
+}) {
+	const to = await getAdminNotifyEmail();
+	const base = siteOrigin();
+	return sendEmail({
+		to,
+		subject: `Incidencia de pago: ${opts.solicitudId}`,
+		text: [
+			'Un pago se ha cobrado con un importe distinto al esperado.',
+			'',
+			`Proveedor: ${opts.provider}`,
+			`Trámite: ${tipoLabel(opts.tipo)}`,
+			`Referencia: ${opts.solicitudId}`,
+			`Esperado: ${(opts.expectedCents / 100).toFixed(2)} €`,
+			`Cobrado: ${(opts.paidCents / 100).toFixed(2)} €`,
+			'',
+			`Ver en gestor: ${base}/gestor/${opts.solicitudId}`,
+			'',
+			'Trámites DGT Online — aviso automático'
+		].join('\n')
+	});
+}

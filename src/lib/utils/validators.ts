@@ -76,11 +76,17 @@ export function validateNifNie(value: string): string | null {
 		return null;
 	}
 
-	if (/^[ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]$/.test(v)) {
+	if (isCifDocumento(v)) {
 		return validateCif(v);
 	}
 
 	return 'Formato de documento no válido';
+}
+
+/** CIF de persona jurídica (no NIF/NIE de persona física). */
+export function isCifDocumento(value: string): boolean {
+	const v = normalizeDocumento(value);
+	return /^[ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]$/.test(v);
 }
 
 /** Algoritmo de dígito de control CIF (AEAT). */

@@ -9,20 +9,22 @@
 	});
 
 	async function markAll() {
-		await fetch('/api/cuenta/notificaciones', {
+		const res = await fetch('/api/cuenta/notificaciones', {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ all: true })
 		});
+		if (!res.ok) return;
 		items = items.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }));
 	}
 
 	async function markOne(id: string) {
-		await fetch('/api/cuenta/notificaciones', {
+		const res = await fetch('/api/cuenta/notificaciones', {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ id })
 		});
+		if (!res.ok) return;
 		items = items.map((n) =>
 			n.id === id ? { ...n, read_at: n.read_at || new Date().toISOString() } : n
 		);

@@ -45,6 +45,7 @@
 				<a href="/politica-de-privacidad">Privacidad</a>
 				<a href="/politica-de-cookies">Cookies</a>
 				<a href="/aviso-legal">Aviso legal</a>
+				<a href="/politica-de-devoluciones">Devoluciones</a>
 			</nav>
 		</div>
 	</div>

@@ -10,6 +10,7 @@
 	import { fetchFactorCorreccion, looksLikeDate } from '$lib/utils/transfer-price-client';
 	import { getStaticSeo } from '$lib/seo/site';
 	import { scrollWizardToTop } from '$lib/utils/scroll';
+	import { validateDate, validateRequired } from '$lib/utils/validators';
 
 	const seo = getStaticSeo('/calcular/valor-venal')!;
 
@@ -48,6 +49,7 @@
 	let fuenteDepreciacion = $state<string | null>(null);
 	let factorLoading = $state(false);
 	let factorError = $state<string | null>(null);
+	let errors = $state<Record<string, string | null>>({});
 
 	const precioBase = $derived(
 		tipoVehiculo === 'coche' ? parsePrecioBase(modeloMeta?.precioBase) : null
@@ -94,7 +96,34 @@
 		};
 	});
 
+	function validateStep(s: number): Record<string, string | null> {
+		const e: Record<string, string | null> = {};
+		if (s === 2) {
+			if (tipoVehiculo === 'coche') {
+				e.marca = validateRequired(marcaId, 'La marca');
+				e.combustible = validateRequired(combustibleId, 'El combustible');
+				e.modelo = validateRequired(modeloId, 'El modelo');
+			} else {
+				e.marca = validateRequired(marcaMotoId, 'La marca');
+			}
+			e.fechaMatricula = validateDate(fechaMatricula, {
+				label: 'La fecha de primera matrícula',
+				notFuture: true
+			});
+			if (fechaVenta.trim()) {
+				e.fechaVenta = validateDate(fechaVenta, {
+					label: 'La fecha de la operación',
+					notFuture: true
+				});
+			}
+		}
+		return e;
+	}
+
 	function next() {
+		const stepErrors = validateStep(step);
+		errors = stepErrors;
+		if (Object.values(stepErrors).some(Boolean)) return;
 		if (step < 3) {
 			step++;
 			void scrollWizardToTop(wizardRoot);
@@ -141,6 +170,11 @@
 						bind:modeloId
 						bind:modeloNombre
 						bind:modeloMeta
+						errors={{
+							marca: errors.marca,
+							combustible: errors.combustible,
+							modelo: errors.modelo
+						}}
 					/>
 				{:else}
 					<MotoModelPicker
@@ -149,16 +183,26 @@
 						bind:modeloId={modeloMotoId}
 						bind:modeloNombre={modeloMotoNombre}
 						bind:cilindrada={cilindradaMoto}
+						errors={{ marca: errors.marca }}
 					/>
 					<p class="note">
 						Las motos no siempre tienen precio medio BOE en el catálogo. Puedes usar la
 						<a href="/calcular/itp">calculadora de ITP</a> indicando el valor venal manualmente.
 					</p>
 				{/if}
-				<FormField label="Fecha primera matrícula" hint="Formato: dd/mm/aaaa" required>
+				<FormField
+					label="Fecha primera matrícula"
+					hint="Formato: dd/mm/aaaa"
+					error={errors.fechaMatricula}
+					required
+				>
 					<input type="text" bind:value={fechaMatricula} placeholder="15/03/2018" />
 				</FormField>
-				<FormField label="Fecha de la operación (opcional)" hint="Si no indicas, se usa hoy">
+				<FormField
+					label="Fecha de la operación (opcional)"
+					hint="Si no indicas, se usa hoy"
+					error={errors.fechaVenta}
+				>
 					<DateInput bind:value={fechaVenta} />
 				</FormField>
 			{:else}

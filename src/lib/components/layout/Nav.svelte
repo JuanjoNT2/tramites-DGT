@@ -139,7 +139,7 @@
 				href="/preguntas-frecuentes"
 				data-analytics={CtaIds.NAV_LINK}
 				onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/preguntas-frecuentes' })}
-				>FAQS</a
+				>Preguntas frecuentes</a
 			>
 			<a
 				href="/contacto"
@@ -346,7 +346,7 @@
 					onclick={() => {
 						trackClick(CtaIds.NAV_LINK, { destination: '/preguntas-frecuentes', nav: 'mobile' });
 						closeMobile();
-					}}>FAQS</a
+					}}>Preguntas frecuentes</a
 				>
 				<a
 					href="/contacto"

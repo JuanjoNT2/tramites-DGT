@@ -193,11 +193,11 @@ export const faqSections: FaqSection[] = [
 		items: [
 			{
 				q: '¿Qué es la baja temporal de un vehículo?',
-				a: 'Es un trámite DGT para inhabilitar temporalmente el uso del vehículo (máximo un año según la normativa habitual) y evitar seguros, IVTM u otras cargas mientras no circulas.'
+				a: 'Es un trámite DGT para inhabilitar temporalmente el uso del vehículo. Desde 2018 no caduca al año: permanece en baja temporal hasta que solicites el alta. Así evitas circular (y, en la mayoría de casos, el seguro obligatorio) mientras no lo uses.'
 			},
 			{
 				q: '¿Cuánto dura la baja temporal?',
-				a: 'Como máximo un año; pasado ese plazo el vehículo puede darse de alta automáticamente. Si quieres prolongarla, hay que solicitar prórroga dentro de los plazos previstos.'
+				a: 'No tiene plazo máximo automático. El vehículo sigue en baja temporal hasta que pidas el alta. Si quieres volver a circular, hay que tramitar el alta (ITV en vigor, seguro, etc.).'
 			},
 			{
 				q: '¿Qué documentos necesito?',

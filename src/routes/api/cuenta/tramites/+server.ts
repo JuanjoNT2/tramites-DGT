@@ -32,6 +32,15 @@ export const PATCH: RequestHandler = async ({ request, locals }) => {
 	if (!body.id || !body.payload) {
 		return json({ error: 'id y payload obligatorios' }, { status: 400 });
 	}
-	const item = await updateUserSolicitudPayload(user.id, body.id, body.payload);
+	const payload = { ...body.payload };
+	delete payload.amount;
+	delete payload.total;
+	if (payload.pago && typeof payload.pago === 'object') {
+		const pago = { ...(payload.pago as Record<string, unknown>) };
+		delete pago.amount;
+		delete pago.amountCentsExpected;
+		payload.pago = pago;
+	}
+	const item = await updateUserSolicitudPayload(user.id, body.id, payload);
 	return json({ ok: true, item });
 };

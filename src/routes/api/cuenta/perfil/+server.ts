@@ -12,7 +12,8 @@ import {
 	validateNifNie,
 	validatePhone,
 	validateRequired,
-	todayIso
+	todayIso,
+	isCifDocumento
 } from '$lib/utils/validators';
 
 export const PATCH: RequestHandler = async ({ request, locals }) => {
@@ -44,10 +45,10 @@ export const PATCH: RequestHandler = async ({ request, locals }) => {
 			? body.nif.trim().toUpperCase().replace(/[\s-]/g, '')
 			: (locals.profile?.nif || '').toUpperCase().replace(/[\s-]/g, '');
 
+	const empresa = isCifDocumento(nifRaw);
 	const nameErr =
-		validateRequired(nombre, 'El nombre') ||
-		validateRequired(apellido1, 'El primer apellido') ||
-		validateRequired(apellido2, 'El segundo apellido');
+		validateRequired(nombre, empresa ? 'La razón social' : 'El nombre') ||
+		(empresa ? null : validateRequired(apellido1, 'El primer apellido'));
 	const phoneErr = validatePhone(telefonoRaw);
 	const nifErr = validateNifNie(nifRaw);
 

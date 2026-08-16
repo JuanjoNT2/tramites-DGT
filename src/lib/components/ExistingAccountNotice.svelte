@@ -58,7 +58,7 @@
 					body: JSON.stringify({ email: trimmed })
 				});
 				const data = (await res.json().catch(() => ({}))) as { exists?: boolean };
-				if (email.trim().toLowerCase() !== trimmed) return;
+				if (!res.ok || email.trim().toLowerCase() !== trimmed) return;
 				lastQueried = trimmed;
 				syncExists(Boolean(data.exists));
 			} catch {

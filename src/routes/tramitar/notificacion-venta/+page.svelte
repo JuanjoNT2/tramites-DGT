@@ -22,6 +22,7 @@
 		partyFromFlat,
 		inferUserPartyRole,
 		contactParty,
+		partyDisplayName,
 		type PartyData
 	} from '$lib/cuenta/party-prefill';
 	import {
@@ -51,7 +52,8 @@
 		validateNifNie,
 		validatePhone,
 		validateRequired,
-		validateCodigoPostal
+		validateCodigoPostal,
+		isCifDocumento
 	} from '$lib/utils/validators';
 	import { funnel, initAnalytics } from '$lib/analytics';
 	import {
@@ -181,9 +183,14 @@
 		const e: Record<string, string | null> = {};
 		e[`${prefix}Email`] = validateEmail(party.email);
 		e[`${prefix}Nif`] = validateNifNie(party.nif);
-		e[cap('nombre')] = validateRequired(party.nombre, 'El nombre');
-		e[`${prefix}Apellido1`] = validateRequired(party.apellido1, 'El primer apellido');
-		e[`${prefix}Apellido2`] = validateRequired(party.apellido2, 'El segundo apellido');
+		e[cap('nombre')] = validateRequired(
+			party.nombre,
+			isCifDocumento(party.nif) ? 'La razón social' : 'El nombre'
+		);
+		e[`${prefix}Apellido1`] = isCifDocumento(party.nif)
+			? null
+			: validateRequired(party.apellido1, 'El primer apellido');
+		e[`${prefix}Apellido2`] = null;
 		e[`${prefix}Telefono`] = validatePhone(party.telefono);
 		e[`${prefix}Provincia`] = validateRequired(party.provincia, 'La provincia');
 		e[`${prefix}Municipio`] = validateRequired(party.municipio, 'El municipio');
@@ -541,6 +548,7 @@
 
 	function goTo(n: number) {
 		if (n < 1 || n > TOTAL_STEPS || n === step) return;
+		if (n !== 1) unlockVehicleDetails();
 		funnel.stepViewed({
 			tramite: 'notificacion-venta',
 			step: n,
@@ -572,27 +580,12 @@
 
 	function next() {
 		if (step === 1 && !vehicleDetailsUnlocked) {
-			const plateErr = validateMatricula(matricula);
-			errors = { ...errors, matricula: plateErr };
-			if (plateErr) {
-				validationAttempted = true;
-				return;
-			}
 			unlockVehicleDetails();
 			noteProgress(true);
 			save();
 			return;
 		}
-
-		validationAttempted = true;
-		const stepErrors = validateStepAt(step);
-		errors = { ...errors, ...stepErrors };
-		if (Object.values(stepErrors).some(Boolean)) {
-			if (!errorSteps.includes(step)) errorSteps = [...errorSteps, step];
-			return;
-		}
-		errorSteps = errorSteps.filter((s) => s !== step);
-
+		if (step >= TOTAL_STEPS) return;
 		funnel.stepCompleted({
 			tramite: 'notificacion-venta',
 			step,
@@ -601,16 +594,14 @@
 		});
 		noteProgress(true);
 		save();
-		if (step < TOTAL_STEPS) {
-			step++;
-			funnel.stepViewed({
-				tramite: 'notificacion-venta',
-				step,
-				step_name: stepLabels[step - 1],
-				total_steps: TOTAL_STEPS
-			});
-			void scrollWizardToTop(wizardRoot);
-		}
+		step++;
+		funnel.stepViewed({
+			tramite: 'notificacion-venta',
+			step,
+			step_name: stepLabels[step - 1],
+			total_steps: TOTAL_STEPS
+		});
+		void scrollWizardToTop(wizardRoot);
 	}
 
 	function prev() {
@@ -731,7 +722,9 @@
 	async function continueToPayment() {
 		if (!validateAllSteps()) {
 			payError = 'Revisa los datos del formulario: hay campos incompletos o no válidos.';
+			unlockVehicleDetails();
 			step = firstInvalidStep();
+			void scrollWizardToTop(wizardRoot);
 			return;
 		}
 		submitting = true;
@@ -909,13 +902,13 @@
 						<li><span>Servicio</span><span>{servicioVehiculo || '—'}</span></li>
 						<li>
 							<span>Comprador</span>
-							<span>{comprador.nombre} {comprador.apellido1} {comprador.apellido2}</span>
+							<span>{partyDisplayName(comprador)}</span>
 						</li>
 						<li><span>NIF comprador</span><span>{comprador.nif || '—'}</span></li>
 						<li><span>Email comprador</span><span>{comprador.email || '—'}</span></li>
 						<li>
 							<span>Vendedor</span>
-							<span>{vendedor.nombre} {vendedor.apellido1} {vendedor.apellido2}</span>
+							<span>{partyDisplayName(vendedor)}</span>
 						</li>
 						<li><span>NIF vendedor</span><span>{vendedor.nif || '—'}</span></li>
 						<li><span>Email vendedor</span><span>{vendedor.email || '—'}</span></li>

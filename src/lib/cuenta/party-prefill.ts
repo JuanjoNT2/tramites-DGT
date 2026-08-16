@@ -3,7 +3,7 @@ import {
 	type SolicitanteFields
 } from '$lib/cuenta/profile-prefill';
 import type { Profile } from '$lib/supabase/types';
-import { normalizeDocumento } from '$lib/utils/validators';
+import { isCifDocumento, normalizeDocumento } from '$lib/utils/validators';
 
 export type PartyRole = 'comprador' | 'vendedor';
 
@@ -23,6 +23,13 @@ export type PartyData = {
 	puerta: string;
 	cp: string;
 };
+
+export function partyDisplayName(
+	party: Pick<PartyData, 'nombre' | 'apellido1' | 'apellido2' | 'nif'>
+): string {
+	if (isCifDocumento(party.nif)) return party.nombre.trim() || '—';
+	return [party.nombre, party.apellido1, party.apellido2].filter((p) => p.trim()).join(' ') || '—';
+}
 
 export function emptyParty(tipoVia = 'Calle'): PartyData {
 	return {

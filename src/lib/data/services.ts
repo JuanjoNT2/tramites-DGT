@@ -54,7 +54,7 @@ export const services: Service[] = [
 		id: 'informe',
 		slug: 'informe-trafico',
 		title: 'Informe de Vehículo DGT',
-		description: 'Emitido directamente por la DGT y autentificado por nosotros',
+		description: 'Emitido directamente por la DGT y autenticado por nosotros',
 		landingPath: '/informe-trafico',
 		tramitarPath: '/tramitar/informe-dgt',
 		image: '/images/services/informe.webp',
@@ -72,10 +72,10 @@ export const services: Service[] = [
 	},
 	{
 		id: 'duplicado',
-		slug: 'duplicado-de-carnet-de-conducir',
+		slug: 'duplicado-permiso-circulacion',
 		title: 'Duplicado permiso de circulación',
 		description: 'Solicita un duplicado del permiso de circulación de tu vehículo',
-		landingPath: '/duplicado-de-carnet-de-conducir',
+		landingPath: '/duplicado-permiso-circulacion',
 		tramitarPath: '/tramitar/duplicado-carnet',
 		image: '/images/services/duplicado.webp',
 		group: 'documentacion'

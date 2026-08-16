@@ -3,6 +3,7 @@
 	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import type { PartyData } from '$lib/cuenta/party-prefill';
 	import { provinces, streetTypes } from '$lib/data/provinces';
+	import { isCifDocumento } from '$lib/utils/validators';
 
 	let {
 		title,
@@ -17,6 +18,8 @@
 		showAutofill?: boolean;
 		onautofill?: () => void;
 	} = $props();
+
+	const isEmpresa = $derived(isCifDocumento(party.nif));
 </script>
 
 <section class="party">
@@ -45,16 +48,20 @@
 		<NifInput bind:value={party.nif} />
 	</FormField>
 	<div class="row-2">
-		<FormField label="Nombre" error={errors.nombre} required>
-			<input bind:value={party.nombre} autocomplete="given-name" />
+		<FormField label={isEmpresa ? 'Razón social' : 'Nombre'} error={errors.nombre} required>
+			<input bind:value={party.nombre} autocomplete={isEmpresa ? 'organization' : 'given-name'} />
 		</FormField>
-		<FormField label="Primer apellido" error={errors.apellido1} required>
-			<input bind:value={party.apellido1} autocomplete="family-name" />
-		</FormField>
+		{#if !isEmpresa}
+			<FormField label="Primer apellido" error={errors.apellido1} required>
+				<input bind:value={party.apellido1} autocomplete="family-name" />
+			</FormField>
+		{/if}
 	</div>
-	<FormField label="Segundo apellido" error={errors.apellido2} required>
-		<input bind:value={party.apellido2} autocomplete="additional-name" />
-	</FormField>
+	{#if !isEmpresa}
+		<FormField label="Segundo apellido" error={errors.apellido2}>
+			<input bind:value={party.apellido2} autocomplete="additional-name" />
+		</FormField>
+	{/if}
 	<FormField label="Teléfono" error={errors.telefono} required>
 		<input type="tel" bind:value={party.telefono} inputmode="tel" placeholder="612345678" />
 	</FormField>

@@ -51,7 +51,7 @@ export async function listUserSolicitudes(
 		.limit(200);
 
 	if (filter === 'en_curso') q = q.in('status', ['nueva', 'en_curso', 'pendiente_pago', 'pagada']);
-	if (filter === 'realizados') q = q.in('status', ['realizada', 'cancelada']);
+	if (filter === 'realizados') q = q.in('status', ['realizada']);
 
 	const { data, error: err } = await q;
 	if (err) throw error(500, err.message);

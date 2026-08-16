@@ -10,6 +10,7 @@ export type PriceBreakdown = {
 	itpRate: number;
 	itpAmount: number;
 	facturaEmpresa: boolean;
+	liquidarItp: boolean;
 	sinValorBoe: boolean;
 	/** Incluido en tramitación; se deja a 0 para no duplicar en el desglose. */
 	tasaDgt: number;
@@ -42,6 +43,10 @@ export function parsePrecioBase(raw: string | number | null | undefined): number
 	return n;
 }
 
+export function findCcaa(ccaaId: string) {
+	return ccaaList.find((c) => c.id === ccaaId) ?? null;
+}
+
 export function calculateTransferPrice(opts: {
 	precioVenta: number;
 	ccaaId: string;
@@ -50,10 +55,19 @@ export function calculateTransferPrice(opts: {
 	precioBase?: string | number | null;
 	factorCorreccion?: number | null;
 	facturaEmpresa?: boolean;
+	/** Si false, el cliente liquida el ITP por su cuenta (o no aplica: donación / IGIC). */
+	liquidarItp?: boolean;
 	fuenteDepreciacion?: string | null;
 }): PriceBreakdown {
-	const ccaa = ccaaList.find((c) => c.id === opts.ccaaId) ?? ccaaList[0];
+	const ccaa = findCcaa(opts.ccaaId);
+	if (!ccaa) {
+		throw new Error('Comunidad autónoma no válida');
+	}
+	if (!(opts.precioVenta > 0)) {
+		throw new Error('El precio de venta debe ser mayor que 0');
+	}
 	const facturaEmpresa = opts.facturaEmpresa === true;
+	const liquidarItp = opts.liquidarItp !== false && !facturaEmpresa && ccaa.itpRate > 0;
 	const precioBase = parsePrecioBase(opts.precioBase);
 	const factor =
 		opts.factorCorreccion != null && Number.isFinite(opts.factorCorreccion)
@@ -68,8 +82,8 @@ export function calculateTransferPrice(opts: {
 	let baseImponible: number;
 	let itpAmount: number;
 
-	if (facturaEmpresa) {
-		baseImponible = 0;
+	if (!liquidarItp) {
+		baseImponible = valoracionReal != null ? round2(Math.max(opts.precioVenta, valoracionReal)) : round2(opts.precioVenta);
 		itpAmount = 0;
 	} else if (valoracionReal != null) {
 		baseImponible = round2(Math.max(opts.precioVenta, valoracionReal));
@@ -93,6 +107,7 @@ export function calculateTransferPrice(opts: {
 		itpRate: ccaa.itpRate,
 		itpAmount,
 		facturaEmpresa,
+		liquidarItp,
 		sinValorBoe,
 		tasaDgt: 0,
 		informeDgt,

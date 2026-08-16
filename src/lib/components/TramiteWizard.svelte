@@ -38,7 +38,8 @@
 		validateDate,
 		normalizeBastidor,
 		validateBastidor,
-		todayIso
+		todayIso,
+		isCifDocumento
 	} from '$lib/utils/validators';
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
 	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
@@ -136,6 +137,7 @@
 	let telefono = $state('');
 	let sexo = $state('');
 	let fechaNacimiento = $state('');
+	const isEmpresa = $derived(isCifDocumento(nif));
 	let provincia = $state('');
 	let municipio = $state('');
 	let pueblo = $state('');
@@ -635,24 +637,24 @@
 		if (s === 2 && variant !== 'cancelacion') {
 			e.email = validateEmail(email);
 			e.nif = validateNifNie(nif);
-			e.nombre = validateRequired(nombre, 'El nombre');
-			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
-			e.apellido2 = validateRequired(apellido2, 'El segundo apellido');
+			e.nombre = validateRequired(nombre, isEmpresa ? 'La razón social' : 'El nombre');
+			if (!isEmpresa) {
+				e.apellido1 = validateRequired(apellido1, 'El primer apellido');
+				if (!sexo) e.sexo = 'Selecciona el sexo';
+				e.fechaNacimiento = validateDate(fechaNacimiento, {
+					label: 'La fecha de nacimiento',
+					notFuture: true,
+					minAgeYears: 16
+				});
+			}
 			e.telefono = validatePhone(telefono);
-			if (!sexo) e.sexo = 'Selecciona el sexo';
-			e.fechaNacimiento = validateDate(fechaNacimiento, {
-				label: 'La fecha de nacimiento',
-				notFuture: true,
-				minAgeYears: 16
-			});
 		}
 
 		if (variant === 'cancelacion' && s === 2) {
 			e.email = validateEmail(email);
 			e.nif = validateNifNie(nif);
-			e.nombre = validateRequired(nombre, 'El nombre');
-			e.apellido1 = validateRequired(apellido1, 'El primer apellido');
-			e.apellido2 = validateRequired(apellido2, 'El segundo apellido');
+			e.nombre = validateRequired(nombre, isEmpresa ? 'La razón social' : 'El nombre');
+			if (!isEmpresa) e.apellido1 = validateRequired(apellido1, 'El primer apellido');
 			e.telefono = validatePhone(telefono);
 			if (!provincia) e.provincia = 'Selecciona la provincia';
 			e.municipio = validateRequired(municipio, 'El municipio');
@@ -751,6 +753,7 @@
 	});
 
 	function next() {
+		if (step >= finalStep) return;
 		funnel.stepCompleted({
 			tramite: tipo,
 			step,
@@ -759,16 +762,14 @@
 		});
 		noteProgress();
 		save();
-		if (step < finalStep) {
-			step++;
-			funnel.stepViewed({
-				tramite: tipo,
-				step,
-				step_name: steps[step - 1],
-				total_steps: steps.length
-			});
-			void scrollWizardToTop(wizardRoot);
-		}
+		step++;
+		funnel.stepViewed({
+			tramite: tipo,
+			step,
+			step_name: steps[step - 1],
+			total_steps: steps.length
+		});
+		void scrollWizardToTop(wizardRoot);
 	}
 
 	function prev() {
@@ -886,6 +887,7 @@
 		if (!validateAllSteps()) {
 			payError = 'Revisa los datos del formulario: hay campos incompletos o no válidos.';
 			step = firstInvalidStep();
+			void scrollWizardToTop(wizardRoot);
 			return;
 		}
 		submitting = true;
@@ -924,10 +926,6 @@
 		}
 	}
 </script>
-
-<svelte:head>
-	<title>{title} | Trámites DGT Online</title>
-</svelte:head>
 
 <section class="section wizard-section" bind:this={wizardRoot}>
 	<div class="wrap wizard-layout">
@@ -1136,19 +1134,24 @@
 						<NifInput bind:value={nif} />
 					</FormField>
 					<div class="row-2">
-						<FormField label="Nombre" error={errors.nombre} required>
+						<FormField label={isEmpresa ? 'Razón social' : 'Nombre'} error={errors.nombre} required>
 							<input bind:value={nombre} />
 						</FormField>
-						<FormField label="Primer apellido" error={errors.apellido1} required>
-							<input bind:value={apellido1} />
-						</FormField>
+						{#if !isEmpresa}
+							<FormField label="Primer apellido" error={errors.apellido1} required>
+								<input bind:value={apellido1} />
+							</FormField>
+						{/if}
 					</div>
-					<FormField label="Segundo apellido" error={errors.apellido2} required>
-						<input bind:value={apellido2} />
-					</FormField>
+					{#if !isEmpresa}
+						<FormField label="Segundo apellido" error={errors.apellido2}>
+							<input bind:value={apellido2} />
+						</FormField>
+					{/if}
 					<FormField label="Teléfono" error={errors.telefono} required>
 						<input type="tel" bind:value={telefono} inputmode="tel" placeholder="612345678" />
 					</FormField>
+					{#if !isEmpresa}
 					<div class="row-2">
 						<FormField label="Sexo" error={errors.sexo} required>
 							<select bind:value={sexo}>
@@ -1162,6 +1165,7 @@
 							<DateInput bind:value={fechaNacimiento} max={todayIso()} />
 						</FormField>
 					</div>
+					{/if}
 				{:else if variant === 'cancelacion' && step === 2}
 					<FormField label="Correo electrónico" error={errors.email} required>
 						<input type="email" bind:value={email} autocomplete="email" />
@@ -1178,16 +1182,20 @@
 						<NifInput bind:value={nif} />
 					</FormField>
 					<div class="row-2">
-						<FormField label="Nombre" error={errors.nombre} required>
+						<FormField label={isEmpresa ? 'Razón social' : 'Nombre'} error={errors.nombre} required>
 							<input bind:value={nombre} />
 						</FormField>
-						<FormField label="Primer apellido" error={errors.apellido1} required>
-							<input bind:value={apellido1} />
-						</FormField>
+						{#if !isEmpresa}
+							<FormField label="Primer apellido" error={errors.apellido1} required>
+								<input bind:value={apellido1} />
+							</FormField>
+						{/if}
 					</div>
-					<FormField label="Segundo apellido" error={errors.apellido2} required>
-						<input bind:value={apellido2} />
-					</FormField>
+					{#if !isEmpresa}
+						<FormField label="Segundo apellido" error={errors.apellido2}>
+							<input bind:value={apellido2} />
+						</FormField>
+					{/if}
 					<FormField label="Teléfono" error={errors.telefono} required>
 						<input type="tel" bind:value={telefono} inputmode="tel" placeholder="612345678" />
 					</FormField>
@@ -1354,7 +1362,7 @@
 								{/if}
 							{/if}
 							<li>
-								<span>Solicitante</span><strong>{nombre} {apellido1} {apellido2}</strong>
+								<span>Solicitante</span><strong>{isEmpresa ? nombre : [nombre, apellido1, apellido2].filter(Boolean).join(' ')}</strong>
 							</li>
 							<li><span>NIF/NIE</span><strong>{nif || '—'}</strong></li>
 							<li><span>Email</span><strong>{email}</strong></li>

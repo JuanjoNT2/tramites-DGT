@@ -5,9 +5,12 @@
 	let { data }: { data: PageData } = $props();
 
 	const tramiteHref = $derived(
-		data.solicitudId
+		data.loggedIn && data.solicitudId
 			? `/cuenta/tramites/${data.solicitudId}`
-			: '/cuenta/tramites?estado=en_curso'
+			: data.pagoUrl || '/cuenta/tramites?estado=en_curso'
+	);
+	const statusHrefLabel = $derived(
+		data.loggedIn ? 'Ver el estado de mi trámite' : 'Seguir el trámite'
 	);
 </script>
 
@@ -36,12 +39,14 @@
 			</p>
 		{/if}
 
-		{#if data.solicitudId}
+		{#if data.allowed && data.solicitudId}
 			<p class="ref">Referencia del trámite: <strong>{data.solicitudId}</strong></p>
 		{/if}
 
 		<div class="actions" role="navigation" aria-label="Opciones tras el pago">
-			<a class="btn primary" href={tramiteHref}>Ver el estado de mi trámite</a>
+			{#if data.allowed || data.loggedIn}
+				<a class="btn primary" href={tramiteHref}>{statusHrefLabel}</a>
+			{/if}
 			<a class="btn secondary" href="/#servicios">Realizar otro trámite</a>
 			<a class="btn ghost" href="/">Volver a la página principal</a>
 		</div>

@@ -19,6 +19,10 @@
 
 <form method="POST" class="form">
 	<label>
+		Contraseña actual
+		<input type="password" name="currentPassword" required minlength="6" autocomplete="current-password" />
+	</label>
+	<label>
 		Nueva contraseña
 		<input type="password" name="password" required minlength="8" autocomplete="new-password" />
 	</label>

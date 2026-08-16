@@ -1,4 +1,5 @@
 import {
+	isCifDocumento,
 	validateBastidor,
 	validateCodigoPostal,
 	validateDate,
@@ -9,10 +10,20 @@ import {
 	validatePhone,
 	validateRequired
 } from '$lib/utils/validators';
+import { resolveCanonicalAmount } from '$lib/server/solicitud-price';
+import { SOLICITUD_TIPOS } from '$lib/supabase/types';
 
 export type SolicitudValidationResult =
 	| { ok: true; email: string | null; amount: number | null }
 	| { ok: false; error: string };
+
+const ALLOWED_TIPOS = new Set<string>([
+	...SOLICITUD_TIPOS,
+	'vmp',
+	'informe',
+	'duplicado',
+	'cancelacion'
+]);
 
 function str(v: unknown): string {
 	return typeof v === 'string' ? v : v == null ? '' : String(v);
@@ -30,33 +41,45 @@ function firstError(...errs: (string | null | undefined)[]): string | null {
 	return null;
 }
 
-/** Validación mínima por tipo antes de persistir la solicitud. */
-export function validateSolicitudPayload(
+function personNameErrors(nif: string, nombre: string, apellido1: string): string | null {
+	const nameErr = validateRequired(nombre, isCifDocumento(nif) ? 'La razón social' : 'El nombre');
+	if (nameErr) return nameErr;
+	if (isCifDocumento(nif)) return null;
+	return firstError(validateRequired(apellido1, 'El primer apellido'));
+}
+
+/** Validación de campos (síncrona). El importe se resuelve aparte. */
+export function validateSolicitudFields(
 	tipo: string,
 	body: Record<string, unknown>
-): SolicitudValidationResult {
+): { ok: true; email: string | null } | { ok: false; error: string } {
+	if (!tipo || !ALLOWED_TIPOS.has(tipo)) {
+		return { ok: false, error: 'Tipo de trámite no válido' };
+	}
+
 	const email = str(body.email).trim().toLowerCase() || null;
 	if (email) {
 		const e = validateEmail(email);
 		if (e) return { ok: false, error: e };
 	}
 
-	const amountRaw = num(body.amount ?? body.total);
-	const amount = Number.isFinite(amountRaw) && amountRaw > 0 ? amountRaw : null;
-
 	if (tipo === 'contacto') {
 		const err = firstError(
 			validateRequired(str(body.nombre), 'El nombre'),
 			email ? null : 'El email es obligatorio',
-			validateRequired(str(body.mensaje || body.message), 'El mensaje')
+			validateRequired(str(body.mensaje || body.message), 'El mensaje'),
+			body.acceptPrivacy === true || body.acceptPrivacy === 'si'
+				? null
+				: 'Debes aceptar la política de privacidad'
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email, amount };
+		return { ok: true, email };
 	}
 
 	if (tipo === 'transferencia') {
 		const fechaMatricula = str(body.fechaMatricula);
 		const fechaVenta = str(body.fechaVenta);
+		const nif = str(body.nif || body.compradorNif || body.vendedorNif);
 		const err = firstError(
 			validateMatricula(str(body.matricula)),
 			validateBastidor(str(body.bastidor)),
@@ -70,99 +93,85 @@ export function validateSolicitudPayload(
 			validateRequired(str(body.ccaaId), 'La comunidad autónoma'),
 			!(num(body.precioVenta) > 0) ? 'Indica un precio de venta mayor que 0' : null,
 			validateEmail(str(body.email || body.compradorEmail || body.vendedorEmail)),
-			validateNifNie(str(body.nif || body.compradorNif || body.vendedorNif)),
-			validateRequired(
+			validateNifNie(nif),
+			personNameErrors(
+				nif,
 				str(body.nombre || body.compradorNombre || body.vendedorNombre),
-				'El nombre'
-			),
-			validateRequired(
-				str(body.apellido1 || body.compradorApellido1 || body.vendedorApellido1),
-				'El primer apellido'
-			),
-			validateRequired(
-				str(body.apellido2 || body.compradorApellido2 || body.vendedorApellido2),
-				'El segundo apellido'
+				str(body.apellido1 || body.compradorApellido1 || body.vendedorApellido1)
 			),
 			validatePhone(str(body.telefono || body.compradorTelefono || body.vendedorTelefono)),
 			validateNifNie(str(body.compradorNif)),
 			validateNifNie(str(body.vendedorNif)),
-			validateCodigoPostal(str(body.cp || body.compradorCp || body.vendedorCp)),
-			amount == null ? 'Importe no válido' : null
+			validateCodigoPostal(str(body.cp || body.compradorCp || body.vendedorCp))
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email, amount };
+		return { ok: true, email };
 	}
 
 	if (tipo === 'etiqueta-vmp' || tipo === 'vmp') {
 		const certificado = str(body.vmpCertificado) !== 'no';
+		const nif = str(body.nif);
 		const err = firstError(
 			validateRequired(str(body.vmpNumSerie), 'El número de serie'),
 			validateRequired(str(body.vmpMarca), 'La marca'),
 			certificado ? validateRequired(str(body.vmpModelo), 'El modelo') : null,
 			certificado ? validateRequired(str(body.vmpNumCertificado), 'El número de certificado') : null,
 			validateEmail(str(body.email)),
-			validateNifNie(str(body.nif)),
-			validateRequired(str(body.nombre), 'El nombre'),
-			validateRequired(str(body.apellido1), 'El primer apellido'),
-			validateRequired(str(body.apellido2), 'El segundo apellido'),
+			validateNifNie(nif),
+			personNameErrors(nif, str(body.nombre), str(body.apellido1)),
 			validatePhone(str(body.telefono)),
-			validateCodigoPostal(str(body.cp)),
-			amount == null ? 'Importe no válido' : null
+			validateCodigoPostal(str(body.cp))
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email, amount };
+		return { ok: true, email };
 	}
 
 	if (tipo === 'duplicado-carnet' || tipo === 'duplicado') {
+		const nif = str(body.nif);
+		const empresa = isCifDocumento(nif);
 		const err = firstError(
 			validateRequired(str(body.motivoDuplicado), 'El motivo'),
 			validateMatricula(str(body.matricula)),
 			validateEmail(str(body.email)),
-			validateNifNie(str(body.nif)),
-			validateRequired(str(body.nombre), 'El nombre'),
-			validateRequired(str(body.apellido1), 'El primer apellido'),
-			validateRequired(str(body.apellido2), 'El segundo apellido'),
+			validateNifNie(nif),
+			personNameErrors(nif, str(body.nombre), str(body.apellido1)),
 			validatePhone(str(body.telefono)),
-			validateDate(str(body.fechaNacimiento), {
-				label: 'La fecha de nacimiento',
-				notFuture: true,
-				minAgeYears: 16
-			}),
-			validateCodigoPostal(str(body.cp)),
-			amount == null ? 'Importe no válido' : null
+			empresa
+				? null
+				: validateDate(str(body.fechaNacimiento), {
+						label: 'La fecha de nacimiento',
+						notFuture: true,
+						minAgeYears: 16
+					}),
+			validateCodigoPostal(str(body.cp))
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email, amount };
+		return { ok: true, email };
 	}
 
 	if (tipo === 'notificacion-venta') {
+		const nif = str(body.nif || body.vendedorNif || body.compradorNif);
 		const err = firstError(
 			validateMatricula(str(body.matricula)),
 			validateEmail(str(body.email || body.vendedorEmail || body.compradorEmail)),
-			validateNifNie(str(body.nif || body.vendedorNif || body.compradorNif)),
-			validateRequired(str(body.nombre || body.vendedorNombre || body.compradorNombre), 'El nombre'),
-			validateRequired(
-				str(body.apellido1 || body.vendedorApellido1 || body.compradorApellido1),
-				'El primer apellido'
-			),
-			validateRequired(
-				str(body.apellido2 || body.vendedorApellido2 || body.compradorApellido2),
-				'El segundo apellido'
+			validateNifNie(nif),
+			personNameErrors(
+				nif,
+				str(body.nombre || body.vendedorNombre || body.compradorNombre),
+				str(body.apellido1 || body.vendedorApellido1 || body.compradorApellido1)
 			),
 			validatePhone(str(body.telefono || body.vendedorTelefono || body.compradorTelefono)),
 			validateNifNie(str(body.compradorNif)),
 			validateNifNie(str(body.vendedorNif)),
-			amount == null ? 'Importe no válido' : null
+			validateCodigoPostal(str(body.cp || body.vendedorCp || body.compradorCp))
 		);
 		if (err) return { ok: false, error: err };
 		return {
 			ok: true,
-			email: email || str(body.vendedorEmail || body.compradorEmail).trim().toLowerCase() || null,
-			amount
+			email: email || str(body.vendedorEmail || body.compradorEmail).trim().toLowerCase() || null
 		};
 	}
 
-	// etiqueta, informe-dgt, nota-simple, baja, cancelacion-reserva y genéricos con matrícula
 	if (
 		tipo === 'etiqueta' ||
 		tipo === 'informe-dgt' ||
@@ -172,26 +181,42 @@ export function validateSolicitudPayload(
 		tipo === 'cancelacion-reserva' ||
 		tipo === 'cancelacion'
 	) {
+		const nif = str(body.nif);
+		const empresa = isCifDocumento(nif);
 		const err = firstError(
 			validateMatricula(str(body.matricula)),
 			body.bastidor ? validateBastidor(str(body.bastidor)) : null,
 			validateEmail(str(body.email)),
-			validateNifNie(str(body.nif)),
-			validateRequired(str(body.nombre), 'El nombre'),
-			validateRequired(str(body.apellido1), 'El primer apellido'),
-			validateRequired(str(body.apellido2), 'El segundo apellido'),
+			validateNifNie(nif),
+			personNameErrors(nif, str(body.nombre), str(body.apellido1)),
 			validatePhone(str(body.telefono)),
-			body.cp ? validateCodigoPostal(str(body.cp)) : null,
-			amount == null ? 'Importe no válido' : null
+			validateCodigoPostal(str(body.cp)),
+			empresa
+				? null
+				: tipo === 'cancelacion' || tipo === 'cancelacion-reserva'
+					? null
+					: validateDate(str(body.fechaNacimiento), {
+							label: 'La fecha de nacimiento',
+							notFuture: true,
+							minAgeYears: 16,
+							required: false
+						})
 		);
 		if (err) return { ok: false, error: err };
-		return { ok: true, email, amount };
+		return { ok: true, email };
 	}
 
-	// Tipos desconocidos: exigir email si hay importe, o al menos tipo
-	if (!tipo || tipo === 'desconocido') {
-		return { ok: false, error: 'Tipo de trámite no válido' };
-	}
+	return { ok: false, error: 'Tipo de trámite no válido' };
+}
 
-	return { ok: true, email, amount };
+/** Validación + importe canónico (el amount del cliente se ignora). */
+export async function validateSolicitudPayload(
+	tipo: string,
+	body: Record<string, unknown>
+): Promise<SolicitudValidationResult> {
+	const fields = validateSolicitudFields(tipo, body);
+	if (!fields.ok) return fields;
+	const priced = await resolveCanonicalAmount(tipo, body);
+	if (!priced.ok) return priced;
+	return { ok: true, email: fields.email, amount: priced.amount };
 }

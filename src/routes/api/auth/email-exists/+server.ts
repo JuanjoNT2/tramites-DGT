@@ -36,7 +36,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	if (error) {
 		console.error('[email-exists]', error.message);
-		return json({ exists: false });
+		return json({ error: 'No se pudo comprobar el email' }, { status: 503 });
 	}
 
 	return json({ exists: Boolean(data?.id) });

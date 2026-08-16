@@ -12,6 +12,7 @@
 	} from '$lib/utils/potencia-fiscal';
 	import { getStaticSeo } from '$lib/seo/site';
 	import { scrollWizardToTop } from '$lib/utils/scroll';
+	import { validateRequired } from '$lib/utils/validators';
 
 	const seo = getStaticSeo('/calcular/potencia-fiscal')!;
 
@@ -48,6 +49,7 @@
 
 	let cilindradaManual = $state('');
 	let cilindrosManual = $state('4');
+	let errors = $state<Record<string, string | null>>({});
 
 	const cvfCatalogo = $derived.by(() => {
 		if (metodo !== 'catalogo') return null;
@@ -79,7 +81,36 @@
 			: 'Fórmula reglamentaria (RD 2822/1998)'
 	);
 
+	function validateStep(s: number): Record<string, string | null> {
+		const e: Record<string, string | null> = {};
+		if (s === 2) {
+			if (metodo === 'catalogo') {
+				if (tipoVehiculo === 'coche') {
+					e.marca = validateRequired(marcaId, 'La marca');
+					e.combustible = validateRequired(combustibleId, 'El combustible');
+					e.modelo = validateRequired(modeloId, 'El modelo');
+				} else {
+					e.marca = validateRequired(marcaMotoId, 'La marca');
+					if (parsePositiveNumber(cilindradaMoto) == null) {
+						e.cilindrada = 'Indica la cilindrada';
+					}
+				}
+			} else {
+				if (parsePositiveNumber(cilindradaManual) == null) {
+					e.cilindrada = 'Indica la cilindrada';
+				}
+				if (tipoVehiculo === 'coche' && parsePositiveNumber(cilindrosManual) == null) {
+					e.cilindros = 'Indica el número de cilindros';
+				}
+			}
+		}
+		return e;
+	}
+
 	function next() {
+		const stepErrors = validateStep(step);
+		errors = stepErrors;
+		if (Object.values(stepErrors).some(Boolean)) return;
 		if (step < 3) {
 			step++;
 			void scrollWizardToTop(wizardRoot);
@@ -145,6 +176,11 @@
 							bind:modeloId
 							bind:modeloNombre
 							bind:modeloMeta
+							errors={{
+								marca: errors.marca,
+								combustible: errors.combustible,
+								modelo: errors.modelo
+							}}
 						/>
 					{:else}
 						<MotoModelPicker
@@ -153,14 +189,15 @@
 							bind:modeloId={modeloMotoId}
 							bind:modeloNombre={modeloMotoNombre}
 							bind:cilindrada={cilindradaMoto}
+							errors={{ marca: errors.marca, cilindrada: errors.cilindrada }}
 						/>
 					{/if}
 				{:else}
-					<FormField label="Cilindrada (cc)" required>
+					<FormField label="Cilindrada (cc)" error={errors.cilindrada} required>
 						<input type="number" bind:value={cilindradaManual} min="1" step="1" placeholder="1598" />
 					</FormField>
 					{#if tipoVehiculo === 'coche'}
-						<FormField label="Número de cilindros" required>
+						<FormField label="Número de cilindros" error={errors.cilindros} required>
 							<input type="number" bind:value={cilindrosManual} min="1" max="16" step="1" />
 						</FormField>
 					{/if}

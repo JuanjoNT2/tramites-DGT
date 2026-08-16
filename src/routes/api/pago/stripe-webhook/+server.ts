@@ -1,7 +1,7 @@
 import { json, text, type RequestHandler } from '@sveltejs/kit';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { constructStripeEvent, isStripeConfigured } from '$lib/server/stripe';
-import { notifyAdminSalePaid } from '$lib/server/admin-notify';
+import { notifyAdminSalePaid, notifyAdminPagoIncidencia } from '$lib/server/admin-notify';
 import { sendPagoConfirmadoEmail } from '$lib/server/mailer';
 import { createNotificacion } from '$lib/cuenta/data';
 import { toStoredEvent } from '$lib/analytics/server/store';
@@ -94,6 +94,13 @@ async function markSolicitudPaid(opts: {
 			.from('solicitudes')
 			.update({ status: 'pendiente_pago', payload: payloadMismatch })
 			.eq('id', opts.solicitudId);
+		void notifyAdminPagoIncidencia({
+			solicitudId: opts.solicitudId,
+			tipo: solicitud.tipo,
+			expectedCents,
+			paidCents,
+			provider: 'stripe'
+		});
 		return;
 	}
 
@@ -174,7 +181,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			(typeof session.client_reference_id === 'string' ? session.client_reference_id : null);
 		if (!solicitudId) {
 			console.error('[stripe/webhook] sin solicitudId', session.id);
-		} else if (session.payment_status === 'paid' || event.type === 'checkout.session.completed') {
+		} else if (session.payment_status === 'paid') {
 			await markSolicitudPaid({ solicitudId, session });
 		}
 	}

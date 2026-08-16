@@ -2,6 +2,7 @@
 	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
 	import NifInput from '$lib/components/ui/NifInput.svelte';
 	import type { ActionData, PageData } from './$types';
+	import { isCifDocumento } from '$lib/utils/validators';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -39,6 +40,7 @@
 		const fromForm = form && 'nif' in form && typeof form.nif === 'string' ? form.nif : null;
 		nif = fromForm ?? data.nif ?? '';
 	});
+	const isEmpresa = $derived(isCifDocumento(nif));
 </script>
 
 <svelte:head>
@@ -54,7 +56,7 @@
 				Has aceptado la invitación. Rellena tus datos y elige una contraseña para activar tu
 				cuenta en Trámites DGT Online.
 			{:else}
-				Regístrate para asociar tus trámites a tu email. Email, móvil y NIF/NIE son
+				Regístrate para asociar tus trámites a tu email. Email, móvil y NIF/NIE/CIF son
 				obligatorios.
 			{/if}
 		</p>
@@ -71,35 +73,36 @@
 
 			<form method="POST" class="form">
 				<label>
-					Nombre
+					{isEmpresa ? 'Razón social' : 'Nombre'}
 					<input
 						type="text"
 						name="nombre"
 						required
-						autocomplete="given-name"
+						autocomplete={isEmpresa ? 'organization' : 'given-name'}
 						value={nombreValue}
 					/>
 				</label>
-				<label>
-					Primer apellido
-					<input
-						type="text"
-						name="apellido1"
-						required
-						autocomplete="family-name"
-						value={apellido1Value}
-					/>
-				</label>
-				<label>
-					Segundo apellido
-					<input
-						type="text"
-						name="apellido2"
-						required
-						autocomplete="additional-name"
-						value={apellido2Value}
-					/>
-				</label>
+				{#if !isEmpresa}
+					<label>
+						Primer apellido
+						<input
+							type="text"
+							name="apellido1"
+							required
+							autocomplete="family-name"
+							value={apellido1Value}
+						/>
+					</label>
+					<label>
+						Segundo apellido
+						<input
+							type="text"
+							name="apellido2"
+							autocomplete="additional-name"
+							value={apellido2Value}
+						/>
+					</label>
+				{/if}
 				<label>
 					Email
 					<input
@@ -128,7 +131,7 @@
 					/>
 				</label>
 				<label>
-					NIF / NIE
+					NIF / NIE / CIF
 					<span class="hint">Escribe los dígitos: la letra se calcula sola</span>
 					<NifInput name="nif" bind:value={nif} required />
 				</label>
@@ -145,6 +148,12 @@
 					autocomplete="new-password"
 					minlength={8}
 				/>
+				<label class="privacy">
+					<input type="checkbox" name="privacy" required />
+					<span>
+						Acepto la <a href="/politica-de-privacidad" target="_blank" rel="noopener">política de privacidad</a>
+					</span>
+				</label>
 				<button type="submit" class="btn"
 					>{inviteMode ? 'Activar cuenta' : 'Registrarme'}</button
 				>
@@ -222,5 +231,16 @@
 	.alt {
 		margin-top: 20px;
 		font-size: 0.95rem;
+	}
+	.privacy {
+		display: flex;
+		align-items: flex-start;
+		gap: 10px;
+		font-weight: 500;
+		line-height: 1.4;
+	}
+	.privacy input {
+		width: auto;
+		margin-top: 3px;
 	}
 </style>

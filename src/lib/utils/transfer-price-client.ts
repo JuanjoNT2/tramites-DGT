@@ -42,6 +42,7 @@ export function buildTransferBreakdown(opts: {
 	precioBase?: string | number | null;
 	factorCorreccion?: number | null;
 	facturaEmpresa?: boolean;
+	liquidarItp?: boolean;
 	fuenteDepreciacion?: string | null;
 }): PriceBreakdown {
 	return calculateTransferPrice(opts);
