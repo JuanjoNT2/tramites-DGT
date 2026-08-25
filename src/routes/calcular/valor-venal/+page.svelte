@@ -10,7 +10,7 @@
 	import { fetchFactorCorreccion, looksLikeDate } from '$lib/utils/transfer-price-client';
 	import { getStaticSeo } from '$lib/seo/site';
 	import { scrollWizardToTop } from '$lib/utils/scroll';
-	import { validateDate, validateRequired } from '$lib/utils/validators';
+	import { validateDate, validateMatricula, normalizeMatricula, validateRequired } from '$lib/utils/validators';
 
 	const seo = getStaticSeo('/calcular/valor-venal')!;
 
@@ -42,6 +42,7 @@
 	let modeloMotoId = $state('');
 	let modeloMotoNombre = $state('');
 	let cilindradaMoto = $state('');
+	let matricula = $state('');
 	let fechaMatricula = $state('');
 	let fechaVenta = $state('');
 
@@ -106,6 +107,9 @@
 			} else {
 				e.marca = validateRequired(marcaMotoId, 'La marca');
 			}
+			if (matricula.trim()) {
+				e.matricula = validateMatricula(matricula);
+			}
 			e.fechaMatricula = validateDate(fechaMatricula, {
 				label: 'La fecha de primera matrícula',
 				notFuture: true
@@ -161,6 +165,19 @@
 					/>
 				</FormField>
 			{:else if step === 2}
+				<FormField
+					label="Matrícula"
+					hint="Opcional. No consulta la DGT en tiempo real: el valor sale del catálogo BOE (marca/modelo) y de las fechas."
+					error={errors.matricula}
+				>
+					<input
+						bind:value={matricula}
+						placeholder="3990WDS"
+						name="matricula"
+						aria-label="Matrícula"
+						autocomplete="off"
+					/>
+				</FormField>
 				{#if tipoVehiculo === 'coche'}
 					<VehicleModelPicker
 						bind:marcaId
@@ -220,8 +237,11 @@
 							{/if}
 							{#if factorCorreccion != null}
 								<li><span>Factor de corrección</span><span>{factorCorreccion} %</span></li>
-							{/if}
-						</ul>
+						{/if}
+						{#if matricula.trim()}
+							<li><span>Matrícula</span><span>{normalizeMatricula(matricula)}</span></li>
+						{/if}
+					</ul>
 						{#if fuenteDepreciacion}
 							<p class="note">Fuente: precios medios BOE · {fuenteDepreciacion}</p>
 						{/if}

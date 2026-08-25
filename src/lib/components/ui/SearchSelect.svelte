@@ -1,3 +1,7 @@
+<script lang="ts" module>
+	let listboxSeq = 0;
+</script>
+
 <script lang="ts">
 	let {
 		options,
@@ -22,6 +26,10 @@
 
 	let query = $state('');
 	let open = $state(false);
+	let activeIndex = $state(-1);
+	let listEl: HTMLUListElement | undefined = $state();
+
+	const listboxId = `search-select-${++listboxSeq}`;
 
 	const selected = $derived(options.find((o) => o.value === value));
 	const selectedLabel = $derived(selected?.label ?? '');
@@ -71,17 +79,47 @@
 				: placeholder
 	);
 
+	const activeOptionId = $derived(
+		open && activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined
+	);
+
+	$effect(() => {
+		void queryNorm;
+		void canSearch;
+		void ranked.length;
+		// Nada preseleccionado: el primer ArrowDown cae en la mejor coincidencia.
+		activeIndex = -1;
+	});
+
 	function pick(v: string) {
 		value = v;
 		query = '';
 		open = false;
+		activeIndex = -1;
 		onChange?.(v);
+	}
+
+	function uniqueExactMatch(): string | null {
+		const q = query.trim().toLowerCase();
+		if (!q) return null;
+		const matches = options.filter((o) => o.label.toLowerCase() === q);
+		return matches.length === 1 ? matches[0].value : null;
+	}
+
+	function commitTyped(): boolean {
+		const exact = uniqueExactMatch();
+		if (exact) {
+			pick(exact);
+			return true;
+		}
+		return false;
 	}
 
 	function clear() {
 		value = '';
 		query = '';
 		open = true;
+		activeIndex = -1;
 		onChange?.('');
 	}
 
@@ -91,12 +129,69 @@
 		// Empezar búsqueda limpia; la selección sigue visible en el placeholder
 		query = '';
 	}
+
+	function onBlur() {
+		commitTyped();
+		setTimeout(() => {
+			open = false;
+		}, 180);
+	}
+
+	function scrollActive() {
+		const el = listEl?.querySelector<HTMLElement>('[aria-selected="true"]');
+		el?.scrollIntoView({ block: 'nearest' });
+	}
+
+	function onKeyDown(e: KeyboardEvent) {
+		if (disabled) return;
+
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			open = false;
+			return;
+		}
+
+		if (e.key === 'Tab') {
+			commitTyped();
+			return;
+		}
+
+		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+			e.preventDefault();
+			if (!open) open = true;
+			if (ranked.length === 0) return;
+			if (e.key === 'ArrowDown') {
+				activeIndex = activeIndex < 0 ? 0 : Math.min(activeIndex + 1, ranked.length - 1);
+			} else {
+				activeIndex = activeIndex < 0 ? ranked.length - 1 : Math.max(activeIndex - 1, 0);
+			}
+			queueMicrotask(scrollActive);
+			return;
+		}
+
+		if (e.key === 'Enter') {
+			if (open && activeIndex >= 0 && ranked[activeIndex]) {
+				e.preventDefault();
+				pick(ranked[activeIndex].value);
+				return;
+			}
+			if (commitTyped()) {
+				e.preventDefault();
+				return;
+			}
+			if (open && ranked.length === 1) {
+				e.preventDefault();
+				pick(ranked[0].value);
+			}
+		}
+	}
 </script>
 
 <div class="search-select" class:disabled>
 	<input
 		type="text"
 		class="input"
+		role="combobox"
 		placeholder={inputPlaceholder}
 		bind:value={query}
 		{disabled}
@@ -104,13 +199,18 @@
 		oninput={() => {
 			if (!disabled) open = true;
 		}}
-		onblur={() => setTimeout(() => (open = false), 180)}
+		onblur={onBlur}
+		onkeydown={onKeyDown}
 		autocomplete="off"
 		aria-autocomplete="list"
+		aria-haspopup="listbox"
+		aria-expanded={open && !disabled}
+		aria-controls={listboxId}
+		aria-activedescendant={activeOptionId}
 		spellcheck="false"
 	/>
 	{#if open && !disabled}
-		<ul class="list" role="listbox">
+		<ul class="list" role="listbox" id={listboxId} bind:this={listEl}>
 			{#if !canSearch}
 				<li class="empty">
 					Escribe al menos {minChars} letra{minChars === 1 ? '' : 's'} para ver sugerencias
@@ -121,14 +221,26 @@
 			{:else if ranked.length === 0}
 				<li class="empty">{queryNorm ? emptyText : 'Empieza a escribir para filtrar…'}</li>
 			{:else}
-				{#each ranked as opt (opt.value)}
-					<li>
-						<button type="button" onmousedown={(e) => e.preventDefault()} onclick={() => pick(opt.value)}>
-							<span class="label">{opt.label}</span>
-							{#if opt.hint}
-								<span class="hint">{opt.hint}</span>
-							{/if}
-						</button>
+				{#each ranked as opt, i (opt.value)}
+					<li
+						role="option"
+						id={`${listboxId}-opt-${i}`}
+						aria-selected={i === activeIndex}
+						class:active={i === activeIndex}
+						data-testid="search-select-option"
+						onmousedown={(e) => e.preventDefault()}
+						onclick={() => pick(opt.value)}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								pick(opt.value);
+							}
+						}}
+					>
+						<span class="label">{opt.label}</span>
+						{#if opt.hint}
+							<span class="hint">{opt.hint}</span>
+						{/if}
 					</li>
 				{/each}
 				{#if totalMatches > ranked.length}
@@ -187,7 +299,7 @@
 		scrollbar-gutter: stable;
 	}
 
-	.list button {
+	.list [role='option'] {
 		width: 100%;
 		text-align: left;
 		padding: 10px 14px;
@@ -200,7 +312,8 @@
 		gap: 2px;
 	}
 
-	.list button:hover {
+	.list [role='option']:hover,
+	.list [role='option'].active {
 		background: var(--primary-dim);
 	}
 

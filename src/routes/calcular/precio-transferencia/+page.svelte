@@ -18,6 +18,7 @@
 	import { getStaticSeo } from '$lib/seo/site';
 	import { scrollWizardToTop } from '$lib/utils/scroll';
 	import { validateDate, validateDateOrder, validateRequired } from '$lib/utils/validators';
+	import type { VehicleType } from '$lib/data/vehicle-types';
 
 	const seo = getStaticSeo('/calcular/precio-transferencia')!;
 
@@ -25,7 +26,7 @@
 	let step = $state(1);
 	let wizardRoot: HTMLElement | undefined = $state();
 
-	let tipoVehiculo = $state<'coche' | 'moto'>('coche');
+	let tipoVehiculo = $state<VehicleType>('coche');
 	let marcaId = $state('');
 	let marcaNombre = $state('');
 	let combustibleId = $state('');
@@ -71,14 +72,14 @@
 		if (needsFactor && factorError) return null;
 		try {
 			return buildTransferBreakdown({
-			precioVenta,
-			ccaaId,
-			tipoVehiculo,
-			incluirInforme: incluirInforme === 'si',
-			precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
-			factorCorreccion: needsFactor ? factorCorreccion : null,
-			facturaEmpresa: facturaEmpresa === 'si',
-			fuenteDepreciacion
+				precioVenta,
+				ccaaId,
+				tipoVehiculo,
+				incluirInforme: incluirInforme === 'si',
+				precioBase: tipoVehiculo === 'coche' ? modeloMeta?.precioBase : null,
+				factorCorreccion: needsFactor ? factorCorreccion : null,
+				facturaEmpresa: facturaEmpresa === 'si',
+				fuenteDepreciacion
 			});
 		} catch {
 			return null;
@@ -132,8 +133,11 @@
 				e.marca = validateRequired(marcaId, 'La marca');
 				e.combustible = validateRequired(combustibleId, 'El combustible');
 				e.modelo = validateRequired(modeloId, 'El modelo');
-			} else {
+			} else if (tipoVehiculo === 'moto') {
 				e.marca = validateRequired(marcaMotoId, 'La marca');
+			} else {
+				e.marca = validateRequired(marcaNombre, 'La marca');
+				e.modelo = validateRequired(modeloNombre, 'El modelo');
 			}
 			e.fechaMatricula = validateDate(fechaMatricula, {
 				label: 'La fecha de primera matrícula',
@@ -185,7 +189,12 @@
 						bind:value={tipoVehiculo}
 						options={[
 							{ value: 'coche', label: 'Coche', desc: 'Turismo, SUV, furgoneta…' },
-							{ value: 'moto', label: 'Moto / sin carnet', desc: 'Motocicleta o ciclomotor' }
+							{ value: 'moto', label: 'Moto / sin carnet', desc: 'Motocicleta o ciclomotor' },
+							{
+								value: 'caravana',
+								label: 'Caravana / Remolque',
+								desc: 'Caravana, remolque ligero…'
+							}
 						]}
 					/>
 				</FormField>
@@ -205,7 +214,7 @@
 							modelo: errors.modelo
 						}}
 					/>
-				{:else}
+				{:else if tipoVehiculo === 'moto'}
 					<MotoModelPicker
 						bind:marcaId={marcaMotoId}
 						bind:marcaNombre={marcaMotoNombre}
@@ -214,6 +223,15 @@
 						bind:cilindrada={cilindradaMoto}
 						errors={{ marca: errors.marca }}
 					/>
+				{:else}
+					<div class="row-2">
+						<FormField label="Marca" error={errors.marca} required>
+							<input bind:value={marcaNombre} placeholder="Ej. Knaus, Tabbert…" />
+						</FormField>
+						<FormField label="Modelo" error={errors.modelo} required>
+							<input bind:value={modeloNombre} placeholder="Ej. Sport 500 QDK" />
+						</FormField>
+					</div>
 				{/if}
 				<FormField
 					label="Fecha primera matrícula"
@@ -271,6 +289,8 @@
 								.filter(Boolean)
 								.join(' · ')}
 						</p>
+					{:else if tipoVehiculo === 'caravana' && (marcaNombre || modeloNombre)}
+						<p class="picked">{[marcaNombre, modeloNombre].filter(Boolean).join(' · ')}</p>
 					{/if}
 					<a class="btn big" href="/tramitar/transferencia">Tramitar ahora</a>
 					<button type="button" class="btn ghost big" onclick={() => (step = 1)}>Nuevo cálculo</button>
@@ -345,6 +365,12 @@
 		padding: 0 12px;
 	}
 
+	.row-2 {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 16px;
+	}
+
 	.result .btn {
 		margin: 6px;
 	}
@@ -361,6 +387,9 @@
 
 	@media (max-width: 900px) {
 		.layout {
+			grid-template-columns: 1fr;
+		}
+		.row-2 {
 			grid-template-columns: 1fr;
 		}
 	}

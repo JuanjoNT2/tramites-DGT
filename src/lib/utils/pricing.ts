@@ -50,7 +50,8 @@ export function findCcaa(ccaaId: string) {
 export function calculateTransferPrice(opts: {
 	precioVenta: number;
 	ccaaId: string;
-	tipoVehiculo: 'coche' | 'moto';
+	/** Caravana/remolque se tarifa como coche, sin precio medio BOE. */
+	tipoVehiculo: 'coche' | 'moto' | 'caravana';
 	incluirInforme: boolean;
 	precioBase?: string | number | null;
 	factorCorreccion?: number | null;
@@ -68,7 +69,8 @@ export function calculateTransferPrice(opts: {
 	}
 	const facturaEmpresa = opts.facturaEmpresa === true;
 	const liquidarItp = opts.liquidarItp !== false && !facturaEmpresa && ccaa.itpRate > 0;
-	const precioBase = parsePrecioBase(opts.precioBase);
+	const precioBase =
+		opts.tipoVehiculo === 'caravana' ? null : parsePrecioBase(opts.precioBase);
 	const factor =
 		opts.factorCorreccion != null && Number.isFinite(opts.factorCorreccion)
 			? Number(opts.factorCorreccion)

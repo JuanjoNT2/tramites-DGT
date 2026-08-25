@@ -37,7 +37,7 @@ export async function fetchFactorCorreccion(
 export function buildTransferBreakdown(opts: {
 	precioVenta: number;
 	ccaaId: string;
-	tipoVehiculo: 'coche' | 'moto';
+	tipoVehiculo: 'coche' | 'moto' | 'caravana';
 	incluirInforme: boolean;
 	precioBase?: string | number | null;
 	factorCorreccion?: number | null;
@@ -45,5 +45,10 @@ export function buildTransferBreakdown(opts: {
 	liquidarItp?: boolean;
 	fuenteDepreciacion?: string | null;
 }): PriceBreakdown {
-	return calculateTransferPrice(opts);
+	const tipo = opts.tipoVehiculo === 'moto' ? 'moto' : 'coche';
+	return calculateTransferPrice({
+		...opts,
+		tipoVehiculo: tipo,
+		precioBase: opts.tipoVehiculo === 'caravana' ? null : opts.precioBase
+	});
 }
