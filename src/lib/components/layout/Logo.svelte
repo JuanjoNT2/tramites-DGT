@@ -28,7 +28,7 @@
 			style="height: {height}px; width: auto"
 		/>
 		<p class="powered">
-			powered by <span class="brand">Performanze</span>
+			Powered by <span class="brand">Gestoria</span>
 		</p>
 	</div>
 {/if}
