@@ -27,9 +27,13 @@
 			height="66"
 			style="height: {height}px; width: auto"
 		/>
-		<p class="powered">
-			Powered by <span class="brand">Gestoria</span>
-		</p>
+		<img
+			class="powered"
+			src={onDark ? '/brand/valoe-gestoria-blanco.png' : '/brand/valoe-gestoria.png'}
+			alt="Valoe Gestoría Administrativa"
+			width="214"
+			height="54"
+		/>
 	</div>
 {/if}
 
@@ -52,22 +56,13 @@
 	}
 
 	.powered {
-		margin: 0;
-		font-size: 10px;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		line-height: 1.2;
-		white-space: nowrap;
-		color: rgba(255, 255, 255, 0.72);
-	}
-
-	.lockup.on-light .powered {
-		color: rgba(26, 43, 60, 0.55);
-	}
-
-	.brand {
-		color: var(--brand-teal);
-		font-weight: 800;
+		display: block;
+		margin: 1px 0 0;
+		height: 20px;
+		width: auto;
+		max-width: 128px;
+		object-fit: contain;
+		object-position: left center;
 	}
 
 	.mark {
