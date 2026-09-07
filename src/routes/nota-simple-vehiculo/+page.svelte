@@ -10,7 +10,7 @@
 	title={seo.title}
 	description={seo.description}
 	path={seo.path}
-	image="/images/services/informe.webp"
+	image="/images/services/nota-simple.webp"
 	jsonLd={serviceJsonLd({
 		name: 'Nota simple de vehículo',
 		description: seo.description,

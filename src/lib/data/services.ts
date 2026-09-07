@@ -37,7 +37,7 @@ export const services: Service[] = [
 		description: 'Notifica la venta de tu vehículo ante la DGT de forma online',
 		landingPath: '/notificacion-de-venta',
 		tramitarPath: '/tramitar/notificacion-venta',
-		image: '/images/services/transferencia.webp',
+		image: '/images/services/notificacion-venta.webp',
 		group: 'titularidad'
 	},
 	{
@@ -67,7 +67,7 @@ export const services: Service[] = [
 		description: 'Obtén la nota simple registral del vehículo de forma rápida y online',
 		landingPath: '/nota-simple-vehiculo',
 		tramitarPath: '/tramitar/nota-simple',
-		image: '/images/services/informe.webp',
+		image: '/images/services/nota-simple.webp',
 		group: 'documentacion'
 	},
 	{
@@ -108,7 +108,7 @@ export const services: Service[] = [
 		description: 'Tramita la baja temporal de tu vehículo ante la DGT sin desplazamientos',
 		landingPath: '/baja-temporal-vehiculo',
 		tramitarPath: '/tramitar/baja-temporal',
-		image: '/images/services/cancelacion.webp',
+		image: '/images/services/baja-temporal.webp',
 		group: 'situacion'
 	}
 ];
