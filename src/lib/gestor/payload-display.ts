@@ -22,7 +22,9 @@ const HIDDEN_KEYS = new Set([
 const HIDDEN_PREFIXES = [
 	'modeloMeta.',
 	'pago.stripeSessionId',
+	'pago.stripePaymentIntent',
 	'pago.clientSecret',
+	'pago.amountCents',
 	'breakdown.fuente.',
 	'metaFiscal.fuente.'
 ];
@@ -125,6 +127,7 @@ const LABELS: Record<string, string> = {
 	'pago.createdAt': 'Pago iniciado',
 	'pago.stripeSessionId': 'Sesión Stripe',
 	'pago.paidAt': 'Fecha de pago',
+	'pago.notifiedAt': 'Pago confirmado',
 	'pago.redsysOrder': 'Pedido Redsys'
 };
 
@@ -195,6 +198,29 @@ const BOOL_KEYS = new Set([
 	'acceptPrivacy'
 ]);
 
+const DATE_KEYS = new Set([
+	'pago.createdAt',
+	'pago.paidAt',
+	'pago.notifiedAt',
+	'facturaEmitidaAt'
+]);
+
+function isIsoDateTime(v: unknown): v is string {
+	return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v);
+}
+
+function formatDateTime(v: unknown): string {
+	const d = new Date(String(v));
+	if (Number.isNaN(d.getTime())) return String(v ?? '');
+	return d.toLocaleString('es-ES', {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit'
+	});
+}
+
 function leafKey(path: string): string {
 	const i = path.lastIndexOf('.');
 	return i >= 0 ? path.slice(i + 1) : path;
@@ -261,6 +287,7 @@ function formatValue(path: string, v: unknown): string {
 	if (v == null || v === '') return '—';
 
 	if (path === 'ccaaId') return formatCcaa(v);
+	if (DATE_KEYS.has(path) || isIsoDateTime(v)) return formatDateTime(v);
 	if (path === 'priceLines') return formatPriceLines(v);
 	if (path === 'docsAttached') return formatDocsAttached(v);
 	if (path === 'breakdown.itpRate' && typeof v === 'number') {
