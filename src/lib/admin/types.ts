@@ -1,4 +1,4 @@
-export type DatePreset = 'day' | 'week' | 'month' | 'year' | 'custom';
+export type DatePreset = 'day' | 'week' | 'month' | 'year';
 
 export type DateRange = {
 	preset: DatePreset;

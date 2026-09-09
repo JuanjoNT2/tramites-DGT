@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { formatRangeLabel } from './dates';
 import type { ChannelRow, DateRange, EventRow, OverviewMetrics } from './types';
 
 export async function buildReportPdf(opts: {
@@ -19,7 +20,7 @@ export async function buildReportPdf(opts: {
 		doc.fillColor('#003050').fontSize(20).text('Informe de analítica', { align: 'left' });
 		doc.moveDown(0.3);
 		doc.fillColor('#5a6b7d').fontSize(11).text('Trámites DGT Online · Estilo GA4');
-		doc.text(`Periodo: ${range.startDate} → ${range.endDate} (${range.preset})`);
+		doc.text(`Periodo: ${formatRangeLabel(range)}`);
 		doc.text(`Fuente métricas: ${overview.source === 'ga4' ? 'GA4 live' : 'Demo'}`);
 		doc.moveDown();
 

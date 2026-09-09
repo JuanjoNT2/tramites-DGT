@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { DateRange } from '$lib/admin/types';
-	import { rangeQuery } from '$lib/admin/dates';
+	import type { DatePreset, DateRange } from '$lib/admin/types';
+	import { formatRangeLabel, normalizePreset, rangeQuery, toIsoWeekValue } from '$lib/admin/dates';
 
 	let {
 		range,
@@ -13,6 +13,14 @@
 	} = $props();
 
 	const q = $derived(rangeQuery(range));
+	const periodLabel = $derived(formatRangeLabel(range));
+	const currentYear = new Date().getFullYear();
+
+	let preset = $state<DatePreset>(normalizePreset(range.preset));
+
+	$effect(() => {
+		preset = normalizePreset(range.preset);
+	});
 
 	const links = [
 		{ href: '/admin', label: 'Overview' },
@@ -47,18 +55,89 @@
 		<header class="top">
 			<div>
 				<h1>{title}</h1>
-				<p class="period">{range.startDate} → {range.endDate}</p>
+				<p class="period">{periodLabel}</p>
 			</div>
 			<form class="filters" method="GET">
-				<select name="preset">
-					<option value="day" selected={range.preset === 'day'}>Día</option>
-					<option value="week" selected={range.preset === 'week'}>Semana</option>
-					<option value="month" selected={range.preset === 'month'}>Mes</option>
-					<option value="year" selected={range.preset === 'year'}>Año</option>
-					<option value="custom" selected={range.preset === 'custom'}>Personalizado</option>
-				</select>
-				<input type="date" name="start" value={range.startDate} />
-				<input type="date" name="end" value={range.endDate} />
+				<label class="field">
+					<span>Ver por</span>
+					<select name="preset" bind:value={preset}>
+						<option value="day">Día</option>
+						<option value="week">Semana</option>
+						<option value="month">Mes</option>
+						<option value="year">Año</option>
+					</select>
+				</label>
+				<div class="range-fields">
+					{#if preset === 'day'}
+						<label class="field">
+							<span>Desde</span>
+							<input type="date" name="start" value={range.startDate} />
+						</label>
+						<span class="sep" aria-hidden="true">→</span>
+						<label class="field">
+							<span>Hasta</span>
+							<input type="date" name="end" value={range.endDate} />
+						</label>
+					{:else if preset === 'week'}
+						<label class="field">
+							<span>Desde</span>
+							<input
+								type="week"
+								name="start"
+								value={toIsoWeekValue(range.startDate)}
+								placeholder="AAAA-WSS"
+							/>
+						</label>
+						<span class="sep" aria-hidden="true">→</span>
+						<label class="field">
+							<span>Hasta</span>
+							<input
+								type="week"
+								name="end"
+								value={toIsoWeekValue(range.endDate)}
+								placeholder="AAAA-WSS"
+							/>
+						</label>
+					{:else if preset === 'month'}
+						<label class="field">
+							<span>Desde</span>
+							<input type="month" name="start" value={range.startDate.slice(0, 7)} />
+						</label>
+						<span class="sep" aria-hidden="true">→</span>
+						<label class="field">
+							<span>Hasta</span>
+							<input type="month" name="end" value={range.endDate.slice(0, 7)} />
+						</label>
+					{:else}
+						<label class="field">
+							<span>Desde</span>
+							<input
+								class="year"
+								type="number"
+								name="start"
+								inputmode="numeric"
+								min="2018"
+								max={currentYear}
+								step="1"
+								value={range.startDate.slice(0, 4)}
+							/>
+						</label>
+						<span class="sep" aria-hidden="true">→</span>
+						<label class="field">
+							<span>Hasta</span>
+							<input
+								class="year"
+								type="number"
+								name="end"
+								inputmode="numeric"
+								min="2018"
+								max={currentYear}
+								step="1"
+								value={range.endDate.slice(0, 4)}
+							/>
+						</label>
+					{/if}
+				</div>
 				<button type="submit" class="btn">Aplicar</button>
 			</form>
 		</header>
@@ -128,8 +207,8 @@
 		display: flex;
 		justify-content: space-between;
 		gap: 16px;
-		align-items: flex-start;
-		padding: 24px 28px 12px;
+		align-items: center;
+		padding: 20px 28px;
 		flex-wrap: wrap;
 		background: #fff;
 		border-bottom: 1px solid #e2e8f0;
@@ -147,8 +226,31 @@
 	.filters {
 		display: flex;
 		flex-wrap: wrap;
+		gap: 12px;
+		align-items: flex-end;
+	}
+	.range-fields {
+		display: flex;
+		flex-wrap: wrap;
 		gap: 8px;
-		align-items: center;
+		align-items: flex-end;
+	}
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.field span {
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: #5a6b7d;
+	}
+	.sep {
+		padding-bottom: 8px;
+		color: #94a3b8;
+		font-weight: 700;
 	}
 	.filters select,
 	.filters input {
@@ -157,10 +259,19 @@
 		border-radius: 6px;
 		padding: 0 10px;
 		font: inherit;
+		background: #fff;
+		min-width: 0;
+	}
+	.filters input[type='month'],
+	.filters input[type='week'] {
+		min-width: 10.5rem;
+	}
+	.filters input.year {
+		width: 5.75rem;
 	}
 	.filters .btn {
 		height: 36px;
-		padding: 0 14px;
+		padding: 0 16px;
 		background: #003050;
 		color: #fff;
 		border: none;
