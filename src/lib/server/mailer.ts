@@ -346,6 +346,38 @@ export async function sendContactoAckEmail(opts: { to: string; nombre?: string |
 	});
 }
 
+/** Credenciales de cuenta creada al iniciar un trámite (password permanente). */
+export async function sendAccountCredentialsEmail(opts: {
+	to: string;
+	password: string;
+	nombre?: string | null;
+}) {
+	const base = siteOrigin();
+	const loginUrl = `${base}/login`;
+	const seguridadUrl = `${base}/cuenta/seguridad`;
+	const hello = opts.nombre?.trim() ? `Hola ${opts.nombre.trim()},` : 'Hola,';
+
+	return sendEmail({
+		to: opts.to,
+		subject: 'Tu cuenta en Trámites DGT Online',
+		text: [
+			hello,
+			'',
+			'Hemos creado tu cuenta para que puedas seguir el trámite y recibir avisos.',
+			'',
+			`Email: ${opts.to}`,
+			`Contraseña: ${opts.password}`,
+			'',
+			`Inicia sesión: ${loginUrl}`,
+			`Si quieres, puedes cambiar la contraseña en Mi área → Seguridad: ${seguridadUrl}`,
+			'',
+			'Guarda este correo en un lugar seguro. No compartas la contraseña.',
+			'',
+			'Trámites DGT Online'
+		].join('\n')
+	});
+}
+
 export async function sendAdminContactoEmail(opts: {
 	nombre: string;
 	email: string;

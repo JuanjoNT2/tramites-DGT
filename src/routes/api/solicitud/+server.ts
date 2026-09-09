@@ -4,10 +4,15 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { env } from '$env/dynamic/private';
 import { isStaffRole } from '$lib/auth/roles';
+import { loginUrl } from '$lib/auth/urls';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { updateProfileFields, upsertVehiculoFromPayload } from '$lib/cuenta/data';
 import { profilePatchFromSolicitantePayload } from '$lib/cuenta/profile-prefill';
 import { validateSolicitudPayload } from '$lib/server/solicitud-validate';
+import {
+	ensureCitizenAccountForTramite,
+	requireAccountForTramites
+} from '$lib/server/auto-account';
 import { sendOtraParteInviteEmail, sendSolicitudReceivedEmail, sendContactoAckEmail } from '$lib/server/mailer';
 import { notifyAdminContacto } from '$lib/server/admin-notify';
 import { generatePagoAccessToken } from '$lib/pago/access';
@@ -52,7 +57,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ error: validated.error }, { status: 400 });
 	}
 
-	const userId = locals.user?.id ?? null;
+	let userId = locals.user?.id ?? null;
 	const email = validated.email || locals.user?.email?.toLowerCase() || null;
 	if (email && !body.email) body.email = email;
 	if (validated.amount != null) {
@@ -63,6 +68,39 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			amount: validated.amount,
 			currency: 'EUR'
 		};
+	}
+
+	let accountCreated = false;
+	let credentialsEmailSent = false;
+
+	// Contacto puede seguir sin cuenta. Resto de trámites: cuenta obligatoria (salvo flag off).
+	const mustHaveAccount = tipo !== 'contacto' && requireAccountForTramites();
+	if (mustHaveAccount && !userId) {
+		const ensured = await ensureCitizenAccountForTramite({ email, payload: body });
+		if (!ensured.ok) {
+			return json(
+				{
+					error: ensured.error,
+					code: ensured.code,
+					/** El cliente añade `next` al trámite actual; aquí solo email. */
+					loginUrl:
+						ensured.code === 'ACCOUNT_EXISTS'
+							? loginUrl('/', email || undefined)
+							: undefined
+				},
+				{ status: ensured.code === 'ACCOUNT_EXISTS' ? 409 : 400 }
+			);
+		}
+		userId = ensured.userId;
+		accountCreated = ensured.created;
+		credentialsEmailSent = ensured.emailSent;
+	}
+
+	if (mustHaveAccount && !userId) {
+		return json(
+			{ error: 'No se pudo asociar la solicitud a una cuenta.', code: 'NO_USER' },
+			{ status: 500 }
+		);
 	}
 
 	const accessToken = generatePagoAccessToken();
@@ -137,11 +175,19 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			}).catch((e) => console.error('[solicitud] invite email', e));
 		}
 
+		const message = accountCreated
+			? credentialsEmailSent
+				? 'Solicitud registrada. Te hemos enviado la contraseña de tu cuenta por email.'
+				: 'Solicitud y cuenta registradas. Si no recibes el email con la contraseña, usa «¿Has olvidado tu contraseña?».'
+			: 'Solicitud registrada correctamente.';
+
 		return json({
 			ok: true,
 			id,
 			accessToken,
-			message: 'Solicitud registrada correctamente.',
+			accountCreated,
+			credentialsEmailSent,
+			message,
 			cuentaUrl: userId ? `/cuenta/tramites/${id}` : null,
 			pagoUrl: `/pago/${id}?t=${encodeURIComponent(accessToken)}`
 		});
@@ -151,6 +197,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (isProdLike) {
 		return json(
 			{ error: 'Almacén de solicitudes no configurado (SUPABASE_*).' },
+			{ status: 503 }
+		);
+	}
+
+	if (mustHaveAccount && !userId) {
+		return json(
+			{
+				error:
+					'En local hace falta SUPABASE_SERVICE_ROLE_KEY para crear la cuenta automáticamente, o inicia sesión.'
+			},
 			{ status: 503 }
 		);
 	}
@@ -168,6 +224,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		ok: true,
 		id,
 		accessToken,
+		accountCreated: false,
+		credentialsEmailSent: false,
 		message: 'Solicitud registrada correctamente (modo demostración local).',
 		cuentaUrl: userId ? `/cuenta/tramites/${id}` : null,
 		pagoUrl: `/pago/${id}?t=${encodeURIComponent(accessToken)}`

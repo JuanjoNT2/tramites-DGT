@@ -29,6 +29,7 @@ Roles: solo **admin** (Supabase Auth role) cambia estados de trámite; **gestor*
 | `STRIPE_WEBHOOK_SECRET` | Signing secret del webhook (`whsec_…`) |
 | `RESEND_API_KEY` | API key `re_…` (emails de solicitud, pago, avisos) |
 | `RESEND_FROM` | Remitente verificado en Resend |
+| `REQUIRE_ACCOUNT_FOR_TRAMITES` | Opcional; por defecto cuenta obligatoria al tramitar. Pon `0` solo para depurar anónimos |
 | `REDSYS_*` | Opcional; solo si no hay Stripe |
 
 Copia de referencia: `.env.example`. Guía Stripe: `docs/stripe-setup.md`.
@@ -136,17 +137,42 @@ npm run seed:demo-users
 - Olvidé mi contraseña: `/recuperar-password` (email Resend)
 - Cambiar estando logueado: `/cuenta/seguridad` (ciudadano, gestor y admin Auth)
 
-## 5. QA mínima
+## 5. Cuenta obligatoria al tramitar
+
+Por defecto (`REQUIRE_ACCOUNT_FOR_TRAMITES` no desactivado):
+
+1. Ciudadano **sin sesión** + email nuevo → `auth.admin.createUser` + email con contraseña **permanente** + `solicitudes.user_id` poblado.
+2. Email ya registrado → HTTP 409 `ACCOUNT_EXISTS` (no se sobrescribe la password); el wizard pide login/`recuperar-password`.
+3. Con sesión → solicitud con el `user_id` actual (sin email de credenciales).
+4. Formulario de **contacto** puede seguir sin cuenta.
+
+El token `?t=` de pago sigue válido para enlaces (otra parte / email), pero las solicitudes **nuevas** de trámite ya no se crean anónimas (`user_id` null).
+
+### Transición legacy (solicitudes anónimas)
+
+| Fase | Comportamiento |
+|------|----------------|
+| Actual | Flag ON: no se crean anónimos nuevos. `claimAnonymousSolicitudes` al login sigue asociando filas históricas `user_id IS NULL` por email. |
+| Medio plazo | Panel gestor `/gestor/cliente/anonimo` para revisar residuales; contactar o reclamar al iniciar sesión. |
+| Retirada | Cuando el volumen anónimo sea ~0: dejar de llamar a `claimAnonymousSolicitudes` y, si procede, denegar pago solo-token en filas sin `user_id`. |
+
+Desactivar el flag (`REQUIRE_ACCOUNT_FOR_TRAMITES=0`) solo para depurar el funnel anónimo en local; no en producción.
+
+Código: `src/lib/server/auto-account.ts`, `POST /api/solicitud`, email `sendAccountCredentialsEmail`.
+
+## 6. QA mínima
 
 - [ ] Registro → email Resend → login
-- [ ] Trámite **sin** login → fila en `solicitudes` y visible en `/gestor`
-- [ ] Trámite **con** login → `user_id` poblado
+- [ ] Trámite **sin** login + email nuevo → cuenta creada, email con password, `user_id` poblado, aviso en `/pago`
+- [ ] Trámite **sin** login + email existente → 409 y enlace a login con `next` al wizard
+- [ ] Trámite **con** login → `user_id` poblado, sin email de password
+- [ ] Login con email que tenía solicitudes anónimas legacy → reclamadas en `/cuenta`
 - [ ] Admin eleva a gestor → acceso `/gestor` + CSV/Excel/PDF
 - [ ] Último paso → pagar (con `STRIPE_*`: Checkout Stripe; si no, Redsys; sin claves: `pendiente_pago`)
 
-## 6. Notas
+## 7. Notas
 
 - El panel `/admin` (analítica) sigue usando cookie HMAC; es independiente de Supabase Auth.
 - `/gestor` exige `profiles.role` ∈ `gestor|admin`.
-- Sin `SUPABASE_*` en local, las solicitudes caen a `.data/solicitudes.json`; en Vercel/prod falla claro (503).
+- Sin `SUPABASE_*` en local, las solicitudes caen a `.data/solicitudes.json`; en Vercel/prod falla claro (503). En local con cuenta obligatoria hace falta service role (o sesión) para crear la cuenta.
 - Pasarela: ver [`docs/redsys-cfo.md`](redsys-cfo.md).

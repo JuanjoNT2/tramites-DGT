@@ -11,6 +11,9 @@
 	import DraftStorageNotice from '$lib/components/DraftStorageNotice.svelte';
 	import DraftRestoreNotice from '$lib/components/DraftRestoreNotice.svelte';
 	import PrivacyAcceptField from '$lib/components/legal/PrivacyAcceptField.svelte';
+	import ConfirmDatosPagoModal from '$lib/components/pago/ConfirmDatosPagoModal.svelte';
+	import { markDatosConfirmados } from '$lib/pago/datos-confirm';
+	import { loginUrl } from '$lib/auth/urls';
 	import TramiteDocumentosStep from '$lib/components/tramite/TramiteDocumentosStep.svelte';
 	import FacturaClienteFields from '$lib/components/tramite/FacturaClienteFields.svelte';
 	import {
@@ -48,6 +51,7 @@
 	import { getStaticSeo } from '$lib/seo/site';
 	import { getDocumentGroups, missingRequiredDocs } from '$lib/tramite/documentos';
 	import { loadProfileNifIntoSlots, uploadTramiteDocuments } from '$lib/tramite/upload-docs';
+	import { markAccountCreated } from '$lib/pago/account-flash';
 	import { createSolicitud } from '$lib/pago/client';
 	import { handleWizardSave } from '$lib/tramite/save';
 	import { formatEur } from '$lib/utils/pricing';
@@ -95,8 +99,10 @@
 	let profilePrefillDone = $state(false);
 	let profileNifPrefillDone = $state(false);
 	let submitting = $state(false);
+	let confirmDatosOpen = $state(false);
 	let saving = $state(false);
 	let payError = $state<string | null>(null);
+	let payLoginHref = $state<string | null>(null);
 	let saveMsg = $state<string | null>(null);
 	let saveError = $state<string | null>(null);
 	let solicitudId = $state<string | null>(null);
@@ -745,16 +751,42 @@
 		}
 	}
 
-	async function continueToPayment() {
+	function askContinueToPayment() {
 		if (!validateAllSteps()) {
 			payError = 'Revisa los datos del formulario: hay campos incompletos o no válidos.';
+			payLoginHref = null;
 			unlockVehicleDetails();
 			step = firstInvalidStep();
 			void scrollWizardToTop(wizardRoot);
 			return;
 		}
+		if (!page.data.user && emailAccountExists) {
+			payError =
+				'Ya hay una cuenta con este email. Inicia sesión para continuar el trámite.';
+			payLoginHref = loginUrl(page.url.pathname, activeParty.email.trim());
+			return;
+		}
+		confirmDatosOpen = true;
+	}
+
+	async function continueToPayment() {
+		if (!validateAllSteps()) {
+			payError = 'Revisa los datos del formulario: hay campos incompletos o no válidos.';
+			payLoginHref = null;
+			unlockVehicleDetails();
+			step = firstInvalidStep();
+			void scrollWizardToTop(wizardRoot);
+			return;
+		}
+		if (!page.data.user && emailAccountExists) {
+			payError =
+				'Ya hay una cuenta con este email. Inicia sesión para continuar el trámite.';
+			payLoginHref = loginUrl(page.url.pathname, activeParty.email.trim());
+			return;
+		}
 		submitting = true;
 		payError = null;
+		payLoginHref = null;
 		try {
 			const result = await createSolicitud({
 				amount: priceLines.total,
@@ -764,6 +796,10 @@
 
 			if (!result.ok) {
 				payError = result.error;
+				payLoginHref =
+					result.code === 'ACCOUNT_EXISTS'
+						? loginUrl(page.url.pathname, activeParty.email.trim())
+						: null;
 				return;
 			}
 
@@ -783,6 +819,8 @@
 			});
 			clearDraft(STORAGE_KEY);
 			void clearDraftFiles(STORAGE_KEY);
+			if (result.accountCreated) markAccountCreated(activeParty.email);
+			markDatosConfirmados();
 			await goto(result.pagoUrl);
 		} finally {
 			submitting = false;
@@ -951,12 +989,27 @@
 						mode="reminder"
 					/>
 					<PrivacyAcceptField bind:checked={acceptPrivacy} error={errors.privacy} />
-					{#if payError}<p class="err">{payError}</p>{/if}
+					{#if !page.data.user}
+						<p class="account-hint">
+							Al continuar se creará tu cuenta (si aún no la tienes) y te enviaremos la
+							contraseña por email para seguir el trámite y recibir avisos.
+						</p>
+					{/if}
+					{#if payError}
+						<p class="err">{payError}</p>
+						{#if payLoginHref}
+							<p class="err">
+								<a href={payLoginHref}>Iniciar sesión</a>
+								·
+								<a href="/recuperar-password">Recuperar contraseña</a>
+							</p>
+						{/if}
+					{/if}
 					<button
 						type="button"
 						class="btn pay-cta"
-						onclick={continueToPayment}
-						disabled={submitting || !acceptPrivacy}
+						onclick={askContinueToPayment}
+						disabled={submitting || !acceptPrivacy || (!page.data.user && emailAccountExists)}
 					>
 						{submitting ? 'Registrando solicitud…' : 'Continuar a pasarela de pago'}
 					</button>
@@ -1002,6 +1055,14 @@
 	open={showDraftRestore}
 	oncontinue={continueDraft}
 	onfresh={startFreshDraft}
+/>
+<ConfirmDatosPagoModal
+	open={confirmDatosOpen}
+	oncancel={() => (confirmDatosOpen = false)}
+	onconfirm={() => {
+		confirmDatosOpen = false;
+		void continueToPayment();
+	}}
 />
 
 <style>
@@ -1095,6 +1156,19 @@
 		color: var(--error);
 		font-size: 13px;
 		margin-top: 8px;
+	}
+	.err a {
+		color: #003050;
+		font-weight: 700;
+	}
+	.account-hint {
+		margin: 0 0 14px;
+		padding: 12px 14px;
+		background: #e8f7f8;
+		border-radius: 8px;
+		font-size: 14px;
+		line-height: 1.45;
+		color: #3d4f5f;
 	}
 	.summary-lead {
 		margin: 0;

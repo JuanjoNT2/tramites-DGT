@@ -34,6 +34,10 @@ export const faqSections: FaqSection[] = [
 			{
 				q: '¿Puedo hacer el trámite por teléfono?',
 				a: 'El trámite se completa online en la web. Si tienes dudas, puedes escribirnos desde la página de contacto o a info@tramitesdgtonline.com y te orientamos sobre el proceso y la documentación.'
+			},
+			{
+				q: '¿Cuál es el horario de atención?',
+				a: 'Lunes a jueves de 9:00 a 18:00 y viernes de 9:00 a 15:00. Las peticiones recibidas hasta las 14:00 se atienden el mismo día laborable; fuera de ese horario, la gestión se realiza el día laborable siguiente. El detalle está en el aviso legal.'
 			}
 		]
 	},

@@ -3,7 +3,10 @@
 	import { onMount } from 'svelte';
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import PaymentGatewayPanel from '$lib/components/pago/PaymentGatewayPanel.svelte';
+	import ConfirmDatosPagoModal from '$lib/components/pago/ConfirmDatosPagoModal.svelte';
+	import { consumeAccountCreated } from '$lib/pago/account-flash';
 	import { postToRedsys, startPayment } from '$lib/pago/client';
+	import { consumeDatosConfirmados } from '$lib/pago/datos-confirm';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -13,6 +16,9 @@
 	let errorMsg = $state<string | null>(null);
 	let embedMount = $state<HTMLDivElement | null>(null);
 	let embedActive = $state(false);
+	let confirmDatosOpen = $state(false);
+	let datosConfirmados = $state(false);
+	let accountCreatedNotice = $state<string | null>(null);
 
 	async function mountStripeEmbedded(clientSecret: string) {
 		const { loadStripe } = await import('@stripe/stripe-js');
@@ -79,10 +85,26 @@
 		}
 	}
 
+	function confirmDatosAndPay() {
+		confirmDatosOpen = false;
+		datosConfirmados = true;
+		void pay();
+	}
+
 	onMount(() => {
-		if (data.gatewayProvider === 'stripe' && data.gatewayReady && !data.alreadyPaid) {
-			pay();
+		const created = consumeAccountCreated();
+		if (created) {
+			accountCreatedNotice = created.email
+				? `Cuenta creada. Te hemos enviado la contraseña a ${created.email}.`
+				: 'Cuenta creada. Te hemos enviado la contraseña por email.';
 		}
+		if (data.alreadyPaid) return;
+		if (consumeDatosConfirmados()) {
+			datosConfirmados = true;
+			if (data.gatewayProvider === 'stripe' && data.gatewayReady) pay();
+			return;
+		}
+		confirmDatosOpen = true;
 	});
 </script>
 
@@ -95,6 +117,9 @@
 
 <section class="section">
 	<div class="wrap layout">
+		{#if accountCreatedNotice}
+			<p class="account-ok" role="status">{accountCreatedNotice}</p>
+		{/if}
 		{#if data.alreadyPaid}
 			<div class="card done">
 				<p class="paid">Esta solicitud ya figura como pagada o finalizada.</p>
@@ -115,7 +140,11 @@
 				message={message}
 				error={errorMsg}
 				hidePayButton={embedActive}
-				onPay={pay}
+				onPay={() => {
+					if (embedActive) return;
+					if (datosConfirmados) void pay();
+					else confirmDatosOpen = true;
+				}}
 			>
 				{#snippet embed()}
 					<div class="embed" bind:this={embedMount}></div>
@@ -125,12 +154,28 @@
 	</div>
 </section>
 
+<ConfirmDatosPagoModal
+	open={confirmDatosOpen}
+	confirmLabel="Continuar al pago"
+	oncancel={() => (confirmDatosOpen = false)}
+	onconfirm={confirmDatosAndPay}
+/>
+
 <style>
 	.layout {
 		max-width: 560px;
 		margin: 0 auto;
 		padding-top: 32px;
 		padding-bottom: 64px;
+	}
+	.account-ok {
+		background: #e8f5ee;
+		color: #0f5132;
+		padding: 12px 14px;
+		border-radius: 8px;
+		margin: 0 0 16px;
+		font-size: 0.95rem;
+		line-height: 1.45;
 	}
 	.card.done {
 		background: #fff;

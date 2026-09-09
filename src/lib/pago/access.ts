@@ -20,7 +20,9 @@ export function resolveStoredAmount(sol: Solicitud): number {
 	return 0;
 }
 
-/** Acceso a ficha de pago: token de la solicitud o propietario logueado. */
+/** Acceso a ficha de pago: token de la solicitud o propietario logueado.
+ * Las solicitudes nuevas llevan `user_id`; el token `?t=` sigue para email/otra parte.
+ * Filas legacy `user_id` null solo se pagan con token válido. */
 export function canAccessPagoSolicitud(opts: {
 	sol: Solicitud;
 	userId?: string | null;

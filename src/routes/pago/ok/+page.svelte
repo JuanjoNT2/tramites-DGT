@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SeoHead from '$lib/components/SeoHead.svelte';
 	import type { PageData } from './$types';
+	import { isCompraVentaTipo } from '$lib/supabase/types';
 
 	let { data }: { data: PageData } = $props();
 
@@ -12,6 +13,7 @@
 	const statusHrefLabel = $derived(
 		data.loggedIn ? 'Ver el estado de mi trámite' : 'Seguir el trámite'
 	);
+	const esCompraVenta = $derived(isCompraVentaTipo(data.tipo));
 </script>
 
 <SeoHead
@@ -29,6 +31,14 @@
 			<p class="lead">
 				Gracias. Hemos recibido la confirmación del pago y tu trámite queda registrado para su
 				gestión. Puedes consultar el estado en tu panel de usuario en cualquier momento.
+			</p>
+			<p class="plazo">
+				El plazo de tramitación empieza a contar cuando aceptes el mandato electrónico por SMS
+				para autorizar a <strong>Valoe Gestoría Administrativa</strong> a utilizar tus datos.
+				{#if esCompraVenta}
+					{' '}En los trámites de compraventa, <strong>quien autoriza el mandato es siempre el
+					comprador</strong>.
+				{/if}
 			</p>
 		{:else}
 			<div class="wait" aria-hidden="true">…</div>
@@ -94,6 +104,20 @@
 		line-height: 1.55;
 		margin: 0 0 14px;
 		font-size: 1rem;
+	}
+	.plazo {
+		margin: 0 0 18px;
+		padding: 14px 16px;
+		background: #f4fbfc;
+		border: 1px solid #9fd8e8;
+		border-radius: 10px;
+		color: #003050;
+		line-height: 1.5;
+		font-size: 0.95rem;
+		text-align: left;
+	}
+	.plazo strong {
+		font-weight: 800;
 	}
 	.ref {
 		font-size: 0.88rem;

@@ -3,7 +3,7 @@
 	import { getStaticSeo } from '$lib/seo/site';
 
 	const seo = getStaticSeo('/aviso-legal')!;
-	const updated = '20 de julio de 2026';
+	const updated = '9 de septiembre de 2026';
 </script>
 
 <SeoHead title={seo.title} description={seo.description} path={seo.path} />
@@ -126,7 +126,22 @@
 			<a href="/politica-de-cookies">Política de cookies</a>.
 		</p>
 
-		<h2>8. Legislación aplicable y jurisdicción</h2>
+		<h2>8. Horario de atención</h2>
+		<p>
+			La gestión de trámites y la atención al cliente se realizan en horario laboral, en días
+			laborables:
+		</p>
+		<ul>
+			<li><strong>Lunes a jueves:</strong> de 9:00 a 18:00.</li>
+			<li><strong>Viernes:</strong> de 9:00 a 15:00.</li>
+		</ul>
+		<p>
+			Se atenderán en el mismo día todas las peticiones recibidas hasta las <strong>14:00</strong>.
+			Fuera de ese horario, las gestiones se realizarán el día laborable siguiente. No se garantiza
+			que los trámites iniciados fuera del horario laboral se gestionen el mismo día.
+		</p>
+
+		<h2>9. Legislación aplicable y jurisdicción</h2>
 		<p>
 			Las presentes condiciones se rigen por la legislación española. Para cualquier controversia
 			derivada del acceso o uso del sitio, las partes se someten a los juzgados y tribunales de
@@ -134,7 +149,7 @@
 			imperativo a favor del usuario.
 		</p>
 
-		<h2>9. Contacto</h2>
+		<h2>10. Contacto</h2>
 		<p>
 			Para cualquier consulta relacionada con este Aviso legal, puedes escribir a
 			<a href="mailto:info@tramitesdgtonline.com">info@tramitesdgtonline.com</a>.

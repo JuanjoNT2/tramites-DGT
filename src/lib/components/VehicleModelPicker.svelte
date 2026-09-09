@@ -2,6 +2,7 @@
 	import FormField from '$lib/components/ui/FormField.svelte';
 	import SearchSelect from '$lib/components/ui/SearchSelect.svelte';
 	import brandsData from '$lib/data/vehicle-brands.json';
+	import { displayFuelLabel, fuelCatalogHint } from '$lib/data/vehicles';
 
 	export type ModeloMeta = {
 		id: string;
@@ -47,6 +48,10 @@
 	let loadingFuels = $state(false);
 	let loadingModels = $state(false);
 	let loadError = $state<string | null>(null);
+
+	const fuelHint = $derived(
+		loadingFuels ? 'Cargando combustibles…' : fuelCatalogHint(fuels)
+	);
 
 	const modelOptions = $derived(
 		models.map((m) => ({
@@ -198,7 +203,7 @@
 <FormField
 	label="Combustible"
 	error={errors.combustible}
-	hint={loadingFuels ? 'Cargando combustibles…' : undefined}
+	hint={fuelHint}
 	required
 >
 	<select
@@ -210,7 +215,7 @@
 			{marcaId ? 'Seleccione tipo de combustible' : 'Primero elige marca'}
 		</option>
 		{#each fuels as f (f.id)}
-			<option value={f.id}>{f.name}</option>
+			<option value={f.id}>{displayFuelLabel(f.name)}</option>
 		{/each}
 	</select>
 </FormField>
@@ -247,7 +252,7 @@
 				<li>Potencia: {modeloMeta.potenciaCv} CV ({modeloMeta.potenciaKw} kW)</li>
 			{/if}
 			{#if modeloMeta.potenciaCvf}<li>Potencia fiscal: {modeloMeta.potenciaCvf} CVF</li>{/if}
-			{#if modeloMeta.combustible}<li>Combustible: {modeloMeta.combustible}</li>{/if}
+			{#if modeloMeta.combustible}<li>Combustible: {displayFuelLabel(modeloMeta.combustible)}</li>{/if}
 		</ul>
 	</div>
 {/if}

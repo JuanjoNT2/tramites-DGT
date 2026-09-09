@@ -73,7 +73,11 @@ export async function getUserSolicitud(userId: string, id: string): Promise<Soli
 	return data as Solicitud;
 }
 
-/** Asocia solicitudes anónimas (mismo email, sin user_id) al usuario que inicia sesión. */
+/**
+ * Legacy: asocia solicitudes antiguas sin `user_id` (mismo email) al usuario que inicia sesión.
+ * Con REQUIRE_ACCOUNT_FOR_TRAMITES (por defecto ON) las solicitudes nuevas ya llevan `user_id`;
+ * esta reclamación se mantiene para el histórico anónimo hasta retirar ese canal.
+ */
 export async function claimAnonymousSolicitudes(userId: string, email: string | null | undefined) {
 	const normalized = (email || '').trim().toLowerCase();
 	if (!normalized) return 0;

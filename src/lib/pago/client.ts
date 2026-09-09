@@ -49,8 +49,16 @@ export async function createSolicitud(opts: {
 	/** Si viene de un Guardar previo, reutiliza la fila `nueva` en lugar de crear otra */
 	solicitudId?: string | null;
 }): Promise<
-	| { ok: true; solicitudId: string; accessToken: string | null; pagoUrl: string }
-	| { ok: false; error: string }
+	| {
+			ok: true;
+			solicitudId: string;
+			accessToken: string | null;
+			pagoUrl: string;
+			accountCreated?: boolean;
+			credentialsEmailSent?: boolean;
+			message?: string;
+	  }
+	| { ok: false; error: string; code?: string; loginUrl?: string }
 > {
 	if (opts.solicitudId) {
 		const promoRes = await fetch('/api/cuenta/promover-pago', {
@@ -99,7 +107,9 @@ export async function createSolicitud(opts: {
 	if (!solRes.ok) {
 		return {
 			ok: false,
-			error: typeof solData.error === 'string' ? solData.error : 'No se pudo registrar la solicitud'
+			error: typeof solData.error === 'string' ? solData.error : 'No se pudo registrar la solicitud',
+			code: typeof solData.code === 'string' ? solData.code : undefined,
+			loginUrl: typeof solData.loginUrl === 'string' ? solData.loginUrl : undefined
 		};
 	}
 	const solicitudId = String(solData.id || '');
@@ -112,7 +122,15 @@ export async function createSolicitud(opts: {
 			: accessToken
 				? `/pago/${solicitudId}?t=${encodeURIComponent(accessToken)}`
 				: `/pago/${solicitudId}`;
-	return { ok: true, solicitudId, accessToken, pagoUrl };
+	return {
+		ok: true,
+		solicitudId,
+		accessToken,
+		pagoUrl,
+		accountCreated: Boolean(solData.accountCreated),
+		credentialsEmailSent: Boolean(solData.credentialsEmailSent),
+		message: typeof solData.message === 'string' ? solData.message : undefined
+	};
 }
 
 /** Inicia la pasarela (Stripe o Redsys) para una solicitud ya creada. */

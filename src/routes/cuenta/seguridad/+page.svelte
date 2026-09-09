@@ -7,7 +7,9 @@
 
 <h1>Seguridad</h1>
 <p class="lead">
-	Cambia la contraseña de tu cuenta{#if data.email} (<strong>{data.email}</strong>){/if}.
+	Cambia la contraseña de tu cuenta{#if data.email} (<strong>{data.email}</strong>){/if} cuando
+	quieras. Si te la enviamos al crear el trámite, puedes seguir usándola o sustituirla aquí
+	(recomendado).
 </p>
 
 {#if form && 'ok' in form && form.ok}

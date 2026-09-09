@@ -191,3 +191,9 @@ export function isEnCursoStatus(status: string): boolean {
 export function isRealizadoStatus(status: string): boolean {
 	return status === 'realizada';
 }
+
+/** Trámites con comprador y vendedor: el mandato lo autoriza siempre el comprador. */
+export function isCompraVentaTipo(tipo: string | null | undefined): boolean {
+	const t = (tipo || '').trim();
+	return t === 'transferencia' || t === 'notificacion-venta';
+}

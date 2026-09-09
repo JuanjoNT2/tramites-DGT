@@ -17,22 +17,23 @@
 
 	let checking = $state(false);
 	let accountExists = $state(false);
-	let dismissedEmail = $state('');
 	let lastQueried = '';
 	let timer: ReturnType<typeof setTimeout> | null = null;
 
 	const loggedIn = $derived(Boolean(page.data.user));
 	const emailNorm = $derived(email.trim().toLowerCase());
 	const emailValid = $derived(Boolean(emailNorm) && validateEmail(emailNorm) === null);
-	const dismissed = $derived(dismissedEmail === emailNorm && dismissedEmail !== '');
 	const nextPath = $derived(
 		(returnPath || page.url.pathname).startsWith('/')
 			? returnPath || page.url.pathname
 			: `/${returnPath || page.url.pathname}`
 	);
 	const loginHref = $derived(loginUrl(nextPath, emailNorm));
+	const recoverHref = $derived(
+		`/recuperar-password${emailNorm ? `?email=${encodeURIComponent(emailNorm)}` : ''}`
+	);
 
-	const showBanner = $derived(emailValid && !loggedIn && !dismissed);
+	const showBanner = $derived(emailValid && !loggedIn);
 
 	function syncExists(v: boolean) {
 		accountExists = v;
@@ -91,34 +92,32 @@
 	<div class="notice" class:soft={!accountExists} class:reminder={mode === 'reminder'} role="status">
 		{#if accountExists}
 			<p>
-				Este correo ya tiene una cuenta. Inicia sesión para reutilizar tus datos y ver tus
-				trámites, o continúa sin iniciar sesión.
+				Este correo ya tiene una cuenta. Debes
+				<a href={loginHref}>iniciar sesión</a>
+				para continuar el trámite
+				{#if mode !== 'reminder'}
+					(o <a href={recoverHref}>recuperar la contraseña</a> si la has olvidado)
+				{/if}.
 			</p>
 			<div class="actions">
 				<a class="btn" href={loginHref}>Iniciar sesión</a>
-				{#if mode === 'prompt'}
-					<button type="button" class="btn ghost" onclick={() => (dismissedEmail = emailNorm)}>
-						Continuar sin iniciar sesión
-					</button>
-				{/if}
+				<a class="btn ghost" href={recoverHref}>Recuperar contraseña</a>
 			</div>
 		{:else}
 			<p>
 				{#if checking}
 					Comprobando si ya tienes cuenta…
+				{:else if mode === 'reminder'}
+					Al continuar se creará tu cuenta (si aún no la tienes) y te enviaremos la contraseña por
+					email para seguir el trámite y recibir avisos.
 				{:else}
-					¿Ya tienes cuenta? Inicia sesión para reutilizar tus datos y guardar el trámite en tu
-					área personal.
+					¿Ya tienes cuenta? Inicia sesión para reutilizar tus datos. Si no, al continuar crearemos
+					tu cuenta y te enviaremos la contraseña por email.
 				{/if}
 			</p>
 			{#if !checking}
 				<div class="actions">
 					<a class="btn ghost" href={loginHref}>Iniciar sesión</a>
-					{#if mode === 'prompt'}
-						<button type="button" class="btn ghost" onclick={() => (dismissedEmail = emailNorm)}>
-							Continuar sin iniciar sesión
-						</button>
-					{/if}
 				</div>
 			{/if}
 		{/if}
@@ -152,6 +151,10 @@
 		font-size: 14px;
 		line-height: 1.45;
 		color: #3d4f5f;
+	}
+	.notice a {
+		color: #003050;
+		font-weight: 700;
 	}
 	.actions {
 		display: flex;
