@@ -5,7 +5,8 @@ import {
 	listDocsForSolicitud,
 	listDocsForUser,
 	requireService,
-	requireUser
+	requireUser,
+	resolveOpenDocPeticiones
 } from '$lib/cuenta/data';
 import { upsertProfileNifDocument } from '$lib/cuenta/profile-docs';
 import { shouldSaveDocTypeToProfile } from '$lib/cuenta/profile-prefill';
@@ -130,52 +131,68 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	const uploaded_by = locals.profile?.role === 'admin' ? 'admin' : staff ? 'gestor' : 'user';
-	const { data, error: insErr } = await sb
+	const meta = {
+		doc_type: docType || null,
+		verify: {
+			expected: verify.expected,
+			detected: verify.detected,
+			confidence: verify.confidence,
+			skipped: verify.skipped ?? false
+		}
+	};
+	const baseRow = {
+		solicitud_id: solicitudId,
+		user_id: ownerId,
+		nombre: storedName,
+		path,
+		mime: file.type || null,
+		uploaded_by
+	};
+
+	let item: unknown = null;
+	const full = await sb
 		.from('solicitud_documentos')
 		.insert({
-			solicitud_id: solicitudId,
-			user_id: ownerId,
-			nombre: storedName,
-			path,
-			mime: file.type || null,
-			uploaded_by,
-			meta: {
-				doc_type: docType || null,
-				verify: {
-					expected: verify.expected,
-					detected: verify.detected,
-					confidence: verify.confidence,
-					skipped: verify.skipped ?? false
-				}
-			}
+			...baseRow,
+			doc_type: docType || null,
+			status: 'recibido',
+			meta
 		})
 		.select('*')
 		.maybeSingle();
 
-	if (insErr) {
-		// Si la columna meta no existe aún, reintentar sin meta
-		if (insErr.message?.includes('meta')) {
-			const retry = await sb
-				.from('solicitud_documentos')
-				.insert({
-					solicitud_id: solicitudId,
-					user_id: ownerId,
-					nombre: storedName,
-					path,
-					mime: file.type || null,
-					uploaded_by
-				})
-				.select('*')
-				.maybeSingle();
-			if (retry.error) return json({ error: retry.error.message }, { status: 500 });
-			await maybeSyncProfileNif();
-			return json({ ok: true, item: retry.data, verify });
+	if (full.error) {
+		const msg = (full.error.message || '').toLowerCase();
+		const missingCols =
+			msg.includes('meta') || msg.includes('doc_type') || msg.includes('status');
+		if (!missingCols) return json({ error: full.error.message }, { status: 500 });
+
+		const retryMeta = await sb
+			.from('solicitud_documentos')
+			.insert({ ...baseRow, meta })
+			.select('*')
+			.maybeSingle();
+		if (retryMeta.error) {
+			if (retryMeta.error.message?.includes('meta')) {
+				const retry = await sb.from('solicitud_documentos').insert(baseRow).select('*').maybeSingle();
+				if (retry.error) return json({ error: retry.error.message }, { status: 500 });
+				item = retry.data;
+			} else {
+				return json({ error: retryMeta.error.message }, { status: 500 });
+			}
+		} else {
+			item = retryMeta.data;
 		}
-		return json({ error: insErr.message }, { status: 500 });
+	} else {
+		item = full.data;
+	}
+
+	if (docType) {
+		await resolveOpenDocPeticiones(solicitudId, docType);
 	}
 
 	await maybeSyncProfileNif();
-	return json({ ok: true, item: data, verify });
+	return json({ ok: true, item, verify });
 
 	async function maybeSyncProfileNif() {
 		const uid = user?.id || ownerId;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { SolicitudStatus } from '$lib/supabase/types';
+	import type { SolicitudDocPeticion, SolicitudDocumento, SolicitudStatus } from '$lib/supabase/types';
 	import { payloadFieldsForDisplay } from '$lib/gestor/payload-display';
 	import {
 		facturaClienteFromPayload,
@@ -8,19 +8,34 @@
 		formatFacturaDireccion,
 		solicitaFacturaFromPayload
 	} from '$lib/tramite/factura-cliente';
+	import { DOC_ACCEPT, documentGroupsForSolicitud } from '$lib/tramite/documentos';
+	import {
+		DOC_REJECTION_REASONS,
+		displayDocNombre,
+		documentoCubreSlot,
+		peticionAbiertaPorTipo
+	} from '$lib/tramite/doc-peticiones';
 
 	let { data }: { data: PageData } = $props();
 	let s = $state(data.item);
 	let docs = $state(data.docs);
+	let peticiones = $state(data.peticiones);
 	let status = $state(String(data.item.status));
 	let msg = $state<string | null>(null);
 	let err = $state<string | null>(null);
 	let uploading = $state(false);
 	let facturando = $state(false);
+	let notifying = $state(false);
+	let rejectingId = $state<string | null>(null);
+	let rejectReasonId = $state<string>('borrosa');
+	let rejectExtra = $state('');
+	let otroLabel = $state('');
+	let otroMotivo = $state('');
 
 	$effect(() => {
 		s = data.item;
 		docs = data.docs;
+		peticiones = data.peticiones;
 		status = String(data.item.status);
 	});
 
@@ -29,6 +44,99 @@
 	const pideFactura = $derived(solicitaFacturaFromPayload(payload));
 	const facturaEmitida = $derived(facturaEmitidaFromPayload(payload));
 	const factura = $derived(facturaClienteFromPayload(payload));
+	const canNotify = $derived(Boolean(s.user_id || s.email));
+	const docGroups = $derived(documentGroupsForSolicitud(s.tipo, payload));
+
+	function slotState(slotId: string): 'recibido' | 'solicitado' | 'rechazado' | 'falta' {
+		const pet = peticionAbiertaPorTipo(peticiones, slotId);
+		if (pet?.kind === 'rechazado') return 'rechazado';
+		if (docs.some((d) => documentoCubreSlot(d, slotId))) return 'recibido';
+		if (pet) return 'solicitado';
+		return 'falta';
+	}
+
+	function mergePeticion(item: SolicitudDocPeticion) {
+		peticiones = [
+			item,
+			...peticiones.filter(
+				(p) => p.id !== item.id && !(p.status === 'abierta' && p.doc_type === item.doc_type)
+			)
+		];
+	}
+
+	function avisoFeedback(body: { emailSent?: boolean; emailSkipped?: string | null; inboxSkipped?: string | null }) {
+		const parts = ['Aviso enviado'];
+		if (body.inboxSkipped === 'sin_cuenta') parts.push('sin bandeja (no hay cuenta)');
+		if (body.emailSkipped === 'sin_email') parts.push('sin email');
+		else if (body.emailSent === false) parts.push('email no enviado');
+		else if (body.emailSent) parts.push('email enviado');
+		return parts.join(' · ');
+	}
+
+	async function enviarPeticion(payloadBody: Record<string, unknown>) {
+		notifying = true;
+		msg = null;
+		err = null;
+		try {
+			const res = await fetch('/api/gestor/documentos/peticion', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ solicitudId: s.id, ...payloadBody })
+			});
+			const body = await res.json();
+			if (!res.ok) throw new Error(body.error || body.message || 'No se pudo enviar el aviso');
+			if (body.item) mergePeticion(body.item);
+			msg = avisoFeedback(body);
+			return true;
+		} catch (e) {
+			err = e instanceof Error ? e.message : 'Error';
+			return false;
+		} finally {
+			notifying = false;
+		}
+	}
+
+	async function solicitarSlot(docType: string, motivo?: string, docLabel?: string) {
+		if (!canNotify) return false;
+		return enviarPeticion({
+			kind: 'pendiente',
+			docType,
+			motivo: motivo || undefined,
+			docLabel: docLabel || undefined
+		});
+	}
+
+	async function solicitarOtro() {
+		const label = otroLabel.trim();
+		if (!label) {
+			err = 'Indica el nombre del documento';
+			return;
+		}
+		const ok = await solicitarSlot('otro', otroMotivo.trim() || undefined, label);
+		if (ok) {
+			otroLabel = '';
+			otroMotivo = '';
+		}
+	}
+
+	async function rechazarDoc(d: SolicitudDocumento) {
+		const ok = await enviarPeticion({
+			kind: 'rechazado',
+			documentoId: d.id,
+			reasonId: rejectReasonId,
+			motivo: rejectExtra.trim() || undefined
+		});
+		if (ok) {
+			docs = docs.map((item) =>
+				item.id === d.id
+					? { ...item, status: 'rechazado', rejection_reason: rejectExtra || rejectReasonId }
+					: item
+			);
+			rejectingId = null;
+			rejectExtra = '';
+			rejectReasonId = 'borrosa';
+		}
+	}
 
 	async function emitirFactura(enviarEmail: boolean) {
 		facturando = true;
@@ -264,20 +372,108 @@
 
 <section class="card">
 	<h2>Documentos</h2>
+	{#if !canNotify}
+		<p class="hint">
+			Este trámite no tiene cuenta ni email: no se puede notificar al ciudadano una petición o un
+			rechazo.
+		</p>
+	{/if}
+
+	{#each docGroups as group}
+		<div class="slot-group">
+			<h3>{group.title}</h3>
+			<ul class="slots">
+				{#each group.slots as slot}
+					{@const st = slotState(slot.id)}
+					<li class="slot-row" class:ok={st === 'recibido'} class:warn={st === 'solicitado'} class:bad={st === 'rechazado'}>
+						<div>
+							<strong>{slot.label}</strong>
+							{#if slot.required}<span class="tag">obligatorio</span>{/if}
+							<small>
+								{#if st === 'recibido'}Recibido
+								{:else if st === 'solicitado'}Solicitado al cliente
+								{:else if st === 'rechazado'}Rechazado — falta nueva foto
+								{:else}Pendiente de aportar{/if}
+							</small>
+						</div>
+						{#if st !== 'recibido'}
+							<button
+								type="button"
+								class="btn ghost"
+								disabled={!canNotify || notifying}
+								onclick={() => solicitarSlot(slot.id)}
+							>
+								{st === 'solicitado' || st === 'rechazado' ? 'Reenviar aviso' : 'Solicitar'}
+							</button>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/each}
+
+	<div class="otro-box">
+		<h3>Otro documento</h3>
+		<p class="hint">Pide algo que no esté en el catálogo (p. ej. autorización, denuncia, contrato).</p>
+		<div class="otro-row">
+			<input type="text" bind:value={otroLabel} maxlength={160} placeholder="Nombre del documento" disabled={!canNotify} />
+			<input type="text" bind:value={otroMotivo} maxlength={500} placeholder="Instrucciones (opcional)" disabled={!canNotify} />
+			<button type="button" class="btn" disabled={!canNotify || notifying || !otroLabel.trim()} onclick={solicitarOtro}>
+				Solicitar
+			</button>
+		</div>
+	</div>
+
 	<ul class="docs">
 		{#each docs as d}
-			<li class="doc-row">
+			<li class="doc-row" class:rechazado={d.status === 'rechazado'}>
 				{#if d.mime?.startsWith('image/')}
 					<a class="thumb" href={`/api/cuenta/documentos?download=${d.id}`} target="_blank" rel="noopener">
-						<img src={`/api/cuenta/documentos?download=${d.id}`} alt={d.nombre} />
+						<img src={`/api/cuenta/documentos?download=${d.id}`} alt={displayDocNombre(d.nombre)} />
 					</a>
 				{:else}
 					<div class="thumb pdf" aria-hidden="true">PDF</div>
 				{/if}
 				<div class="doc-meta">
-					<a href={`/api/cuenta/documentos?download=${d.id}`}>{d.nombre}</a>
-					<small>{d.uploaded_by} · {new Date(d.created_at).toLocaleString('es-ES')}</small>
+					<a href={`/api/cuenta/documentos?download=${d.id}`}>{displayDocNombre(d.nombre)}</a>
+					<small>
+						{d.uploaded_by} · {new Date(d.created_at).toLocaleString('es-ES')}
+						{#if d.status === 'rechazado'}
+							· rechazado{d.rejection_reason ? `: ${d.rejection_reason}` : ''}
+						{/if}
+					</small>
 					<a class="dl" href={`/api/cuenta/documentos?download=${d.id}`}>Descargar</a>
+					{#if d.status !== 'rechazado'}
+						{#if rejectingId === d.id}
+							<div class="reject-form">
+								<select bind:value={rejectReasonId}>
+									{#each DOC_REJECTION_REASONS as r}
+										<option value={r.id}>{r.label}</option>
+									{/each}
+								</select>
+								<input type="text" bind:value={rejectExtra} maxlength={500} placeholder="Detalle para el cliente (opcional)" />
+								<div class="reject-actions">
+									<button type="button" class="btn danger" disabled={!canNotify || notifying} onclick={() => rechazarDoc(d)}>
+										Confirmar rechazo
+									</button>
+									<button type="button" class="btn ghost" onclick={() => (rejectingId = null)}>Cancelar</button>
+								</div>
+							</div>
+						{:else}
+							<button
+								type="button"
+								class="btn ghost danger-ghost"
+								disabled={!canNotify || notifying}
+								onclick={() => {
+									rejectingId = d.id;
+									rejectReasonId = 'borrosa';
+									rejectExtra = '';
+								}}
+							>
+								Rechazar (DGT)
+							</button>
+						{/if}
+					{/if}
 				</div>
 			</li>
 		{:else}
@@ -286,7 +482,7 @@
 	</ul>
 	<label class="upload">
 		Subir documento
-		<input type="file" onchange={uploadDoc} disabled={uploading} />
+		<input type="file" accept={DOC_ACCEPT} onchange={uploadDoc} disabled={uploading} />
 	</label>
 </section>
 
@@ -424,6 +620,95 @@
 		margin: 0 0 12px;
 		font-size: 1rem;
 		color: #003050;
+	}
+	h3 {
+		margin: 0 0 8px;
+		font-size: 0.9rem;
+		color: #003050;
+	}
+	.slot-group {
+		margin-bottom: 14px;
+	}
+	.slots {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 8px;
+	}
+	.slot-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 12px;
+		flex-wrap: wrap;
+		padding: 10px 12px;
+		border: 1px solid #e8eef3;
+		border-radius: 10px;
+		background: #f8fafc;
+	}
+	.slot-row.ok {
+		border-color: #86d4a8;
+		background: #f0fdf4;
+	}
+	.slot-row.warn {
+		border-color: #f0b429;
+		background: #fffbeb;
+	}
+	.slot-row.bad {
+		border-color: #f0a0a0;
+		background: #fef2f2;
+	}
+	.slot-row strong {
+		display: block;
+	}
+	.slot-row small {
+		display: block;
+		margin-top: 2px;
+		color: #5a6b7d;
+	}
+	.otro-box {
+		margin: 8px 0 16px;
+		padding: 12px;
+		border: 1px dashed #c5d0da;
+		border-radius: 10px;
+	}
+	.otro-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.otro-row input {
+		flex: 1 1 160px;
+		padding: 8px 10px;
+		border-radius: 8px;
+		border: 1px solid #c5d0da;
+		font: inherit;
+	}
+	.doc-row.rechazado {
+		border-color: #f0a0a0;
+		background: #fef2f2;
+	}
+	.reject-form {
+		display: grid;
+		gap: 8px;
+		margin-top: 8px;
+	}
+	.reject-form input,
+	.reject-form select {
+		width: 100%;
+	}
+	.reject-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.btn.danger {
+		background: #9b1c1c;
+		color: #fff;
+	}
+	.btn.danger-ghost {
+		color: #9b1c1c;
 	}
 	table {
 		width: 100%;

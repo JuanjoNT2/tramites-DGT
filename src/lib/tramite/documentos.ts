@@ -281,6 +281,7 @@ export function getDocumentGroups(
 					]
 				}
 			];
+		case 'vmp':
 		case 'etiqueta-vmp':
 			return [
 				{
@@ -392,6 +393,45 @@ export function getDocumentGroups(
 
 export function flattenDocSlots(groups: DocGroup[]): DocSlot[] {
 	return groups.flatMap((g) => g.slots);
+}
+
+function payloadFlag(payload: Record<string, unknown>, ...keys: string[]): string | undefined {
+	for (const key of keys) {
+		const v = payload[key];
+		if (typeof v === 'string' && v.trim()) return v.trim();
+		if (v === true) return 'si';
+		if (v === false) return 'no';
+	}
+	return undefined;
+}
+
+/** Contexto del catálogo a partir del payload guardado en la solicitud. */
+export function docCatalogContextFromPayload(
+	payload: Record<string, unknown> | null | undefined
+): DocCatalogContext {
+	const p = payload || {};
+	return {
+		motivoDuplicado: payloadFlag(p, 'motivoDuplicado', 'motivo'),
+		otraParteEmail: payloadFlag(p, 'otraParteEmail'),
+		rol: payloadFlag(p, 'rol'),
+		tipoSolicitudVmp: payloadFlag(p, 'tipoSolicitudVmp', 'tipoSolicitud'),
+		facturaEmpresa: payloadFlag(p, 'facturaEmpresa'),
+		liquidarItp: payloadFlag(p, 'liquidarItp'),
+		motivoTransferencia: payloadFlag(p, 'motivoTransferencia'),
+		cartaFinalizacion: payloadFlag(p, 'cartaFinalizacion')
+	};
+}
+
+export function catalogTipoFromSolicitud(tipo: string): string {
+	if (tipo === 'vmp') return 'etiqueta-vmp';
+	return tipo;
+}
+
+export function documentGroupsForSolicitud(
+	tipo: string,
+	payload?: Record<string, unknown> | null
+): DocGroup[] {
+	return getDocumentGroups(catalogTipoFromSolicitud(tipo), docCatalogContextFromPayload(payload));
 }
 
 export function missingRequiredDocs(

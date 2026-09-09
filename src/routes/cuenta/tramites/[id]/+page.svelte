@@ -3,26 +3,30 @@
 	import { payloadFieldsForDisplay } from '$lib/gestor/payload-display';
 	import { SOLICITUD_TIPO_LABELS, SOLICITUD_STATUS_LABELS } from '$lib/supabase/types';
 	import type { SolicitudStatus } from '$lib/supabase/types';
+	import { DOC_ACCEPT } from '$lib/tramite/documentos';
+	import { displayDocNombre } from '$lib/tramite/doc-peticiones';
 
 	let { data }: { data: PageData } = $props();
 	const s = $derived(data.item);
 	let uploading = $state(false);
 	let uploadMsg = $state<string | null>(null);
+	let uploadingSlot = $state<string | null>(null);
 
-	const fields = $derived(
-		payloadFieldsForDisplay((s.payload || {}) as Record<string, unknown>)
-	);
+	const fields = $derived(payloadFieldsForDisplay((s.payload || {}) as Record<string, unknown>));
+	const abiertas = $derived(data.peticiones.filter((p) => p.status === 'abierta'));
 
-	async function uploadDoc(e: Event) {
+	async function uploadDoc(e: Event, docType?: string) {
 		const input = e.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
 		if (!file) return;
 		uploading = true;
+		uploadingSlot = docType || null;
 		uploadMsg = null;
 		try {
 			const fd = new FormData();
 			fd.set('solicitud_id', s.id);
 			fd.set('file', file);
+			if (docType) fd.set('doc_type', docType);
 			const res = await fetch('/api/cuenta/documentos', { method: 'POST', body: fd });
 			const body = await res.json();
 			if (!res.ok) throw new Error(body.error || 'Error');
@@ -32,6 +36,8 @@
 			uploadMsg = err instanceof Error ? err.message : 'Error';
 		} finally {
 			uploading = false;
+			uploadingSlot = null;
+			input.value = '';
 		}
 	}
 </script>
@@ -71,25 +77,68 @@
 	{/if}
 </section>
 
+{#if abiertas.length}
+	<section class="card alert">
+		<h2>Documentos que necesitamos</h2>
+		<p class="lead">
+			Tu gestoría ha pedido que aportes {abiertas.length === 1 ? 'este documento' : 'estos documentos'}.
+			Súbelos aquí; también te hemos avisado por email.
+		</p>
+		<ul class="peticiones">
+			{#each abiertas as p}
+				<li class:rechazado={p.kind === 'rechazado'}>
+					<div>
+						<strong>{p.doc_label}</strong>
+						<small>
+							{#if p.kind === 'rechazado'}
+								Rechazado por la DGT{p.motivo ? `: ${p.motivo}` : ''}
+							{:else}
+								Pendiente de aportar{p.motivo ? ` — ${p.motivo}` : ''}
+							{/if}
+						</small>
+					</div>
+					{#if data.canUpload}
+						<label class="upload compact">
+							{uploading && uploadingSlot === p.doc_type ? 'Subiendo…' : 'Subir archivo'}
+							<input
+								type="file"
+								accept={DOC_ACCEPT}
+								onchange={(e) => uploadDoc(e, p.doc_type)}
+								disabled={uploading}
+							/>
+						</label>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+		{#if uploadMsg}<p class="msg">{uploadMsg}</p>{/if}
+	</section>
+{/if}
+
 <section class="card">
 	<h2>Documentos</h2>
 	<ul class="docs">
 		{#each data.docs as d}
-			<li>
-				<a href={`/api/cuenta/documentos?download=${d.id}`}>{d.nombre}</a>
-				<small>{new Date(d.created_at).toLocaleString('es-ES')}</small>
+			<li class:rechazado={d.status === 'rechazado'}>
+				<a href={`/api/cuenta/documentos?download=${d.id}`}>{displayDocNombre(d.nombre)}</a>
+				<small>
+					{new Date(d.created_at).toLocaleString('es-ES')}
+					{#if d.status === 'rechazado'}
+						· no válido{d.rejection_reason ? `: ${d.rejection_reason}` : ''}
+					{/if}
+				</small>
 			</li>
 		{:else}
 			<li class="empty">Sin documentos.</li>
 		{/each}
 	</ul>
-	{#if data.canUpload}
+	{#if data.canUpload && !abiertas.length}
 		<label class="upload">
 			Subir documento
-			<input type="file" onchange={uploadDoc} disabled={uploading} />
+			<input type="file" accept={DOC_ACCEPT} onchange={(e) => uploadDoc(e)} disabled={uploading} />
 		</label>
 		{#if uploadMsg}<p class="msg">{uploadMsg}</p>{/if}
-	{:else}
+	{:else if !data.canUpload}
 		<p class="empty">No se pueden subir documentos en el estado actual.</p>
 	{/if}
 </section>
@@ -130,10 +179,19 @@
 		padding: 16px 18px;
 		margin-bottom: 16px;
 	}
+	.card.alert {
+		border-color: #f0b429;
+		background: #fffbeb;
+	}
 	h2 {
 		margin: 0 0 12px;
 		font-size: 1rem;
 		color: #003050;
+	}
+	.lead {
+		margin: 0 0 12px;
+		color: #5a6b7d;
+		font-size: 0.92rem;
 	}
 	table {
 		width: 100%;
@@ -153,17 +211,40 @@
 		color: #5a6b7d;
 		font-weight: 600;
 	}
-	.docs {
+	.docs,
+	.peticiones {
 		list-style: none;
 		margin: 0 0 12px;
 		padding: 0;
 	}
-	.docs li {
+	.docs li,
+	.peticiones li {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
 		gap: 12px;
 		padding: 8px 0;
 		border-bottom: 1px solid #e8eef3;
+	}
+	.peticiones li {
+		align-items: flex-start;
+		padding: 10px 0;
+	}
+	.peticiones li.rechazado,
+	.docs li.rechazado {
+		color: #9b1c1c;
+	}
+	.peticiones strong,
+	.peticiones small {
+		display: block;
+	}
+	.peticiones small {
+		margin-top: 4px;
+		font-weight: 400;
+		color: #5a6b7d;
+	}
+	.peticiones li.rechazado small {
+		color: #9b1c1c;
 	}
 	.empty {
 		color: #5a6b7d;
@@ -174,6 +255,10 @@
 		gap: 6px;
 		font-weight: 600;
 		font-size: 0.9rem;
+	}
+	.upload.compact {
+		flex-shrink: 0;
+		font-size: 0.82rem;
 	}
 	.msg {
 		background: #e8f5ee;

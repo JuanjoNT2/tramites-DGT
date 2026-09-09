@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { fetchSolicitudById } from '$lib/gestor/access';
-import { getProfileById, listDocsForSolicitud, listVehiculos } from '$lib/cuenta/data';
+import { getProfileById, listDocPeticiones, listDocsForSolicitud, listVehiculos } from '$lib/cuenta/data';
 import { canChangeSolicitudStatus } from '$lib/auth/roles';
 import {
 	SOLICITUD_STATUSES,
@@ -12,10 +12,11 @@ import {
 export const load: PageServerLoad = async ({ params, locals }) => {
 	try {
 		const item = await fetchSolicitudById(params.id);
-		const [docs, citizen, vehiculos] = await Promise.all([
+		const [docs, citizen, vehiculos, peticiones] = await Promise.all([
 			listDocsForSolicitud(item.id).catch(() => []),
 			item.user_id ? getProfileById(item.user_id) : Promise.resolve(null),
-			item.user_id ? listVehiculos(item.user_id).catch(() => []) : Promise.resolve([])
+			item.user_id ? listVehiculos(item.user_id).catch(() => []) : Promise.resolve([]),
+			listDocPeticiones(item.id).catch(() => [])
 		]);
 
 		const payloadMatricula =
@@ -34,6 +35,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			docs,
 			citizen,
 			vehiculos: vehiculosOrdenados,
+			peticiones,
+			canNotify: Boolean(item.user_id || item.email),
 			label: SOLICITUD_TIPO_LABELS[item.tipo] || item.tipo,
 			canChangeStatus: canChangeSolicitudStatus(locals.profile),
 			statuses: SOLICITUD_STATUSES,

@@ -8,8 +8,9 @@ Ejecutar en SQL Editor:
 
 - `supabase/migrations/20260724_panel_usuario.sql`
 - `supabase/migrations/20260724_pago_estados.sql` (estados `pendiente_pago` / `pagada`)
+- `supabase/migrations/20260909_solicitud_doc_peticiones.sql` (pedir/rechazar documentos y avisar al ciudadano)
 
-Amplía `profiles`, estados de `solicitudes`, tablas `vehiculos`, `solicitud_documentos`, `notificaciones` y bucket Storage `tramite-docs`.
+Amplía `profiles`, estados de `solicitudes`, tablas `vehiculos`, `solicitud_documentos`, `notificaciones` y bucket Storage `tramite-docs`. La migración de peticiones añade `solicitud_doc_peticiones` y columnas `doc_type` / `status` / `meta` en `solicitud_documentos`.
 
 Roles: solo **admin** (Supabase Auth role) cambia estados de trámite; **gestor** ve/exporta/docs.
 

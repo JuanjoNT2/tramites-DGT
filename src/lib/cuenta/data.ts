@@ -1,10 +1,12 @@
 import { error } from '@sveltejs/kit';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import type {
+	DocPeticionKind,
 	Notificacion,
 	Profile,
 	Solicitud,
 	SolicitudDocumento,
+	SolicitudDocPeticion,
 	SolicitudStatus,
 	Vehiculo
 } from '$lib/supabase/types';
@@ -382,6 +384,130 @@ export async function listDocsForSolicitud(solicitudId: string): Promise<Solicit
 		throw error(500, err.message);
 	}
 	return (data ?? []) as SolicitudDocumento[];
+}
+
+export async function listDocPeticiones(solicitudId: string): Promise<SolicitudDocPeticion[]> {
+	const sb = requireService();
+	const { data, error: err } = await sb
+		.from('solicitud_doc_peticiones')
+		.select('*')
+		.eq('solicitud_id', solicitudId)
+		.order('created_at', { ascending: false });
+	if (err) {
+		console.error('[docs] list peticiones', err.message);
+		if (isSchemaMissingError(err)) return [];
+		throw error(500, err.message);
+	}
+	return (data ?? []) as SolicitudDocPeticion[];
+}
+
+export async function upsertDocPeticion(input: {
+	solicitud_id: string;
+	user_id?: string | null;
+	kind: DocPeticionKind;
+	doc_type: string;
+	doc_label: string;
+	motivo?: string | null;
+	documento_id?: string | null;
+}): Promise<SolicitudDocPeticion> {
+	const sb = requireService();
+	const { data: existing, error: findErr } = await sb
+		.from('solicitud_doc_peticiones')
+		.select('*')
+		.eq('solicitud_id', input.solicitud_id)
+		.eq('doc_type', input.doc_type)
+		.eq('status', 'abierta')
+		.maybeSingle();
+	if (findErr && !isSchemaMissingError(findErr)) {
+		throw error(500, findErr.message);
+	}
+	if (findErr && isSchemaMissingError(findErr)) {
+		throw error(503, 'Falta aplicar la migración de peticiones de documentos.');
+	}
+
+	if (existing) {
+		const { data, error: updErr } = await sb
+			.from('solicitud_doc_peticiones')
+			.update({
+				kind: input.kind,
+				doc_label: input.doc_label,
+				motivo: input.motivo || null,
+				documento_id: input.documento_id || existing.documento_id,
+				user_id: input.user_id ?? existing.user_id
+			})
+			.eq('id', existing.id)
+			.select('*')
+			.maybeSingle();
+		if (updErr) throw error(500, updErr.message);
+		if (!data) throw error(500, 'No se pudo actualizar la petición');
+		return data as SolicitudDocPeticion;
+	}
+
+	const { data, error: insErr } = await sb
+		.from('solicitud_doc_peticiones')
+		.insert({
+			solicitud_id: input.solicitud_id,
+			user_id: input.user_id || null,
+			kind: input.kind,
+			doc_type: input.doc_type,
+			doc_label: input.doc_label,
+			motivo: input.motivo || null,
+			documento_id: input.documento_id || null,
+			status: 'abierta'
+		})
+		.select('*')
+		.maybeSingle();
+	if (insErr) {
+		if (isSchemaMissingError(insErr)) {
+			throw error(503, 'Falta aplicar la migración de peticiones de documentos.');
+		}
+		throw error(500, insErr.message);
+	}
+	if (!data) throw error(500, 'No se pudo crear la petición');
+	return data as SolicitudDocPeticion;
+}
+
+export async function resolveOpenDocPeticiones(
+	solicitudId: string,
+	docType: string
+): Promise<number> {
+	const type = (docType || '').trim();
+	if (!type) return 0;
+	const sb = requireService();
+	const { data, error: err } = await sb
+		.from('solicitud_doc_peticiones')
+		.update({ status: 'resuelta', resolved_at: new Date().toISOString() })
+		.eq('solicitud_id', solicitudId)
+		.eq('doc_type', type)
+		.eq('status', 'abierta')
+		.select('id');
+	if (err) {
+		if (isSchemaMissingError(err)) return 0;
+		console.error('[docs] resolve peticiones', err.message);
+		return 0;
+	}
+	return data?.length ?? 0;
+}
+
+export async function markDocumentoRechazado(
+	documentoId: string,
+	reason: string
+): Promise<SolicitudDocumento> {
+	const sb = requireService();
+	const { data, error: err } = await sb
+		.from('solicitud_documentos')
+		.update({ status: 'rechazado', rejection_reason: reason })
+		.eq('id', documentoId)
+		.select('*')
+		.maybeSingle();
+	if (err) {
+		if (isSchemaMissingError(err) || err.message?.includes('status')) {
+			throw error(503, 'Falta aplicar la migración de peticiones de documentos.');
+		}
+		throw error(500, err.message);
+	}
+	if (!data) throw error(404, 'Documento no encontrado');
+	return data as SolicitudDocumento;
 }
 
 export async function listNotificaciones(userId: string): Promise<Notificacion[]> {

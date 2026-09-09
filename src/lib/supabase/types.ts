@@ -84,6 +84,8 @@ export type Vehiculo = {
 	updated_at: string;
 };
 
+export type SolicitudDocumentoStatus = 'recibido' | 'rechazado';
+
 export type SolicitudDocumento = {
 	id: string;
 	solicitud_id: string;
@@ -93,6 +95,27 @@ export type SolicitudDocumento = {
 	mime: string | null;
 	uploaded_by: 'user' | 'gestor' | 'admin';
 	created_at: string;
+	doc_type?: string | null;
+	status?: SolicitudDocumentoStatus | string | null;
+	rejection_reason?: string | null;
+	meta?: Record<string, unknown> | null;
+};
+
+export type DocPeticionKind = 'pendiente' | 'rechazado';
+export type DocPeticionStatus = 'abierta' | 'resuelta' | 'cancelada';
+
+export type SolicitudDocPeticion = {
+	id: string;
+	solicitud_id: string;
+	user_id: string | null;
+	kind: DocPeticionKind;
+	doc_type: string;
+	doc_label: string;
+	motivo: string | null;
+	documento_id: string | null;
+	status: DocPeticionStatus;
+	created_at: string;
+	resolved_at: string | null;
 };
 
 export type Notificacion = {
