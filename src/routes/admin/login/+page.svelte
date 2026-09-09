@@ -26,21 +26,22 @@
 
 <style>
 	.wrap {
-		min-height: 100vh;
+		min-height: 50vh;
 		display: grid;
 		place-items: center;
-		background: #00263d;
-		padding: 24px;
+		padding: 48px 24px 64px;
 		font-family: 'Open Sans', system-ui, sans-serif;
 	}
 	.card {
 		width: min(400px, 100%);
 		background: #fff;
+		border: 1px solid #d8e0e8;
 		border-radius: 12px;
 		padding: 32px;
 		display: flex;
 		flex-direction: column;
 		gap: 14px;
+		box-shadow: 0 8px 28px rgba(0, 48, 80, 0.08);
 	}
 	h1 {
 		margin: 0;

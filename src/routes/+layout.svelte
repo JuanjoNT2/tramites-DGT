@@ -18,7 +18,8 @@
 	let { children } = $props();
 
 	const isShell = $derived(
-		page.url.pathname.startsWith('/admin') ||
+		(page.url.pathname.startsWith('/admin') &&
+			!page.url.pathname.startsWith('/admin/login')) ||
 			page.url.pathname.startsWith('/gestor') ||
 			page.url.pathname.startsWith('/cuenta')
 	);
@@ -156,7 +157,7 @@
 		const p = to?.url.pathname;
 		if (
 			p &&
-			!p.startsWith('/admin') &&
+			!(p.startsWith('/admin') && !p.startsWith('/admin/login')) &&
 			!p.startsWith('/gestor') &&
 			!p.startsWith('/cuenta')
 		) {
