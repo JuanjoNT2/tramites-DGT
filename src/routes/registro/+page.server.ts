@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { authEmailExists, getAuthUserByEmail } from '$lib/auth/email-exists';
 import { authCallbackUrl } from '$lib/auth/urls';
 import { joinPersonName, namePartsFromProfile } from '$lib/cuenta/profile-prefill';
 import { notifyAdminUserRegistered } from '$lib/server/admin-notify';
@@ -12,6 +13,15 @@ import {
 	validatePhone,
 	validateRequired
 } from '$lib/utils/validators';
+
+function alreadyExistsPayload<T extends Record<string, unknown>>(fields: T) {
+	return {
+		alreadyExists: true as const,
+		error:
+			'Ya hay una cuenta con este email. Inicia sesión o recupera la contraseña si la has olvidado.',
+		...fields
+	};
+}
 
 function profileIncomplete(profile: App.Locals['profile']): boolean {
 	if (!profile) return true;
@@ -178,6 +188,14 @@ export const actions: Actions = {
 			throw redirect(303, '/cuenta');
 		}
 
+		const sbAdmin = getServiceSupabase();
+		const emailTaken = sbAdmin
+			? (await authEmailExists(sbAdmin, email)).exists
+			: Boolean(await getAuthUserByEmail(email));
+		if (emailTaken) {
+			return fail(400, alreadyExistsPayload(fields));
+		}
+
 		const emailRedirectTo = authCallbackUrl(url);
 		let data;
 		let error;
@@ -203,7 +221,8 @@ export const actions: Actions = {
 			const msg = e instanceof Error ? e.message : String(e);
 			console.error('[registro] signUp threw', e);
 			return fail(500, {
-				error: `Error de conexión con Auth: ${msg || 'desconocido'}`,
+				error:
+					'No se pudo enviar el email de confirmación. Revisa el SMTP de Resend en Supabase Auth.',
 				...fields
 			} as const);
 		}
@@ -213,45 +232,27 @@ export const actions: Actions = {
 				error.code === 'user_already_exists' ||
 				/already|registered|exists|existe/i.test(error.message || '');
 			if (already) {
-				const { error: resendErr } = await locals.supabase.auth.resend({
-					type: 'signup',
-					email,
-					options: { emailRedirectTo }
-				});
-				if (!resendErr) {
-					return {
-						ok: true as const,
-						...fields,
-						message:
-							'Esa cuenta ya existía. Si aún no está verificada, te hemos reenviado el correo de confirmación. Revisa bandeja y spam.'
-					};
-				}
-				return fail(400, {
-					error:
-						'Esa cuenta ya existe. Prueba a iniciar sesión o recuperar la contraseña. Si no te llega el correo de verificación, escríbenos.',
-					...fields
-				} as const);
+				return fail(400, alreadyExistsPayload(fields));
 			}
-			const detail = [
-				typeof error.message === 'string' && error.message !== '{}' ? error.message : null,
-				error.code,
-				error.status,
-				!error.message || error.message === '{}'
-					? JSON.stringify({ name: error.name, status: error.status, code: error.code })
-					: null
-			]
-				.filter(Boolean)
-				.join(' · ');
-			console.error('[registro] signUp error', { error, emailRedirectTo });
+			const smtpFail =
+				error.status === 500 ||
+				error.name === 'AuthRetryableFetchError' ||
+				/confirmation email|sending|smtp/i.test(error.message || '');
+			console.error('[registro] signUp error', {
+				name: error.name,
+				status: error.status,
+				code: error.code,
+				message: error.message,
+				emailRedirectTo
+			});
 			return fail(400, {
-				error:
-					detail ||
-					'No se pudo crear la cuenta. Revisa SMTP SendGrid y Auth Logs en Supabase.',
+				error: smtpFail
+					? 'No se pudo enviar el email de confirmación. El SMTP de Auth (Resend) no está bien configurado.'
+					: 'No se pudo crear la cuenta. Inténtalo de nuevo o escríbenos si sigue fallando.',
 				...fields
 			} as const);
 		}
 
-		// Anti-enumeración: email ya registrado → user con identities vacías y sin session
 		const fakeDuplicate =
 			data.user &&
 			!data.session &&
@@ -259,31 +260,13 @@ export const actions: Actions = {
 			data.user.identities.length === 0;
 
 		if (fakeDuplicate) {
-			const { error: resendErr } = await locals.supabase.auth.resend({
-				type: 'signup',
-				email,
-				options: { emailRedirectTo }
-			});
-			console.info('[registro] email ya existía; resend', {
-				email,
-				resendOk: !resendErr,
-				resendErr: resendErr?.message
-			});
-			return {
-				ok: true as const,
-				...fields,
-				message: resendErr
-					? 'Si esa cuenta ya existe y no está verificada, usa «Reenviar confirmación» en el login o recupera la contraseña.'
-					: 'Esa cuenta ya existía. Te hemos reenviado el correo de confirmación (revisa bandeja y spam). Si ya la verificaste, inicia sesión.'
-			};
+			return fail(400, alreadyExistsPayload(fields));
 		}
 
 		if (data.user?.id) {
 			const sb = getServiceSupabase();
 			if (!sb) {
-				console.error(
-					'[registro] profile upsert omitido: falta SUPABASE_SERVICE_ROLE_KEY'
-				);
+				console.error('[registro] profile upsert omitido: falta SUPABASE_SERVICE_ROLE_KEY');
 			} else {
 				const { error: upErr } = await sb.from('profiles').upsert(
 					{
@@ -313,8 +296,7 @@ export const actions: Actions = {
 		return {
 			ok: true as const,
 			...fields,
-			message:
-				'Revisa tu correo para verificar la cuenta. Después podrás iniciar sesión.'
+			message: 'Revisa tu correo para verificar la cuenta. Después podrás iniciar sesión.'
 		};
 	}
 };

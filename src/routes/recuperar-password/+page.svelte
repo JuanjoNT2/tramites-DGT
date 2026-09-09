@@ -1,8 +1,12 @@
 <script lang="ts">
-	import type { ActionData } from './$types';
+	import type { ActionData, PageData } from './$types';
 	import SeoHead from '$lib/components/SeoHead.svelte';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	const emailValue = $derived(
+		form && 'email' in form && typeof form.email === 'string' ? form.email : data.email || ''
+	);
 </script>
 
 <SeoHead
@@ -33,7 +37,7 @@
 						name="email"
 						required
 						autocomplete="email"
-						value={form && 'email' in form ? form.email : ''}
+						value={emailValue}
 					/>
 				</label>
 				<button type="submit" class="btn">Enviar enlace</button>

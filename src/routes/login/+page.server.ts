@@ -130,7 +130,8 @@ export const actions: Actions = {
 		return {
 			ok: true as const,
 			email,
-			message: 'Si la cuenta existe y no está verificada, te hemos enviado un nuevo correo. Revisa bandeja y spam.'
+			message:
+				'Si la cuenta existe y no está verificada, te hemos enviado un nuevo correo. Revisa bandeja y spam.'
 		};
 	}
 };

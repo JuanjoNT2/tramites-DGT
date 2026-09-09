@@ -4,14 +4,14 @@ import { passwordRecoveryRedirect } from '$lib/auth/urls';
 
 import { isStaffRole } from '$lib/auth/roles';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	if (locals.user) {
 		throw redirect(
 			303,
 			isStaffRole(locals.profile?.role) ? '/gestor/seguridad' : '/cuenta/seguridad'
 		);
 	}
-	return {};
+	return { email: (url.searchParams.get('email') || '').trim().toLowerCase() };
 };
 
 export const actions: Actions = {

@@ -41,6 +41,15 @@
 		nif = fromForm ?? data.nif ?? '';
 	});
 	const isEmpresa = $derived(isCifDocumento(nif));
+	const alreadyExists = $derived(Boolean(form && 'alreadyExists' in form && form.alreadyExists));
+	const loginHref = $derived(
+		emailValue ? `/login?email=${encodeURIComponent(emailValue)}` : '/login'
+	);
+	const recoverHref = $derived(
+		emailValue
+			? `/recuperar-password?email=${encodeURIComponent(emailValue)}`
+			: '/recuperar-password'
+	);
 </script>
 
 <svelte:head>
@@ -67,7 +76,14 @@
 				<p><a href="/login">Ir a iniciar sesión</a></p>
 			</div>
 		{:else}
-			{#if form?.error}
+			{#if alreadyExists}
+				<p class="warn" role="alert">
+					Ya hay una cuenta con este email.
+					<a href={loginHref}>Inicia sesión</a>
+					o
+					<a href={recoverHref}>¿has olvidado la contraseña?</a>
+				</p>
+			{:else if form?.error}
 				<p class="err" role="alert">{form.error}</p>
 			{/if}
 
@@ -221,6 +237,18 @@
 		padding: 10px 12px;
 		border-radius: 8px;
 		margin-bottom: 16px;
+	}
+	.warn {
+		background: #fff6e5;
+		color: #7a4b00;
+		padding: 12px 14px;
+		border-radius: 8px;
+		margin-bottom: 16px;
+		line-height: 1.45;
+	}
+	.warn a {
+		font-weight: 700;
+		color: #003050;
 	}
 	.ok {
 		background: #e8f5ee;

@@ -49,7 +49,7 @@
 				? 'También se ha enviado por email.'
 				: body.emailSkipped === 'sin_email'
 					? 'Guardado en la bandeja; el cliente no tiene email.'
-					: 'Guardado en la bandeja; el email no se pudo enviar (revisa SendGrid).';
+					: 'Guardado en la bandeja; el email no se pudo enviar (revisa Resend).';
 			feedback = { ok: true, text: `Aviso enviado. ${emailNote}` };
 			titulo = '';
 			cuerpo = '';
@@ -96,7 +96,7 @@
 <section class="card card-aviso">
 	<h2>Enviar aviso al cliente</h2>
 	<p class="hint">
-		Se guarda en su bandeja de notificaciones y se envía también por email (si SendGrid está
+		Se guarda en su bandeja de notificaciones y se envía también por email (si Resend está
 		configurado).
 	</p>
 	<form class="aviso-form" onsubmit={enviarAviso}>

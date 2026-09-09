@@ -10,17 +10,54 @@ async function sendEmail(opts: {
 	html?: string;
 	attachments?: { filename: string; content: Buffer; type?: string }[];
 }): Promise<boolean> {
-	const key = env.SENDGRID_API_KEY?.trim();
-	const from = env.SENDGRID_FROM?.trim() || 'noreply@tramitesdgtonline.com';
-	if (!key) {
-		console.info('[mailer] SENDGRID_API_KEY no configurada; email omitido →', opts.to, opts.subject);
+	const resendKey = env.RESEND_API_KEY?.trim();
+	const sendgridKey = env.SENDGRID_API_KEY?.trim();
+	const from =
+		env.RESEND_FROM?.trim() ||
+		env.SENDGRID_FROM?.trim() ||
+		'no-reply@tramitesdgtonline.com';
+
+	if (resendKey) {
+		const fromHeader = from.includes('<') ? from : `Trámites DGT Online <${from}>`;
+		const res = await fetch('https://api.resend.com/emails', {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${resendKey}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				from: fromHeader,
+				to: [opts.to],
+				subject: opts.subject,
+				text: opts.text,
+				...(opts.html ? { html: opts.html } : {}),
+				...(opts.attachments?.length
+					? {
+							attachments: opts.attachments.map((a) => ({
+								filename: a.filename,
+								content: a.content.toString('base64')
+							}))
+						}
+					: {})
+			})
+		});
+		if (!res.ok) {
+			const body = await res.text().catch(() => '');
+			console.error('[mailer] Resend error', res.status, body);
+			return false;
+		}
+		return true;
+	}
+
+	if (!sendgridKey) {
+		console.info('[mailer] RESEND_API_KEY no configurada; email omitido →', opts.to, opts.subject);
 		return false;
 	}
 
 	const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
 		method: 'POST',
 		headers: {
-			Authorization: `Bearer ${key}`,
+			Authorization: `Bearer ${sendgridKey}`,
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify({

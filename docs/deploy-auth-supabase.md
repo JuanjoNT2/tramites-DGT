@@ -1,4 +1,4 @@
-# Deploy: Auth Supabase, SendGrid y paneles
+# Deploy: Auth Supabase, Resend y paneles
 
 Checklist para producción / preview en Vercel del flujo de registro, solicitudes y panel gestor.
 
@@ -26,6 +26,8 @@ Roles: solo **admin** (Supabase Auth role) cambia estados de trámite; **gestor*
 | `ADMIN_SESSION_SECRET` | Firma cookie admin (≥32 chars) |
 | `STRIPE_SECRET_KEY` | Secret key Stripe (`sk_test_…` / `sk_live_…`) |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret del webhook (`whsec_…`) |
+| `RESEND_API_KEY` | API key `re_…` (emails de solicitud, pago, avisos) |
+| `RESEND_FROM` | Remitente verificado en Resend |
 | `REDSYS_*` | Opcional; solo si no hay Stripe |
 
 Copia de referencia: `.env.example`. Guía Stripe: `docs/stripe-setup.md`.
@@ -39,21 +41,23 @@ Confirmado con `vercel env ls` en el proyecto `tramites-dgt-v2`:
 - [ ] `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` — por conectar
 - [ ] `REDSYS_*` — opcionales (Stripe tiene prioridad)
 
-El SMTP de verificación de email **no** va en Vercel: se configura en el Dashboard de Supabase (SendGrid).
+El SMTP de verificación de email **no** va en Vercel: se configura en el Dashboard de Supabase (Resend).
 
-## 3. Supabase Auth + SMTP SendGrid (único canal)
+En Vercel, para emails de la app (solicitud, pago, avisos): `RESEND_API_KEY` y `RESEND_FROM`.
 
-La verificación de email se hace **solo con SendGrid** vía SMTP personalizado de Supabase Auth. No usar Resend.
+## 3. Supabase Auth + SMTP Resend (único canal)
+
+La verificación de email se hace **solo con Resend** vía SMTP personalizado de Supabase Auth.
 
 En **Authentication → Providers**: Email habilitado (password).
 
-En **Authentication → SMTP / Emails** (custom SMTP):
+En **Authentication → Emails → SMTP Settings** (custom SMTP):
 
-- Host: `smtp.sendgrid.net`
-- Port: `587` (TLS) o `465` (SSL)
-- Username: `apikey` (literal)
-- Password: API key de SendGrid (`SG....`)
-- Sender: p. ej. `no-reply@gestion.tramitesdgtonline.com` (dominio verificado en SendGrid)
+- Host: `smtp.resend.com`
+- Port: `465`
+- Username: `resend` (literal)
+- Password: API key de Resend (`re_....`)
+- Sender: p. ej. `no-reply@tramitesdgtonline.com` (dominio verificado en Resend)
 
 En **Authentication → URL configuration**:
 
@@ -94,13 +98,13 @@ El saludo puede usar `{{ .Data.nombre }}` (metadata del registro).
 
 #### Aviso de Gmail («mensaje sospechoso» / imágenes ocultas)
 
-No es un fallo específico de SendGrid: Gmail oculta imágenes y marca avisos cuando el dominio
+No es un fallo específico de Resend: Gmail oculta imágenes y marca avisos cuando el dominio
 es nuevo, el volumen es bajo o faltan/fallan **SPF, DKIM y DMARC** en el dominio del remitente
-(`gestion.tramitesdgtonline.com`). Conviene:
+(`tramitesdgtonline.com`). Conviene:
 
-- Dominio autenticado en SendGrid (Single Sender / Domain Authentication).
-- Registros DNS SPF + DKIM de SendGrid y DMARC en el dominio.
-- Remitente estable (`no-reply@gestion.…`) y Site URL canónica `https://tramitesdgtonline.com`.
+- Dominio autenticado en Resend (Domains → Verify).
+- Registros DNS SPF + DKIM de Resend y DMARC en el dominio.
+- Remitente estable (`no-reply@tramitesdgtonline.com`) y Site URL canónica `https://tramitesdgtonline.com`.
 
 Las plantillas del repo están pensadas para leerse bien **aunque Gmail oculte las imágenes**
 (texto en castellano + botón/enlace).
@@ -128,12 +132,12 @@ npm run seed:demo-users
 
 ### Contraseñas
 
-- Olvidé mi contraseña: `/recuperar-password` (email SendGrid)
+- Olvidé mi contraseña: `/recuperar-password` (email Resend)
 - Cambiar estando logueado: `/cuenta/seguridad` (ciudadano, gestor y admin Auth)
 
 ## 5. QA mínima
 
-- [ ] Registro → email SendGrid → login
+- [ ] Registro → email Resend → login
 - [ ] Trámite **sin** login → fila en `solicitudes` y visible en `/gestor`
 - [ ] Trámite **con** login → `user_id` poblado
 - [ ] Admin eleva a gestor → acceso `/gestor` + CSV/Excel/PDF

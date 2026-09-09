@@ -89,6 +89,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	return json({
 		ok: true,
 		emailSent,
-		emailSkipped: !to ? 'sin_email' : emailSent ? null : 'sendgrid_omitido'
+		emailSkipped: !to ? 'sin_email' : emailSent ? null : 'resend_omitido'
 	});
 };
