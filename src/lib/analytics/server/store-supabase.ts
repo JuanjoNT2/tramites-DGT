@@ -14,6 +14,15 @@ function client(): SupabaseClient | null {
 	return createClient(url, key, { auth: { persistSession: false } });
 }
 
+function isMissingRelation(error: { code?: string; message?: string } | null): boolean {
+	if (!error) return false;
+	return (
+		error.code === 'PGRST205' ||
+		error.code === '42P01' ||
+		/schema cache|does not exist/i.test(error.message || '')
+	);
+}
+
 export function createSupabaseStore(): AnalyticsStore | null {
 	const sb = client();
 	if (!sb) return null;
@@ -44,7 +53,13 @@ export function createSupabaseStore(): AnalyticsStore | null {
 				.lte('ts', end + 'T23:59:59.999Z')
 				.order('ts', { ascending: true })
 				.limit(limit);
-			if (error) throw error;
+			if (error) {
+				if (isMissingRelation(error)) {
+					console.warn('[analytics] analytics_events no disponible', error.message);
+					return [];
+				}
+				throw error;
+			}
 			return (data || []).map(rowToStored);
 		},
 
@@ -72,7 +87,13 @@ export function createSupabaseStore(): AnalyticsStore | null {
 				.select('*')
 				.gte('day', start)
 				.lte('day', end);
-			if (error) throw error;
+			if (error) {
+				if (isMissingRelation(error)) {
+					console.warn('[analytics] analytics_daily no disponible', error.message);
+					return [];
+				}
+				throw error;
+			}
 			return (data || []).map((r) => ({
 				day: r.day,
 				channel: r.channel,
@@ -108,7 +129,13 @@ export function createSupabaseStore(): AnalyticsStore | null {
 				.lte('day', end);
 			if (source) q = q.eq('source', source);
 			const { data, error } = await q;
-			if (error) throw error;
+			if (error) {
+				if (isMissingRelation(error)) {
+					console.warn('[analytics] analytics_external_daily no disponible', error.message);
+					return [];
+				}
+				throw error;
+			}
 			return (data || []).map((r) => ({
 				source: r.source,
 				day: r.day,
