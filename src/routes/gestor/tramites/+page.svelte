@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import StatusBadge from '$lib/components/gestor/StatusBadge.svelte';
 	import TramiteKanban from '$lib/components/gestor/TramiteKanban.svelte';
-	import { SOLICITUD_STATUS_LABELS, SOLICITUD_TIPO_LABELS } from '$lib/supabase/types';
-	import type { SolicitudStatus } from '$lib/supabase/types';
+	import { SOLICITUD_TIPO_LABELS } from '$lib/supabase/types';
 
 	let { data }: { data: PageData } = $props();
 
@@ -11,10 +11,6 @@
 
 	function tipoLabel(tipo: string) {
 		return SOLICITUD_TIPO_LABELS[tipo] || tipo;
-	}
-
-	function statusLabel(status: string) {
-		return SOLICITUD_STATUS_LABELS[status as SolicitudStatus] || status;
 	}
 
 	function clienteHref(t: PageData['items'][number]) {
@@ -127,7 +123,7 @@
 					<tr>
 						<td>{new Date(t.createdAt).toLocaleString('es-ES')}</td>
 						<td>{tipoLabel(t.tipo)}</td>
-						<td><span class="status">{statusLabel(t.status)}</span></td>
+						<td><StatusBadge status={t.status} /></td>
 						<td>
 							{#if cliente}
 								<a href={cliente}>{t.email || 'Ver cliente'}</a>
@@ -306,14 +302,6 @@
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 		color: #5a6b7d;
-	}
-	.status {
-		display: inline-block;
-		padding: 2px 8px;
-		border-radius: 999px;
-		background: #e8eef3;
-		font-size: 0.8rem;
-		font-weight: 600;
 	}
 	.badge {
 		display: inline-block;

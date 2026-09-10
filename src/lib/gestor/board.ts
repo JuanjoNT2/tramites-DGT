@@ -1,4 +1,4 @@
-/** Columnas del tablero: por hacer, en curso, hechos. */
+/** Columnas del tablero: por hacer, en curso, finalizados. */
 export type TramiteBucket = 'por_hacer' | 'en_curso' | 'hecho';
 
 export function classifyTramiteBucket(status: string): TramiteBucket {
@@ -17,7 +17,7 @@ export const BUCKET_DEFAULT_STATUS: Record<TramiteBucket, string> = {
 export const BUCKET_LABELS: Record<TramiteBucket, string> = {
 	por_hacer: 'Por hacer',
 	en_curso: 'En curso',
-	hecho: 'Hechos'
+	hecho: 'Finalizados'
 };
 
 /** Máximo de tarjetas por columna; el resto se consulta en modo lista. */

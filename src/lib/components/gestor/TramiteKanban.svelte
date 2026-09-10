@@ -1,4 +1,5 @@
 <script lang="ts">
+	import StatusBadge from '$lib/components/gestor/StatusBadge.svelte';
 	import {
 		BUCKET_DEFAULT_STATUS,
 		BUCKET_LABELS,
@@ -10,8 +11,7 @@
 	import {
 		SOLICITUD_STATUSES,
 		SOLICITUD_STATUS_LABELS,
-		SOLICITUD_TIPO_LABELS,
-		type SolicitudStatus
+		SOLICITUD_TIPO_LABELS
 	} from '$lib/supabase/types';
 
 	let {
@@ -43,10 +43,6 @@
 
 	function tipoLabel(tipo: string) {
 		return SOLICITUD_TIPO_LABELS[tipo] || tipo;
-	}
-
-	function statusLabel(status: string) {
-		return SOLICITUD_STATUS_LABELS[status as SolicitudStatus] || status;
 	}
 
 	function clienteHref(t: TramiteResumen) {
@@ -144,7 +140,7 @@
 					>
 						<div class="card-top">
 							<span class="tipo">{tipoLabel(t.tipo)}</span>
-							<span class="badge status">{statusLabel(t.status)}</span>
+							<StatusBadge status={t.status} />
 						</div>
 
 						<p class="meta">{new Date(t.createdAt).toLocaleDateString('es-ES')}</p>
@@ -279,15 +275,6 @@
 		font-size: 0.7rem;
 		font-weight: 700;
 		margin: 0;
-	}
-	.badge.status {
-		background: #e8eef3;
-		color: #3d4f5f;
-		white-space: nowrap;
-	}
-	.card.cancelada .badge.status {
-		background: #e4e8ec;
-		color: #5a6b7d;
 	}
 	.badge.warn {
 		background: #fff3cd;
