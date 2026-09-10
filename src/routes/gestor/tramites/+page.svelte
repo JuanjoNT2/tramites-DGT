@@ -1,9 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import TramiteKanban from '$lib/components/gestor/TramiteKanban.svelte';
 	import { SOLICITUD_STATUS_LABELS, SOLICITUD_TIPO_LABELS } from '$lib/supabase/types';
 	import type { SolicitudStatus } from '$lib/supabase/types';
 
 	let { data }: { data: PageData } = $props();
+
+	const qParam = $derived(encodeURIComponent(data.q));
+	const listaHref = $derived(`/gestor/tramites?modo=lista&vista=todos&q=${qParam}`);
 
 	function tipoLabel(tipo: string) {
 		return SOLICITUD_TIPO_LABELS[tipo] || tipo;
@@ -36,28 +40,46 @@
 	<p class="err">{data.error}</p>
 {/if}
 
-<nav class="tabs" aria-label="Vistas de trámites">
+<nav class="modes" aria-label="Modo de visualización">
 	<a
-		href="/gestor/tramites?vista=pendientes&q={encodeURIComponent(data.q)}"
-		class:active={data.vista === 'pendientes'}
+		href="/gestor/tramites?modo=kanban&vista={data.vista}&q={qParam}"
+		class:active={data.modo === 'kanban'}
 	>
-		Pendientes <span>{data.counts.pendientes}</span>
+		Kanban
 	</a>
 	<a
-		href="/gestor/tramites?vista=finalizados&q={encodeURIComponent(data.q)}"
-		class:active={data.vista === 'finalizados'}
+		href="/gestor/tramites?modo=lista&vista={data.vista}&q={qParam}"
+		class:active={data.modo === 'lista'}
 	>
-		Finalizados <span>{data.counts.finalizados}</span>
-	</a>
-	<a
-		href="/gestor/tramites?vista=todos&q={encodeURIComponent(data.q)}"
-		class:active={data.vista === 'todos'}
-	>
-		Todos <span>{data.counts.todos}</span>
+		Lista
 	</a>
 </nav>
 
+{#if data.modo === 'lista'}
+	<nav class="tabs" aria-label="Vistas de trámites">
+		<a
+			href="/gestor/tramites?modo=lista&vista=pendientes&q={qParam}"
+			class:active={data.vista === 'pendientes'}
+		>
+			Pendientes <span>{data.counts.pendientes}</span>
+		</a>
+		<a
+			href="/gestor/tramites?modo=lista&vista=finalizados&q={qParam}"
+			class:active={data.vista === 'finalizados'}
+		>
+			Finalizados <span>{data.counts.finalizados}</span>
+		</a>
+		<a
+			href="/gestor/tramites?modo=lista&vista=todos&q={qParam}"
+			class:active={data.vista === 'todos'}
+		>
+			Todos <span>{data.counts.todos}</span>
+		</a>
+	</nav>
+{/if}
+
 <form class="filters" method="GET">
+	<input type="hidden" name="modo" value={data.modo} />
 	<input type="hidden" name="vista" value={data.vista} />
 	<label>
 		Buscar trámite
@@ -71,53 +93,69 @@
 	<button type="submit" class="btn secondary">Filtrar</button>
 </form>
 
-<div class="table-wrap">
-	<table>
-		<thead>
-			<tr>
-				<th>Fecha</th>
-				<th>Tipo</th>
-				<th>Estado</th>
-				<th>Cliente</th>
-				<th>Matrícula</th>
-				<th>Factura</th>
-				<th></th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each data.items as t}
-				{@const cliente = clienteHref(t)}
+{#if data.modo === 'kanban'}
+	{#if data.canChangeStatus}
+		<p class="hint">
+			Arrastra una tarjeta entre columnas o usa su selector para cambiar el estado. El ciudadano
+			recibe aviso en cada cambio.
+		</p>
+	{:else}
+		<p class="hint">Solo lectura: tu perfil no puede cambiar el estado de los trámites.</p>
+	{/if}
+	<TramiteKanban
+		board={data.board}
+		canChangeStatus={data.canChangeStatus}
+		listHref={listaHref}
+	/>
+{:else}
+	<div class="table-wrap">
+		<table>
+			<thead>
 				<tr>
-					<td>{new Date(t.createdAt).toLocaleString('es-ES')}</td>
-					<td>{tipoLabel(t.tipo)}</td>
-					<td><span class="status">{statusLabel(t.status)}</span></td>
-					<td>
-						{#if cliente}
-							<a href={cliente}>{t.email || 'Ver cliente'}</a>
-						{:else}
-							{t.email || '—'}
-						{/if}
-					</td>
-					<td>{t.matricula || '—'}</td>
-					<td>
-						{#if t.solicitaFactura && t.facturaEmitida}
-							<span class="badge ok">Emitida</span>
-						{:else if t.solicitaFactura}
-							<span class="badge warn">Pendiente</span>
-						{:else}
-							—
-						{/if}
-					</td>
-					<td><a href="/gestor/{t.id}">Abrir</a></td>
+					<th>Fecha</th>
+					<th>Tipo</th>
+					<th>Estado</th>
+					<th>Cliente</th>
+					<th>Matrícula</th>
+					<th>Factura</th>
+					<th></th>
 				</tr>
-			{:else}
-				<tr>
-					<td colspan="7" class="empty">No hay trámites en esta vista.</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-</div>
+			</thead>
+			<tbody>
+				{#each data.items as t}
+					{@const cliente = clienteHref(t)}
+					<tr>
+						<td>{new Date(t.createdAt).toLocaleString('es-ES')}</td>
+						<td>{tipoLabel(t.tipo)}</td>
+						<td><span class="status">{statusLabel(t.status)}</span></td>
+						<td>
+							{#if cliente}
+								<a href={cliente}>{t.email || 'Ver cliente'}</a>
+							{:else}
+								{t.email || '—'}
+							{/if}
+						</td>
+						<td>{t.matricula || '—'}</td>
+						<td>
+							{#if t.solicitaFactura && t.facturaEmitida}
+								<span class="badge ok">Emitida</span>
+							{:else if t.solicitaFactura}
+								<span class="badge warn">Pendiente</span>
+							{:else}
+								—
+							{/if}
+						</td>
+						<td><a href="/gestor/{t.id}">Abrir</a></td>
+					</tr>
+				{:else}
+					<tr>
+						<td colspan="7" class="empty">No hay trámites en esta vista.</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+{/if}
 
 <style>
 	.head {
@@ -164,6 +202,31 @@
 		color: #9b1c1c;
 		padding: 10px 12px;
 		border-radius: 8px;
+	}
+	.modes {
+		display: inline-flex;
+		gap: 4px;
+		padding: 4px;
+		margin-bottom: 16px;
+		background: #e8eef3;
+		border-radius: 999px;
+	}
+	.modes a {
+		padding: 6px 16px;
+		border-radius: 999px;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #3d4f5f;
+		text-decoration: none;
+	}
+	.modes a.active {
+		background: #fff;
+		color: #003050;
+	}
+	.hint {
+		margin: 0 0 14px;
+		font-size: 0.85rem;
+		color: #5a6b7d;
 	}
 	.tabs {
 		display: flex;

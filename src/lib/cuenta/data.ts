@@ -583,7 +583,7 @@ export async function createNotificacion(input: {
 	if (err) console.error('[notificaciones] insert failed', err.message);
 }
 
-export async function adminUpdateSolicitudStatus(
+export async function updateSolicitudStatusByStaff(
 	id: string,
 	status: SolicitudStatus
 ): Promise<Solicitud> {

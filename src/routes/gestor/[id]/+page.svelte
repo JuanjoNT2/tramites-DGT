@@ -167,7 +167,7 @@
 	async function changeStatus() {
 		msg = null;
 		err = null;
-		const res = await fetch('/api/admin/solicitud-status', {
+		const res = await fetch('/api/gestor/solicitud-status', {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ id: s.id, status })
@@ -282,7 +282,7 @@
 
 {#if data.canChangeStatus}
 	<section class="card">
-		<h2>Cambiar estado (solo admin)</h2>
+		<h2>Cambiar estado</h2>
 		<div class="status-row">
 			<select bind:value={status}>
 				{#each data.statuses as st}

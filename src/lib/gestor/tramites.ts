@@ -1,9 +1,12 @@
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { classifySolicitud } from '$lib/gestor/clients';
+import { classifyTramiteBucket, type TramiteBucket } from '$lib/gestor/board';
 import { facturaEmitidaFromPayload, solicitaFacturaFromPayload } from '$lib/tramite/factura-cliente';
 import type { Solicitud } from '$lib/supabase/types';
 
 export type GestorTramiteVista = 'pendientes' | 'finalizados' | 'todos';
+
+export type TramiteBoard = Record<TramiteBucket, TramiteResumen[]>;
 
 export type TramiteResumen = {
 	id: string;
@@ -35,11 +38,27 @@ function toResumen(s: Solicitud): TramiteResumen {
 	};
 }
 
+function matchesQuery(t: TramiteResumen, query: string): boolean {
+	return (
+		t.id.toLowerCase().includes(query) ||
+		t.tipo.toLowerCase().includes(query) ||
+		t.status.toLowerCase().includes(query) ||
+		(t.email || '').toLowerCase().includes(query) ||
+		(t.matricula || '').toLowerCase().includes(query) ||
+		(t.userId || '').toLowerCase().includes(query)
+	);
+}
+
+function emptyBoard(): TramiteBoard {
+	return { por_hacer: [], en_curso: [], hecho: [] };
+}
+
 export async function loadGestorTramites(
 	vista: GestorTramiteVista,
 	q = ''
 ): Promise<{
 	items: TramiteResumen[];
+	board: TramiteBoard;
 	counts: { pendientes: number; finalizados: number; todos: number };
 	error: string | null;
 }> {
@@ -47,6 +66,7 @@ export async function loadGestorTramites(
 	if (!sb) {
 		return {
 			items: [],
+			board: emptyBoard(),
 			counts: { pendientes: 0, finalizados: 0, todos: 0 },
 			error: 'Supabase no configurado.'
 		};
@@ -61,12 +81,17 @@ export async function loadGestorTramites(
 	if (error) {
 		return {
 			items: [],
+			board: emptyBoard(),
 			counts: { pendientes: 0, finalizados: 0, todos: 0 },
 			error: error.message
 		};
 	}
 
-	const all = ((sols ?? []) as Solicitud[]).map(toResumen);
+	const query = q.trim().toLowerCase();
+	const all = ((sols ?? []) as Solicitud[])
+		.map(toResumen)
+		.filter((t) => !query || matchesQuery(t, query));
+
 	const pendientes = all.filter((t) => classifySolicitud(t.status) === 'pendiente');
 	const finalizados = all.filter((t) => classifySolicitud(t.status) === 'finalizado');
 
@@ -76,20 +101,10 @@ export async function loadGestorTramites(
 		todos: all.length
 	};
 
-	let items = vista === 'pendientes' ? pendientes : vista === 'finalizados' ? finalizados : all;
+	const board = emptyBoard();
+	for (const t of all) board[classifyTramiteBucket(t.status)].push(t);
 
-	const query = q.trim().toLowerCase();
-	if (query) {
-		items = items.filter(
-			(t) =>
-				t.id.toLowerCase().includes(query) ||
-				t.tipo.toLowerCase().includes(query) ||
-				t.status.toLowerCase().includes(query) ||
-				(t.email || '').toLowerCase().includes(query) ||
-				(t.matricula || '').toLowerCase().includes(query) ||
-				(t.userId || '').toLowerCase().includes(query)
-		);
-	}
+	const items = vista === 'pendientes' ? pendientes : vista === 'finalizados' ? finalizados : all;
 
-	return { items, counts, error: null };
+	return { items, board, counts, error: null };
 }

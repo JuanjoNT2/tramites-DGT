@@ -12,7 +12,7 @@ Ejecutar en SQL Editor:
 
 Amplía `profiles`, estados de `solicitudes`, tablas `vehiculos`, `solicitud_documentos`, `notificaciones` y bucket Storage `tramite-docs`. La migración de peticiones añade `solicitud_doc_peticiones` y columnas `doc_type` / `status` / `meta` en `solicitud_documentos`.
 
-Roles: solo **admin** (Supabase Auth role) cambia estados de trámite; **gestor** ve/exporta/docs.
+Roles: **gestor** y **admin** (Supabase Auth role) cambian estados de trámite, desde la ficha `/gestor/[id]` o el tablero kanban de `/gestor/tramites`.
 
 ## 2. Variables en Vercel
 

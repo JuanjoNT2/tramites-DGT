@@ -1,13 +1,13 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { canChangeSolicitudStatus } from '$lib/auth/roles';
-import { adminUpdateSolicitudStatus } from '$lib/cuenta/data';
+import { updateSolicitudStatusByStaff } from '$lib/cuenta/data';
 import type { SolicitudStatus } from '$lib/supabase/types';
 import { SOLICITUD_STATUSES } from '$lib/supabase/types';
 
-/** Cambio de status: solo rol admin (Supabase Auth), no el gate ADMIN_PASSWORD. */
+/** Cambio de status: gestor o admin (Supabase Auth), no el gate ADMIN_PASSWORD. */
 export const PATCH: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user || !canChangeSolicitudStatus(locals.profile)) {
-		return json({ error: 'Solo un admin puede cambiar el estado' }, { status: 403 });
+		return json({ error: 'Solo el equipo gestor puede cambiar el estado' }, { status: 403 });
 	}
 
 	let body: { id?: string; status?: string };
@@ -26,6 +26,6 @@ export const PATCH: RequestHandler = async ({ request, locals }) => {
 		);
 	}
 
-	const item = await adminUpdateSolicitudStatus(id, status);
+	const item = await updateSolicitudStatusByStaff(id, status);
 	return json({ ok: true, item });
 };
