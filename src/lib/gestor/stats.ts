@@ -1,4 +1,5 @@
 import { classifySolicitud } from '$lib/gestor/clients';
+import { PROVEEDOR_TIPOS, isProveedorTipo } from '$lib/proveedor/scope';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { SOLICITUD_TIPO_LABELS, SOLICITUD_TIPOS } from '$lib/supabase/types';
 
@@ -146,7 +147,8 @@ export function parseDashboardFilters(url: URL): GestorDashboardFilters {
 
 	const tipoRaw = (url.searchParams.get('tipo') || 'todos').trim().toLowerCase();
 	const known = new Set<string>(SOLICITUD_TIPOS as readonly string[]);
-	const tipo = tipoRaw === 'todos' || known.has(tipoRaw) ? tipoRaw : 'todos';
+	const tipo =
+		tipoRaw === 'todos' || (known.has(tipoRaw) && !isProveedorTipo(tipoRaw)) ? tipoRaw : 'todos';
 
 	const metricaRaw = url.searchParams.get('metrica') || 'realizadas';
 	const metrica: ChartMetric =
@@ -188,7 +190,7 @@ function emptyKpis(): GestorDashboardKpis {
 export async function loadGestorDashboard(filters: GestorDashboardFilters): Promise<GestorDashboard> {
 	const tipoOptions = [
 		{ value: 'todos', label: 'Todos los trámites' },
-		...SOLICITUD_TIPOS.filter((t) => t !== 'contacto').map((t) => ({
+		...SOLICITUD_TIPOS.filter((t) => t !== 'contacto' && !isProveedorTipo(t)).map((t) => ({
 			value: t,
 			label: labelFor(t)
 		}))
@@ -219,6 +221,7 @@ export async function loadGestorDashboard(filters: GestorDashboardFilters): Prom
 		sb
 			.from('solicitudes')
 			.select('id,tipo,status,email,user_id,created_at,updated_at,payload')
+			.not('tipo', 'in', `(${PROVEEDOR_TIPOS.join(',')})`)
 			.order('created_at', { ascending: false })
 			.limit(8000)
 	]);
@@ -326,7 +329,7 @@ export async function loadGestorDashboard(filters: GestorDashboardFilters): Prom
 		const tiposBase =
 			filters.tipo !== 'todos'
 				? [filters.tipo]
-				: SOLICITUD_TIPOS.filter((t) => t !== 'contacto');
+				: SOLICITUD_TIPOS.filter((t) => t !== 'contacto' && !isProveedorTipo(t));
 		for (const t of tiposBase) {
 			if (!counts.has(t)) counts.set(t, 0);
 		}

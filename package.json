@@ -14,7 +14,8 @@
 		"security:scan": "node scripts/security-scan.mjs",
 		"seed:demo-users": "node scripts/seed-demo-users.mjs",
 		"seed:demo-solicitudes": "node scripts/seed-demo-solicitudes.mjs",
-		"test:validators": "node --experimental-strip-types --test src/lib/utils/validators.test.ts"
+		"test:validators": "node --experimental-strip-types --test src/lib/utils/validators.test.ts",
+		"test:proveedor": "node --experimental-strip-types --test src/lib/proveedor/scope.test.ts src/lib/proveedor/schedule.test.ts"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",

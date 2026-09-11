@@ -9,8 +9,11 @@ Ejecutar en SQL Editor:
 - `supabase/migrations/20260724_panel_usuario.sql`
 - `supabase/migrations/20260724_pago_estados.sql` (estados `pendiente_pago` / `pagada`)
 - `supabase/migrations/20260909_solicitud_doc_peticiones.sql` (pedir/rechazar documentos y avisar al ciudadano)
+- `supabase/migrations/20260911_rol_proveedor.sql` (rol `proveedor` en el CHECK de `profiles.role`)
 
 Amplía `profiles`, estados de `solicitudes`, tablas `vehiculos`, `solicitud_documentos`, `notificaciones` y bucket Storage `tramite-docs`. La migración de peticiones añade `solicitud_doc_peticiones` y columnas `doc_type` / `status` / `meta` en `solicitud_documentos`.
+
+**Importante:** la migración del rol hay que ejecutarla *antes* de asignar `role = 'proveedor'` a nadie; si no, el `update` falla por el CHECK.
 
 Roles: **gestor** y **admin** (Supabase Auth role) cambian estados de trámite, desde la ficha `/gestor/[id]` o el tablero kanban de `/gestor/tramites`.
 
@@ -129,6 +132,7 @@ npm run seed:demo-users
 |-----|-------|----------|--------|
 | Ciudadano | `demo1@tramitesdgtonline.com` … `demo5@…` | `DemoUser2026!` | `/login` → `/cuenta` |
 | **Gestor** | `gestor@tramitesdgtonline.com` | `GestorDemo2026!` | `/login` → `/gestor` |
+| **Proveedor (Ideauto)** | `ideauto@tramitesdgtonline.com` | `IdeautoDemo2026!` | `/login` → `/proveedor` |
 
 **Importante:** `/admin` (analítica) usa `ADMIN_PASSWORD`, independiente de Auth.
 
@@ -136,6 +140,35 @@ npm run seed:demo-users
 
 - Olvidé mi contraseña: `/recuperar-password` (email Resend)
 - Cambiar estando logueado: `/cuenta/seguridad` (ciudadano, gestor y admin Auth)
+
+## 4 bis. Proveedor externo del distintivo ambiental (Ideauto)
+
+Los trámites de tipo `etiqueta` (distintivo ambiental de coche) los lleva un proveedor externo y **no aparecen en el panel del gestor**: ni en el tablero, ni en el listado, ni en las fichas, ni en los KPIs, ni en sus descargas. El adhesivo de patinete (`etiqueta-vmp`) sí sigue siendo del gestor.
+
+| Quién | Dónde | Qué ve | Excel |
+|---|---|---|---|
+| Gestor | `/gestor` | Todo **menos** `etiqueta` | Descarga con filtro de estado y fechas |
+| Ideauto | `/proveedor` | **Solo** `etiqueta` | Descarga, envío manual y envío automático |
+| Admin | ambos | Todo | Ambos |
+
+El proveedor puede cambiar el estado del trámite y descargar los documentos adjuntos, porque necesita el permiso de circulación y el NIF para emitir la pegatina.
+
+### Envío automático del Excel
+
+Tres vías sobre el mismo generador: descarga directa, botón «Enviar ahora por email» y envío programado.
+
+El programado se controla desde `/proveedor/ajustes` (interruptor, frecuencia y email de destino) y se guarda en `site_settings` bajo la clave `proveedor_excel_report`. **Sale desactivado**; apagarlo es un clic, sin tocar código ni despliegue.
+
+El disparador es el cron diario declarado en [`vercel.json`](../vercel.json), que llama a `/api/cron/proveedor-excel`:
+
+| Variable | Uso |
+|---|---|
+| `CRON_SECRET` | Obligatoria para que el cron envíe. Vercel la manda como `Authorization: Bearer …`. Sin ella el endpoint responde 503 |
+| `PROVEEDOR_NOTIFY_EMAIL` | Opcional. Destinatario por defecto si no se fija uno en el panel |
+
+Cada frecuencia manda un periodo **cerrado**, de modo que no se solapan envíos: diario manda el día anterior, semanal solo los lunes con la semana anterior, y mensual solo el día 1 con el mes anterior. El cron solo existe en Vercel: en local no se dispara, pero el botón manual sí funciona.
+
+Comprobar el calendario: `npm run test:proveedor`.
 
 ## 5. Cuenta obligatoria al tramitar
 
@@ -168,11 +201,13 @@ Código: `src/lib/server/auto-account.ts`, `POST /api/solicitud`, email `sendAcc
 - [ ] Trámite **con** login → `user_id` poblado, sin email de password
 - [ ] Login con email que tenía solicitudes anónimas legacy → reclamadas en `/cuenta`
 - [ ] Admin eleva a gestor → acceso `/gestor` + CSV/Excel/PDF
+- [ ] Gestor no ve ningún distintivo ambiental, y `/gestor/api/export/excel?tipo=etiqueta` sale vacío
+- [ ] Proveedor entra en `/proveedor`, descarga el Excel del periodo y no puede entrar en `/gestor`
 - [ ] Último paso → pagar (con `STRIPE_*`: Checkout Stripe; si no, Redsys; sin claves: `pendiente_pago`)
 
 ## 7. Notas
 
 - El panel `/admin` (analítica) sigue usando cookie HMAC; es independiente de Supabase Auth.
-- `/gestor` exige `profiles.role` ∈ `gestor|admin`.
+- `/gestor` exige `profiles.role` ∈ `gestor|admin`; `/proveedor` exige `proveedor|admin`.
 - Sin `SUPABASE_*` en local, las solicitudes caen a `.data/solicitudes.json`; en Vercel/prod falla claro (503). En local con cuenta obligatoria hace falta service role (o sesión) para crear la cuenta.
 - Pasarela: ver [`docs/redsys-cfo.md`](redsys-cfo.md).

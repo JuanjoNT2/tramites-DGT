@@ -233,6 +233,14 @@ export function daysInRange(range: DateRange): number {
 	return Math.max(1, Math.round((b.getTime() - a.getTime()) / 86400000) + 1);
 }
 
+/** Límites UTC del rango, listos para comparar contra columnas timestamptz. */
+export function rangeBoundsIso(range: DateRange): { from: string; to: string } {
+	return {
+		from: `${range.startDate}T00:00:00.000Z`,
+		to: `${range.endDate}T23:59:59.999Z`
+	};
+}
+
 export function rangeQuery(range: DateRange): string {
 	const p = new URLSearchParams({
 		preset: range.preset,

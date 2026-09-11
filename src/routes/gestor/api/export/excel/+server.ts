@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import { requireGestor, fetchSolicitudById, fetchSolicitudes } from '$lib/gestor/access';
+import { exportFilename, parseGestorExportFilter } from '$lib/gestor/export-filters';
 import { buildSolicitudExcelXml, solicitudToExportRow, toExcelXml } from '$lib/gestor/export';
 
 export const GET: RequestHandler = async ({ locals, url }) => {
@@ -18,16 +19,15 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		});
 	}
 
-	const tipo = url.searchParams.get('tipo') || 'todos';
-	const items = await fetchSolicitudes(tipo);
+	const filter = parseGestorExportFilter(url);
+	const items = await fetchSolicitudes(filter);
 	const rows = items.map(solicitudToExportRow);
 	const xml = toExcelXml(rows);
-	const filename = `solicitudes-${tipo}-${new Date().toISOString().slice(0, 10)}.xls`;
 
 	return new Response(xml, {
 		headers: {
 			'Content-Type': 'application/vnd.ms-excel; charset=utf-8',
-			'Content-Disposition': `attachment; filename="${filename}"`
+			'Content-Disposition': `attachment; filename="${exportFilename(filter, 'xls')}"`
 		}
 	});
 };

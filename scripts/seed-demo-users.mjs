@@ -54,8 +54,9 @@ const sb = createClient(url, key, {
 
 const DEMO_USER_PASSWORD = 'DemoUser2026!';
 const GESTOR_PASSWORD = 'GestorDemo2026!';
+const PROVEEDOR_PASSWORD = 'IdeautoDemo2026!';
 
-/** @type {{ email: string, password: string, fullName: string, telefono: string, nif: string, role: 'user'|'gestor', vehicles: { matricula: string, tipo: string, marca: string, modelo: string, bastidor?: string }[] }[]} */
+/** @type {{ email: string, password: string, fullName: string, telefono: string, nif: string, role: 'user'|'gestor'|'proveedor', vehicles: { matricula: string, tipo: string, marca: string, modelo: string, bastidor?: string }[] }[]} */
 const ACCOUNTS = [
 	{
 		email: 'demo1@tramitesdgtonline.com',
@@ -125,6 +126,16 @@ const ACCOUNTS = [
 		vehicles: [
 			{ matricula: '9999GST', tipo: 'coche', marca: 'Skoda', modelo: 'Octavia', bastidor: 'TMBZZZ1Z000000099' }
 		]
+	},
+	{
+		// Proveedor externo del distintivo ambiental: solo ve /proveedor
+		email: 'ideauto@tramitesdgtonline.com',
+		password: PROVEEDOR_PASSWORD,
+		fullName: 'Ideauto Distintivos',
+		telefono: '612345098',
+		nif: 'B99887766',
+		role: 'proveedor',
+		vehicles: []
 	}
 ];
 
@@ -235,6 +246,9 @@ async function main() {
 	console.log('\nGestor (/login → /gestor):');
 	const g = rows.find((x) => x.role === 'gestor');
 	if (g) console.log(`  ${g.email}  /  ${g.password}`);
+	console.log('\nProveedor Ideauto (/login → /proveedor):');
+	const p = rows.find((x) => x.role === 'proveedor');
+	if (p) console.log(`  ${p.email}  /  ${p.password}`);
 	console.log('\nNOTA: /admin (analítica) usa ADMIN_PASSWORD, no estas cuentas.');
 	console.log('=========================================\n');
 }

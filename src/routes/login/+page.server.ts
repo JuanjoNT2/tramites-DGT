@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { isStaffRole } from '$lib/auth/roles';
+import { isProveedorRole, isStaffRole } from '$lib/auth/roles';
 import { authCallbackUrl, safePostLoginNext } from '$lib/auth/urls';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { validateEmail } from '$lib/utils/validators';
@@ -15,6 +15,10 @@ async function resolvePostLoginRedirect(
 	if (sb) {
 		const { data } = await sb.from('profiles').select('role').eq('id', userId).maybeSingle();
 		role = (data as { role?: string } | null)?.role ?? null;
+	}
+	if (isProveedorRole(role)) {
+		if (next.startsWith('/proveedor')) return next;
+		return '/proveedor';
 	}
 	if (isStaffRole(role)) {
 		if (next.startsWith('/gestor')) return next;

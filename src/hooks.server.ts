@@ -2,7 +2,7 @@ import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 import type { User } from '@supabase/supabase-js';
 import { readSessionCookie, verifySessionToken } from '$lib/admin/auth';
-import { isStaffRole } from '$lib/auth/roles';
+import { canAccessProveedorPanel, isProveedorRole, isStaffRole } from '$lib/auth/roles';
 import { joinPersonName } from '$lib/cuenta/profile-prefill';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { createSupabaseServerClient } from '$lib/supabase/server';
@@ -140,6 +140,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
+	const isProveedorPanel = path === '/proveedor' || path.startsWith('/proveedor/');
+	if (isProveedorPanel) {
+		if (!event.locals.user || !canAccessProveedorPanel(event.locals.profile)) {
+			throw redirect(303, `/login?next=${encodeURIComponent(event.url.pathname)}`);
+		}
+	}
+
+	const esProveedor = Boolean(event.locals.user && isProveedorRole(event.locals.profile?.role));
+
 	const isCuenta = path === '/cuenta' || path.startsWith('/cuenta/');
 	if (isCuenta && !event.locals.user) {
 		throw redirect(303, `/login?next=${encodeURIComponent(event.url.pathname + event.url.search)}`);
@@ -152,14 +161,22 @@ export const handle: Handle = async ({ event, resolve }) => {
 				: '/gestor';
 		throw redirect(303, dest);
 	}
+	// El proveedor externo tampoco: su sitio es /proveedor
+	if (isCuenta && esProveedor) {
+		const dest =
+			path === '/cuenta/seguridad' || path.startsWith('/cuenta/seguridad/')
+				? '/proveedor/seguridad'
+				: '/proveedor';
+		throw redirect(303, dest);
+	}
 
 	// Gestores no deben iniciar trámites de ciudadano ni usar la home pública como funnel
 	const isStaff = Boolean(event.locals.user && isStaffRole(event.locals.profile?.role));
-	if (isStaff) {
+	if (isStaff || esProveedor) {
 		const isHome = path === '/';
 		const isTramitar = path === '/tramitar' || path.startsWith('/tramitar/');
 		if (isHome || isTramitar) {
-			throw redirect(303, '/gestor');
+			throw redirect(303, esProveedor ? '/proveedor' : '/gestor');
 		}
 	}
 

@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { classifySolicitud } from '$lib/gestor/clients';
 import { classifyTramiteBucket, type TramiteBucket } from '$lib/gestor/board';
+import { PROVEEDOR_TIPOS } from '$lib/proveedor/scope';
 import { facturaEmitidaFromPayload, solicitaFacturaFromPayload } from '$lib/tramite/factura-cliente';
 import type { Solicitud } from '$lib/supabase/types';
 
@@ -72,9 +73,11 @@ export async function loadGestorTramites(
 		};
 	}
 
+	// Los distintivos ambientales los lleva el proveedor externo, no el gestor
 	const { data: sols, error } = await sb
 		.from('solicitudes')
 		.select('*')
+		.not('tipo', 'in', `(${PROVEEDOR_TIPOS.join(',')})`)
 		.order('created_at', { ascending: false })
 		.limit(5000);
 

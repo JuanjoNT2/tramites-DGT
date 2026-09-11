@@ -21,6 +21,7 @@
 		(page.url.pathname.startsWith('/admin') &&
 			!page.url.pathname.startsWith('/admin/login')) ||
 			page.url.pathname.startsWith('/gestor') ||
+			page.url.pathname.startsWith('/proveedor') ||
 			page.url.pathname.startsWith('/cuenta')
 	);
 	const siteLd = $derived(isShell ? null : [organizationJsonLd(), websiteJsonLd()]);
@@ -159,6 +160,7 @@
 			p &&
 			!(p.startsWith('/admin') && !p.startsWith('/admin/login')) &&
 			!p.startsWith('/gestor') &&
+			!p.startsWith('/proveedor') &&
 			!p.startsWith('/cuenta')
 		) {
 			trackPageView(p);

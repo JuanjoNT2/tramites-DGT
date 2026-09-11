@@ -1,3 +1,4 @@
+import { PROVEEDOR_TIPOS } from '$lib/proveedor/scope';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import {
 	isEnCursoStatus,
@@ -56,7 +57,12 @@ export async function loadGestorClientes(vista: GestorVista, q = ''): Promise<{
 			.eq('role', 'user')
 			.order('created_at', { ascending: false })
 			.limit(5000),
-		sb.from('solicitudes').select('*').order('created_at', { ascending: false }).limit(8000)
+		sb
+			.from('solicitudes')
+			.select('*')
+			.not('tipo', 'in', `(${PROVEEDOR_TIPOS.join(',')})`)
+			.order('created_at', { ascending: false })
+			.limit(8000)
 	]);
 
 	if (pErr || sErr) {

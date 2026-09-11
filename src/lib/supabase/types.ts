@@ -1,4 +1,4 @@
-export type UserRole = 'user' | 'gestor' | 'admin';
+export type UserRole = 'user' | 'gestor' | 'admin' | 'proveedor';
 
 export type SolicitudStatus =
 	| 'nueva'

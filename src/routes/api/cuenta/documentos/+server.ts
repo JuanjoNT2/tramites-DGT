@@ -10,14 +10,25 @@ import {
 } from '$lib/cuenta/data';
 import { upsertProfileNifDocument } from '$lib/cuenta/profile-docs';
 import { shouldSaveDocTypeToProfile } from '$lib/cuenta/profile-prefill';
-import { canManageAllDocs, isStaffRole } from '$lib/auth/roles';
+import { canAccessProveedorPanel, canManageAllDocs, isStaffRole } from '$lib/auth/roles';
 import { fetchSolicitudById } from '$lib/gestor/access';
+import { loadProveedorTramiteById } from '$lib/proveedor/data';
+import { isProveedorTipo } from '$lib/proveedor/scope';
 import { canAccessPagoSolicitud } from '$lib/pago/access';
 import { getServiceSupabase } from '$lib/supabase/admin';
 import { verifyDocumentUpload } from '$lib/server/doc-verify';
 import type { Profile, Solicitud } from '$lib/supabase/types';
 
 const BUCKET = 'tramite-docs';
+
+type ServiceClient = ReturnType<typeof requireService>;
+
+/** true si la solicitud del documento es un distintivo ambiental (ámbito del proveedor). */
+async function isDocDeProveedor(sb: ServiceClient, solicitudId: string): Promise<boolean> {
+	if (!solicitudId) return false;
+	const { data } = await sb.from('solicitudes').select('tipo').eq('id', solicitudId).maybeSingle();
+	return isProveedorTipo((data as { tipo?: string } | null)?.tipo);
+}
 
 export const GET: RequestHandler = async ({ locals, url }) => {
 	const user = requireUser(locals);
@@ -34,7 +45,12 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		if (err || !doc) throw error(404, 'Documento no encontrado');
 
 		const staff = isStaffRole(locals.profile?.role);
-		if (!staff && doc.user_id !== user.id) throw error(403, 'No autorizado');
+		// El proveedor externo solo llega a los documentos de sus propios trámites
+		const viaProveedor =
+			!staff &&
+			canAccessProveedorPanel(locals.profile) &&
+			(await isDocDeProveedor(sb, String(doc.solicitud_id)));
+		if (!staff && !viaProveedor && doc.user_id !== user.id) throw error(403, 'No autorizado');
 
 		const { data: file, error: dlErr } = await sb.storage.from(BUCKET).download(doc.path);
 		if (dlErr || !file) throw error(500, dlErr?.message || 'No se pudo descargar');
@@ -49,8 +65,9 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 
 	if (solicitudId) {
 		const staff = canManageAllDocs(locals.profile);
-		if (!staff) await getUserSolicitud(user.id, solicitudId);
-		else await fetchSolicitudById(solicitudId);
+		if (staff) await fetchSolicitudById(solicitudId);
+		else if (canAccessProveedorPanel(locals.profile)) await loadProveedorTramiteById(solicitudId);
+		else await getUserSolicitud(user.id, solicitudId);
 		const items = await listDocsForSolicitud(solicitudId);
 		return json({ items });
 	}

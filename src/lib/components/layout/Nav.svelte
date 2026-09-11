@@ -2,7 +2,7 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { CtaIds, trackClick } from '$lib/analytics';
-	import { isStaffRole } from '$lib/auth/roles';
+	import { isProveedorRole, isStaffRole } from '$lib/auth/roles';
 	import { loginUrl } from '$lib/auth/urls';
 	import { displayFirstName } from '$lib/cuenta/profile-prefill';
 	import { servicesByGroup, calculators } from '$lib/data/services';
@@ -18,7 +18,12 @@
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
 	const staff = $derived(isStaffRole(profile?.role));
-	const brandHref = $derived(staff ? '/gestor' : '/');
+	const proveedor = $derived(isProveedorRole(profile?.role));
+	/** Staff y proveedor comparten estructura de nav: panel propio en vez de funnel público. */
+	const interno = $derived(staff || proveedor);
+	const panelHref = $derived(proveedor ? '/proveedor' : '/gestor');
+	const panelLabel = $derived(proveedor ? 'Panel Ideauto' : 'Panel gestor');
+	const brandHref = $derived(interno ? panelHref : '/');
 	const displayName = $derived(displayFirstName(profile, user?.email));
 	const accountLabel = $derived(`Hola, ${displayName}`);
 	// Solo pathname: en prerender no se puede leer url.search
@@ -74,13 +79,13 @@
 		</a>
 
 		<nav class="links" aria-label="Principal">
-			{#if staff}
+			{#if interno}
 				<a
-					href="/gestor"
+					href={panelHref}
 					data-analytics={CtaIds.NAV_LINK}
-					onclick={() => trackClick(CtaIds.NAV_LINK, { destination: '/gestor' })}
+					onclick={() => trackClick(CtaIds.NAV_LINK, { destination: panelHref })}
 				>
-					Panel gestor
+					{panelLabel}
 				</a>
 			{:else}
 				<div class="dropdown">
@@ -150,7 +155,18 @@
 
 		{#snippet accountMenu()}
 			<div class="drop-menu account-menu" role="menu">
-				{#if staff}
+				{#if proveedor}
+					<a href="/proveedor" role="menuitem" onclick={() => (openAccount = false)}>Distintivos</a>
+					<a href="/proveedor/ajustes" role="menuitem" onclick={() => (openAccount = false)}
+						>Envío automático</a
+					>
+					<a href="/proveedor/seguridad" role="menuitem" onclick={() => (openAccount = false)}
+						>Cambiar contraseña</a
+					>
+					<form method="POST" action="/proveedor?/logout">
+						<button type="submit" class="logout-item" role="menuitem">Cerrar sesión</button>
+					</form>
+				{:else if staff}
 					<a href="/gestor" role="menuitem" onclick={() => (openAccount = false)}>Dashboard</a>
 					<a href="/gestor/usuarios" role="menuitem" onclick={() => (openAccount = false)}
 						>Usuarios</a
@@ -259,13 +275,13 @@
 			aria-label="Menú de navegación"
 		>
 			<nav class="mobile-nav" aria-label="Menú móvil">
-				{#if staff}
+				{#if interno}
 					<a
-						href="/gestor"
+						href={panelHref}
 						onclick={() => {
-							trackClick(CtaIds.NAV_LINK, { destination: '/gestor', nav: 'mobile' });
+							trackClick(CtaIds.NAV_LINK, { destination: panelHref, nav: 'mobile' });
 							closeMobile();
-						}}>Panel gestor</a
+						}}>{panelLabel}</a
 					>
 				{:else}
 					<div class="mobile-group">
@@ -356,7 +372,16 @@
 					}}>Contacto</a
 				>
 				{#if user}
-					{#if staff}
+					{#if proveedor}
+						<a href="/proveedor" class="btn mobile-cta" onclick={closeMobile}>Panel Ideauto</a>
+						<div class="mobile-sub account-mobile">
+							<a href="/proveedor/ajustes" onclick={closeMobile}>Envío automático</a>
+							<a href="/proveedor/seguridad" onclick={closeMobile}>Cambiar contraseña</a>
+							<form method="POST" action="/proveedor?/logout">
+								<button type="submit" class="mobile-logout">Cerrar sesión</button>
+							</form>
+						</div>
+					{:else if staff}
 						<a href="/gestor" class="btn mobile-cta" onclick={closeMobile}>Panel gestor</a>
 						<div class="mobile-sub account-mobile">
 							<a href="/gestor/usuarios" onclick={closeMobile}>Usuarios</a>

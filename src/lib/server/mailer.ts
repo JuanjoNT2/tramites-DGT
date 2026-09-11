@@ -295,6 +295,39 @@ export async function sendFacturaClienteEmail(opts: {
 	});
 }
 
+/** Excel de distintivos ambientales para el proveedor externo (manual o programado). */
+export async function sendProveedorExcelEmail(opts: {
+	to: string;
+	filename: string;
+	xml: string;
+	rangeLabel: string;
+	total: number;
+	automatico?: boolean;
+}) {
+	const origen = opts.automatico ? 'envío programado' : 'envío manual desde el panel';
+	return sendEmail({
+		to: opts.to,
+		subject: `Distintivos ambientales · ${opts.rangeLabel} (${opts.total})`,
+		text: [
+			'Hola,',
+			'',
+			`Adjuntamos el Excel con los distintivos ambientales del periodo ${opts.rangeLabel}.`,
+			`Solicitudes incluidas: ${opts.total}.`,
+			'',
+			`Origen: ${origen}.`,
+			'',
+			'Trámites DGT Online'
+		].join('\n'),
+		attachments: [
+			{
+				filename: opts.filename,
+				content: Buffer.from(opts.xml, 'utf8'),
+				type: 'application/vnd.ms-excel'
+			}
+		]
+	});
+}
+
 /** Aviso del gestor al ciudadano (bandeja + email). */
 export async function sendGestorAvisoEmail(opts: {
 	to: string;
